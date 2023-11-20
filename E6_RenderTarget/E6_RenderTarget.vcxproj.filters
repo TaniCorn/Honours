@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Prototype1">
+      <UniqueIdentifier>{b08ddf4f-4e5e-44a0-9773-bab48fa0eefd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3DGrid">
+      <UniqueIdentifier>{9450c205-694f-46b9-b12a-8b4f471462dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -21,27 +27,27 @@
     <ClCompile Include="LightShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TextureShader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="App1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GreyShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CameraSpot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TextureShader.cpp">
+      <Filter>Prototype1</Filter>
+    </ClCompile>
+    <ClCompile Include="App1.cpp">
+      <Filter>Prototype1</Filter>
+    </ClCompile>
+    <ClCompile Include="GridApp.cpp">
+      <Filter>3DGrid</Filter>
+    </ClCompile>
+    <ClCompile Include="GridShader.cpp">
+      <Filter>3DGrid</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="LightShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TextureShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GreyShader.h">
@@ -50,18 +56,24 @@
     <ClInclude Include="CameraSpot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TextureShader.h">
+      <Filter>Prototype1</Filter>
+    </ClInclude>
+    <ClInclude Include="App1.h">
+      <Filter>Prototype1</Filter>
+    </ClInclude>
+    <ClInclude Include="GridApp.h">
+      <Filter>3DGrid</Filter>
+    </ClInclude>
+    <ClInclude Include="GridShader.h">
+      <Filter>3DGrid</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shaders\light_ps.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
     <FxCompile Include="shaders\light_vs.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\texture_ps.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\texture_vs.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
     <FxCompile Include="greyscale_ps.hlsl">
@@ -76,10 +88,25 @@
     <FxCompile Include="cameraspot_vs.hlsl">
       <Filter>Resource Files</Filter>
     </FxCompile>
+    <FxCompile Include="shaders\texture_vs.hlsl">
+      <Filter>Prototype1</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\texture_ps.hlsl">
+      <Filter>Prototype1</Filter>
+    </FxCompile>
+    <FxCompile Include="grid_vs.hlsl">
+      <Filter>3DGrid</Filter>
+    </FxCompile>
+    <FxCompile Include="grid_ps.hlsl">
+      <Filter>3DGrid</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Tracer.hlsli">
-      <Filter>Resource Files</Filter>
+      <Filter>Prototype1</Filter>
+    </None>
+    <None Include="GridShading.hlsli">
+      <Filter>3DGrid</Filter>
     </None>
   </ItemGroup>
 </Project>

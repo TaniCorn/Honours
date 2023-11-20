@@ -166,6 +166,8 @@
     <ClCompile Include="App1.cpp" />
     <ClCompile Include="CameraSpot.cpp" />
     <ClCompile Include="GreyShader.cpp" />
+    <ClCompile Include="GridApp.cpp" />
+    <ClCompile Include="GridShader.cpp" />
     <ClCompile Include="LightShader.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="TextureShader.cpp" />
@@ -174,6 +176,8 @@
     <ClInclude Include="App1.h" />
     <ClInclude Include="CameraSpot.h" />
     <ClInclude Include="GreyShader.h" />
+    <ClInclude Include="GridApp.h" />
+    <ClInclude Include="GridShader.h" />
     <ClInclude Include="LightShader.h" />
     <ClInclude Include="TextureShader.h" />
   </ItemGroup>
@@ -207,6 +211,18 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="grid_ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="grid_vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="shaders\light_ps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -229,6 +245,7 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="GridShading.hlsli" />
     <None Include="Tracer.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

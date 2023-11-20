@@ -1,53 +1,35 @@
-// Lab1.cpp
-// Lab 1 example, simple coloured triangle mesh
-#include "App1.h"
-
-App1::App1()
+#include "GridApp.h"
+GridApp::GridApp()
 {
 
 }
 
-void App1::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight, Input *in, bool VSYNC, bool FULL_SCREEN)
+void GridApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight, Input* in, bool VSYNC, bool FULL_SCREEN)
 {
 	// Call super/parent init function (required!)
 	BaseApplication::init(hinstance, hwnd, screenWidth, screenHeight, in, VSYNC, FULL_SCREEN);
 
-	// Create Mesh object and shader object
-	// Cube mesh is the geometry in the scene.
-	// Ortho mesh is the geometry we render the result to.
-	textureMgr->loadTexture(L"brick", L"res/brick1.dds");
-
-	orthoMesh = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth , screenHeight , 0, 0);
+	orthoMesh = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth, screenHeight, 0, 0);
 	screenh = screenHeight;
 	screenw = screenWidth;
 
 	renderTexture = new RenderTexture(renderer->getDevice(), screenWidth, screenHeight, SCREEN_NEAR, SCREEN_DEPTH);
-	textureShader = new TextureShader(renderer->getDevice(), hwnd);
+	textureShader = new GridShader(renderer->getDevice(), hwnd);
 
 	camera->setPosition(0, 0, 0);
 	camera->setRotation(0, 0, 0);
 }
 
 
-App1::~App1()
+GridApp::~GridApp()
 {
 	// Run base application deconstructor
 	BaseApplication::~BaseApplication();
 
-	// Release the Direct3D object.
-	if (sphereMesh != nullptr)
-	{
-		delete sphereMesh;
-	}
-	if (secondCamera)
-	{
-		delete secondCamera;
-		secondCamera = 0;
-	}
 }
 
 
-bool App1::frame()
+bool GridApp::frame()
 {
 	bool result;
 
@@ -56,7 +38,7 @@ bool App1::frame()
 	{
 		return false;
 	}
-	
+
 	// Render the graphics.
 	result = render();
 	if (!result)
@@ -65,13 +47,10 @@ bool App1::frame()
 	}
 	camera->move(0.01);
 
-
-	//secondCamera->move(timer->getTime());
-
 	return true;
 }
 
-bool App1::render()
+bool GridApp::render()
 {
 
 	texturepass();
@@ -83,7 +62,7 @@ bool App1::render()
 #include <iostream>
 static long long timep = 0.0f;
 static int framesadd = 0;
-void App1::texturepass()
+void GridApp::texturepass()
 {
 	// Clear the scene. (default blue colour)
 	renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
@@ -121,7 +100,7 @@ void App1::texturepass()
 }
 
 
-void App1::gui()
+void GridApp::gui()
 {
 	// Force turn off unnecessary shader stages.
 	renderer->getDeviceContext()->GSSetShader(NULL, NULL, 0);
@@ -130,7 +109,7 @@ void App1::gui()
 
 	// Build UI
 	ImGui::Text("FPS: %.2f", timer->getFPS());
-	ImGui::Text("FrameTime: %i", timep/framesadd);
+	ImGui::Text("FrameTime: %i", timep / framesadd);
 	ImGui::Checkbox("Wireframe mode", &wireframeToggle);
 
 	// Render UI

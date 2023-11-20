@@ -1,14 +1,15 @@
 // Main.cpp
 #include "System.h"
-#include "App1.h"
-
+//#include "App1.h"
+#include "GridApp.h"
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
-	App1* app = new App1();
+	//App1* app = new App1();
+	GridApp* grid = new GridApp();
 	System* system;
 
 	// Create the system object.
-	system = new System(app, 1200, 675, true, false);
+	system = new System(grid, 1200, 675, true, false);
 
 	// Initialize and run the system object.
 	system->run();

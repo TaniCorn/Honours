@@ -23,7 +23,7 @@ protected:
 	void firstPass();
 	void secondPass();
 	void greyPass();
-	void finalPass();
+	void texturepass();
 
 	void firstPlayerPass();
 	void secondPlayerPass();

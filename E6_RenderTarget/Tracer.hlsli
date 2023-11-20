@@ -25,7 +25,7 @@ int raymarchHit(float3 position, float3 direction, float3 voxelposition, float s
     {
         for (int i = 0; i < steps; i++)
         {
-            if (sdBox(position, float3(1, 1, 1), voxelposition))
+            if (sdBox(position, float3(1*circleRadius, 1*circleRadius, 1*circleRadius), voxelposition))
             {
                 return i;
             }
@@ -36,7 +36,7 @@ int raymarchHit(float3 position, float3 direction, float3 voxelposition, float s
     return -1;
 }
 
-int raySphere(float3 rayPosition, float3 rayDirection, float3 spherePosition)
+int raySphere(float3 rayPosition, float3 rayDirection, float3 spherePosition, float sphereRadius)
 {
     //https://www.youtube.com/watch?v=4NshnkzOdI0
     //https://www.youtube.com/watch?v=Qz0KTGYJtUk
@@ -49,7 +49,6 @@ int raySphere(float3 rayPosition, float3 rayDirection, float3 spherePosition)
     //-b +- sqrt(b^2 - 4ac) / 2a
     
     //The upcoming values are calculated with test scenario sphere(0,0,5), rayd(0,0,1), rayp(0,0,0)
-    float sphereRadius = 2.0f;
     float3 offsetRayOrigin = rayPosition - spherePosition; //-5
     
     float a = dot(rayDirection, rayDirection); //Always 1?

@@ -52,7 +52,7 @@ float4 main(InputType input) : SV_TARGET
     float3 rayVector = CalculateViewVector(v, viewMatrix, worldMatrix);
 
     //int hit = raymarchHit(camPos.xyz, rayVector, float3(0, 0, 5), 5000, 0.01f, true, 1.0f);
-    int hit = raySphere(camPos.xyz, rayVector, float3(0, 0, 5));
+    int hit = raySphere(camPos.xyz, rayVector, float3(0, 0, 5), 1.0f);
 
     if (hit >= 0)
     {
