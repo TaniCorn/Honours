@@ -90,7 +90,7 @@ I wish I could encompass every detail of what I've researched but I can only giv
 ## Rendering Technique and Voxel Intersection technique
 I'm researching two techniques, Raymarching and Raytracing.
 
-With the Raymarcher, I plan on using Signed Distance Functions to traverse space and create shapes in respect to the voxel points. I'll probably have to look at encoding the coordinates using.
+With the Raymarcher, I plan on using Signed Distance Functions to traverse space and create shapes in respect to the voxel points. I'll probably have to look at encoding the coordinates using Mortan Codes.
 With the Raytracer I'll be using intersection functions for now.
 
 If I find any better ways to render the shapes I will update this.
@@ -101,7 +101,7 @@ Something to clear up is that Raytracing, Raymarching, Raycasting are all differ
 
 ## Voxel Storage / Acceleration Techniques
 
-This is where I get a bit confused, I'll be ccing back to tidy this up in the future when I understand it a bit more.
+This is where I get a bit confused, I'll be coming back to tidy this up in the future when I understand it a bit more.
 The most basic way to store voxels is in an array, a 3D array to specify whether a voxel is filled or not. This is ok for storing the world, but innefficient when it comes to sending to the GPU to render.
 I was under the impression that Octrees and BVH's are not storing them but sorting them? However the more I try to understand it the more I think that they are storing them. So don't quote me around this area because I may be wrong.
 There are others I've considered but ruled out such as Signed Distance Fields, and 3D Textures.
