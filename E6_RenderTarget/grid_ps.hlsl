@@ -21,17 +21,6 @@ struct InputType
     float4 cameraPosition : TEXCOORD1;
 };
 
-//static const int world[8] = { 1, 1, 1, 1, 1, 1, 1, 1 };
-
-//static const int world[8] = { 1, 0, 1, 0, 1, 0, 1, 0 };
-
-//static const int world[3 * 3] =
-//{
-//    1, 1, 1,
-//     1, 0, 1,
-//     1, 1, 1
-//};
-
 #include "GridShading.hlsli"
 
 float4 main(InputType input) : SV_TARGET
@@ -42,7 +31,7 @@ float4 main(InputType input) : SV_TARGET
     
     float4 v = UVPositionCalculation(res, input.tex, projectionMatrix, fov);
     float3 rayVector = CalculateViewVector(v, viewMatrix, worldMatrix);
-
+    
     return Render3DGrid(camPos, rayVector, false);
     return Render2DGrid(camPos, rayVector, false);
     return Render1DGrid(camPos, rayVector, false);

@@ -19,7 +19,7 @@ static const int ThreeDimensionGrid[3 * 3 * 3] =
      1, 0, 1,
      1, 1, 1
 };
-
+#define SPHEREERROR 0.001f
 #include "Tracer.hlsli"
 float4 Render3DGrid(float3 camPos, float3 rayVector, bool raymarch)
 {
@@ -38,7 +38,8 @@ float4 Render3DGrid(float3 camPos, float3 rayVector, bool raymarch)
                 int hit = 0;
                 if (raymarch)
                 {
-                    hit = raymarchHit(camPos.xyz, rayVector, float3(x, y, z), 500, 0.1f, false, 0.1f);
+                    hit = SphereTracing(camPos.xyz, rayVector, float3(x, y, z), 500, 0.1f, SPHEREERROR);
+                    //hit = raymarchHit(camPos.xyz, rayVector, float3(x, y, z), 500, 0.1f, false, 0.1f);
                 }
                 else
                 {
@@ -74,7 +75,8 @@ float4 Render2DGrid(float3 camPos, float3 rayVector, bool raymarch)
             int hit = 0;
             if (raymarch)
             {
-                hit = raymarchHit(camPos.xyz, rayVector, float3(x, y, 0), 500, 0.1f, false, 0.1f);
+                hit = SphereTracing(camPos.xyz, rayVector, float3(x, y, 0), 500, 0.1f, SPHEREERROR);
+                //hit = raymarchHit(camPos.xyz, rayVector, float3(x, y, 0), 500, 0.1f, false, 0.1f);
             }
             else
             {
@@ -102,13 +104,13 @@ float4 Render1DGrid(float3 camPos, float3 rayVector, bool raymarch)
         if (OneDimensionGrid[i] == 0)
         {
             continue;
-            
         }
         
         int hit = 0;
         if(raymarch)
         {
-            hit = raymarchHit(camPos.xyz, rayVector, float3(0, 0, i), 500, 0.1f, false, 0.1f);
+            hit = SphereTracing(camPos.xyz, rayVector, float3(0, 0, i), 500, 0.1f, SPHEREERROR);
+            //hit = raymarchHit(camPos.xyz, rayVector, float3(0, 0, i), 500, 0.1f, false, 0.1f);
         }
         else
         {
@@ -126,3 +128,5 @@ float4 Render1DGrid(float3 camPos, float3 rayVector, bool raymarch)
     }
     return float4(rayVector.x, rayVector.y, rayVector.z, 1);
 }
+
+#undef SPHERERROR

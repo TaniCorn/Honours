@@ -1,13 +1,33 @@
-bool sdBox(float3 camPos, float3 boxSize, float3 boxPos)
+float sdBox(float3 camPos, float3 boxSize, float3 boxPos)
 {
     const float boxCurve = 0;
     float3 distance = abs(camPos - boxPos) - (boxSize);
-    return (length(max(distance, 0.0)) + min(max(distance.x, max(distance.y, distance.z)), 0.0) < boxCurve);
+    return (length(max(distance, 0.0)) + min(max(distance.x, max(distance.y, distance.z)), 0.0));
 }
 bool sphereHit(float3 raypos, float3 spherecent, float radius)
 {
     return ((distance(raypos, spherecent) - radius) < radius);
 }
+float sdSphere(float3 raypos, float3 spherecent, float radius)
+{
+    return (distance(raypos, spherecent) - radius);
+}
+
+int SphereTracing(float3 position, float3 direction, float3 voxelposition, float steps, float circleRadius, float error)
+{
+        for (int i = 0; i < steps; i++)
+        {
+            float distance = sdSphere(position, voxelposition, circleRadius);
+            //float distance = sdBox(position, float3(circleRadius, circleRadius, circleRadius),voxelposition);
+            if (distance < 0 + error)
+            {
+                return i;
+            }
+            position += direction * distance;
+        }
+    return -1;
+}
+
 int raymarchHit(float3 position, float3 direction, float3 voxelposition, float steps, float stepSize, bool circle, float circleRadius)
 {
     if (circle)

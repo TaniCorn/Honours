@@ -19,6 +19,12 @@
     <Filter Include="3DGrid">
       <UniqueIdentifier>{9450c205-694f-46b9-b12a-8b4f471462dc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Octree">
+      <UniqueIdentifier>{7e2645a7-8d2b-40c9-9b4e-a53f361230e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="QuadTree">
+      <UniqueIdentifier>{02b67970-9c0f-4d62-9af5-f15b4d7bbdd8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -45,6 +51,15 @@
     <ClCompile Include="GridShader.cpp">
       <Filter>3DGrid</Filter>
     </ClCompile>
+    <ClCompile Include="QuadTreeApp.cpp">
+      <Filter>QuadTree</Filter>
+    </ClCompile>
+    <ClCompile Include="QuadTreeShader.cpp">
+      <Filter>QuadTree</Filter>
+    </ClCompile>
+    <ClCompile Include="QuadTree.cpp">
+      <Filter>QuadTree</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LightShader.h">
@@ -67,6 +82,15 @@
     </ClInclude>
     <ClInclude Include="GridShader.h">
       <Filter>3DGrid</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadTreeApp.h">
+      <Filter>QuadTree</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadTreeShader.h">
+      <Filter>QuadTree</Filter>
+    </ClInclude>
+    <ClInclude Include="QuadTree.h">
+      <Filter>QuadTree</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -99,6 +123,12 @@
     </FxCompile>
     <FxCompile Include="grid_ps.hlsl">
       <Filter>3DGrid</Filter>
+    </FxCompile>
+    <FxCompile Include="quadtreeshader_ps.hlsl">
+      <Filter>QuadTree</Filter>
+    </FxCompile>
+    <FxCompile Include="quadtreeshader_vs.hlsl">
+      <Filter>QuadTree</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
