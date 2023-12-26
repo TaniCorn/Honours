@@ -39,7 +39,7 @@ Octree::~Octree()
 void Octree::insert(OctVoxel* vox)
 {
 
-    float minSize = 0.5f;
+    float minSize = 1.0f;
     // If the point is out of bounds
     if (!inBoundary(vox->point)) {
         cout << "Point is out of bound" << endl;

@@ -51,14 +51,20 @@
     <ClCompile Include="GridShader.cpp">
       <Filter>3DGrid</Filter>
     </ClCompile>
-    <ClCompile Include="QuadTreeApp.cpp">
-      <Filter>QuadTree</Filter>
+    <ClCompile Include="Quad\Octree.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QuadTreeShader.cpp">
-      <Filter>QuadTree</Filter>
+    <ClCompile Include="Quad\QuadTree.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="QuadTree.cpp">
-      <Filter>QuadTree</Filter>
+    <ClCompile Include="Quad\QuadTreeApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad\QuadTreeShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BoundingVolumeHierarchy.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,14 +89,20 @@
     <ClInclude Include="GridShader.h">
       <Filter>3DGrid</Filter>
     </ClInclude>
-    <ClInclude Include="QuadTreeApp.h">
-      <Filter>QuadTree</Filter>
+    <ClInclude Include="Quad\Octree.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="QuadTreeShader.h">
-      <Filter>QuadTree</Filter>
+    <ClInclude Include="Quad\QuadTree.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="QuadTree.h">
-      <Filter>QuadTree</Filter>
+    <ClInclude Include="Quad\QuadTreeApp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Quad\QuadTreeShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BoundingVolumeHierarchy.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -124,12 +136,8 @@
     <FxCompile Include="grid_ps.hlsl">
       <Filter>3DGrid</Filter>
     </FxCompile>
-    <FxCompile Include="quadtreeshader_ps.hlsl">
-      <Filter>QuadTree</Filter>
-    </FxCompile>
-    <FxCompile Include="quadtreeshader_vs.hlsl">
-      <Filter>QuadTree</Filter>
-    </FxCompile>
+    <FxCompile Include="Quad\quadtreeshader_ps.hlsl" />
+    <FxCompile Include="Quad\quadtreeshader_vs.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Tracer.hlsli">

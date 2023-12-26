@@ -161,9 +161,13 @@
       <AdditionalLibraryDirectories>$(SolutionDir)lib\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>d3d11.lib;DXFramework.lib;dxgi.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="App1.cpp" />
+    <ClCompile Include="BoundingVolumeHierarchy.cpp" />
     <ClCompile Include="CameraSpot.cpp" />
     <ClCompile Include="GreyShader.cpp" />
     <ClCompile Include="GridApp.cpp" />
@@ -400,6 +404,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App1.h" />
+    <ClInclude Include="BoundingVolumeHierarchy.h" />
     <ClInclude Include="CameraSpot.h" />
     <ClInclude Include="GreyShader.h" />
     <ClInclude Include="GridApp.h" />
@@ -422,6 +427,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="cameraspot_vs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>

@@ -8,6 +8,7 @@
 #include "QuadTreeShader.h"
 #include "QuadTree.h"
 #include "Octree.h"
+#include "../BoundingVolumeHierarchy.h"
 
 
 /*
@@ -27,6 +28,7 @@ protected:
 	bool render();
 	void texturepass();
 	void octpass();
+	void bvhpass();
 
 	void gui();
 
@@ -36,9 +38,12 @@ protected:
 
 	void RecursiveOctreeLoop(Octree* quad_tree, float depth);
 	void RenderCubeTree(const float depth, Octree* childQuad);
+
+	void RecursiveBVHLoop(BoundingVolumeHierarchy* bvh, float depth);
+	void RenderPlaneQuad(const float depth, BoundingVolumeHierarchy* bvh);
 private:
 	float screenw, screenh;
-	float resolution = 8;
+	float resolution = 16;
 	int maxDepth;
 
 	QuadTreeShader* quadTreeShader;
@@ -52,6 +57,8 @@ private:
 	
 	Octree* octree;
 	std::vector<OctVoxel*> octpoints;
+
+	BoundingVolumeHierarchy* BVH;
 };
 
 #endif

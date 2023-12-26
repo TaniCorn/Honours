@@ -43,6 +43,7 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 	{
 		quadTree->insert(points[i]);
 	}
+
 	
 
 	OctVoxel* oct = new OctVoxel();
@@ -74,6 +75,27 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 
 	maxDepth = GetMaxDepth(quadTree, 0);
 
+
+
+	BVH = new BoundingVolumeHierarchy();
+	BVH->topLeft = BVHPoint(0, 4, 0);
+	BVH->bottomRight = BVHPoint(4, 0, 0);
+	for (int i = 0; i < points.size(); i++)
+	{
+		BVH->points.push_back(BVHPoint(points[i]->point.GetX(), points[i]->point.GetY(), 0));
+	}
+	BVH->points.push_back(BVHPoint(0.2, 0.2, 0));
+	BVH->points.push_back(BVHPoint(0.8, 0.3, 0));
+	BVH->points.push_back(BVHPoint(1.5, 2.2, 0));
+	BVH->points.push_back(BVHPoint(2.9, 3.2, 0));
+	BVH->points.push_back(BVHPoint(0.9, 3.9, 0));
+	BVH->points.push_back(BVHPoint(3.9, 3.9, 0));
+	BVH->points.push_back(BVHPoint(2, 2, 0));
+	BVH->points.push_back(BVHPoint(2.5, 3.4, 0));
+	BVH->points.push_back(BVHPoint(2.6, 0.1, 0));
+
+	BVH->BuildBVH();
+	//BVH->ReverseResizeRecursion();
 }
 
 
@@ -110,7 +132,8 @@ bool QuadTreeApp::render()
 {
 
 	//texturepass();
-	octpass();
+	//octpass();
+	bvhpass();
 	return true;
 
 
@@ -285,6 +308,49 @@ void QuadTreeApp::RenderCubeTree(const float depth, Octree* childQuad)
 	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix *localMoveMatrix* scale * translation, viewMatrix, projectionMatrix, depth, maxDepth);
 	quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
 }
+static int nums = 0;
+void QuadTreeApp::RecursiveBVHLoop(BoundingVolumeHierarchy* bvh, float depth)
+{
+	nums++;
+	/*if (nums > 1)
+	{
+		return;
+	}*/
+	if (bvh->left != nullptr)
+	{
+		RenderPlaneQuad(depth, bvh->left);
+		depth += 0.2f;
+		RecursiveBVHLoop(bvh->left, depth);
+	}
+	if (bvh->right != nullptr)
+	{
+		RenderPlaneQuad(depth, bvh->right);
+		depth += 0.1f;
+
+		RecursiveBVHLoop(bvh->right, depth);
+
+	}
+}
+
+void QuadTreeApp::RenderPlaneQuad(const float depth, BoundingVolumeHierarchy* bvh)
+{
+	XMMATRIX worldMatrix = renderer->getWorldMatrix();
+	XMMATRIX viewMatrix = camera->getViewMatrix();
+	XMMATRIX projectionMatrix = renderer->getProjectionMatrix();
+	float xScale = bvh->bottomRight.GetX() - bvh->topLeft.GetX();
+	float yScale = bvh->topLeft.GetY() - bvh->bottomRight.GetY();
+	XMMATRIX scale = XMMatrixScaling(xScale, 1, yScale);
+	float x = bvh->topLeft.GetX();
+	float y = depth;
+	float z = bvh->bottomRight.GetY();
+	XMMATRIX translation = XMMatrixTranslation(x, y, z);
+
+
+	plane->sendData(renderer->getDeviceContext());
+	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale * translation, viewMatrix, projectionMatrix, depth, maxDepth);
+	quadTreeShader->render(renderer->getDeviceContext(), plane->getIndexCount());
+
+}
 
 
 void QuadTreeApp::texturepass()
@@ -384,6 +450,54 @@ void QuadTreeApp::octpass()
 
 
 	
+	// Render GUI
+	gui();
+
+	// Present the rendered scene to the screen.
+	renderer->endScene();
+}
+
+void QuadTreeApp::bvhpass()
+{
+	// Clear the scene. (default blue colour)
+	renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
+
+	// Get matrices
+	camera->update();
+	XMMATRIX worldMatrix = renderer->getWorldMatrix();
+	XMMATRIX viewMatrix = camera->getViewMatrix();
+	XMMATRIX projectionMatrix = renderer->getProjectionMatrix();
+	XMMATRIX scale = XMMatrixScaling(4, 1, 4);
+
+	plane->sendData(renderer->getDeviceContext());
+	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale, viewMatrix, projectionMatrix, 0.0f, maxDepth);
+	quadTreeShader->render(renderer->getDeviceContext(), plane->getIndexCount());
+
+	float xScale = BVH->bottomRight.GetX() - BVH->topLeft.GetX();
+	float yScale = BVH->topLeft.GetY() - BVH->bottomRight.GetY();
+	float x = BVH->topLeft.GetX();
+	float y = -1;
+	float z = BVH->bottomRight.GetY();
+	XMMATRIX translation = XMMatrixTranslation(x, y, z);
+	plane->sendData(renderer->getDeviceContext());
+	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * XMMatrixScaling(xScale, 1, yScale) * translation, viewMatrix, projectionMatrix, 0.0f, maxDepth);
+	quadTreeShader->render(renderer->getDeviceContext(), plane->getIndexCount());
+
+	float depth = 1.0f;
+	RecursiveBVHLoop(BVH, depth);
+	nums = 0;
+	for (int i = 0; i < BVH->points.size(); ++i)
+	{
+		XMMATRIX scale = XMMatrixScaling(0.1, 0.1, 0.1);
+
+		cube->sendData(renderer->getDeviceContext());
+		quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale * XMMatrixTranslation(BVH->points[i].GetX(), 2, BVH->points[i].GetY()), viewMatrix, projectionMatrix, 1, 1);
+		quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
+	}
+
+
+
+
 	// Render GUI
 	gui();
 
