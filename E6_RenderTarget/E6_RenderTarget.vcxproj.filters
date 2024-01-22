@@ -13,138 +13,94 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Prototype1">
-      <UniqueIdentifier>{b08ddf4f-4e5e-44a0-9773-bab48fa0eefd}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="3DGrid">
+    <Filter Include="Feasibility">
       <UniqueIdentifier>{9450c205-694f-46b9-b12a-8b4f471462dc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Octree">
-      <UniqueIdentifier>{7e2645a7-8d2b-40c9-9b4e-a53f361230e9}</UniqueIdentifier>
+    <Filter Include="Feasibility\Rendering">
+      <UniqueIdentifier>{0387083a-4756-4a78-9b3f-73c1c0698ecd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="QuadTree">
-      <UniqueIdentifier>{02b67970-9c0f-4d62-9af5-f15b4d7bbdd8}</UniqueIdentifier>
+    <Filter Include="Feasibility\Structures">
+      <UniqueIdentifier>{01b4408d-bb94-4524-8070-43d808de8e8b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Feasibility\Structures\BVH">
+      <UniqueIdentifier>{4541963d-1f04-471b-9ab8-f90c6caabd88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Feasibility\Structures\Quadtree">
+      <UniqueIdentifier>{90822c35-dc25-453a-8a43-889777a3fe72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Feasibility\Structures\Octree">
+      <UniqueIdentifier>{d6c61d28-208a-4fce-a170-4c23a2600f7e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LightShader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GreyShader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CameraSpot.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="TextureShader.cpp">
-      <Filter>Prototype1</Filter>
-    </ClCompile>
-    <ClCompile Include="App1.cpp">
-      <Filter>Prototype1</Filter>
-    </ClCompile>
     <ClCompile Include="GridApp.cpp">
-      <Filter>3DGrid</Filter>
+      <Filter>Feasibility\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="GridShader.cpp">
-      <Filter>3DGrid</Filter>
-    </ClCompile>
-    <ClCompile Include="Quad\Octree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Quad\QuadTree.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Quad\QuadTreeApp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Quad\QuadTreeShader.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Feasibility\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="BoundingVolumeHierarchy.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Feasibility\Structures\BVH</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad\QuadTree.cpp">
+      <Filter>Feasibility\Structures\Quadtree</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad\Octree.cpp">
+      <Filter>Feasibility\Structures\Octree</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad\QuadTreeApp.cpp">
+      <Filter>Feasibility\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Quad\QuadTreeShader.cpp">
+      <Filter>Feasibility\Structures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="LightShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GreyShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CameraSpot.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TextureShader.h">
-      <Filter>Prototype1</Filter>
-    </ClInclude>
-    <ClInclude Include="App1.h">
-      <Filter>Prototype1</Filter>
+    <ClInclude Include="GridShader.h">
+      <Filter>Feasibility\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="GridApp.h">
-      <Filter>3DGrid</Filter>
-    </ClInclude>
-    <ClInclude Include="GridShader.h">
-      <Filter>3DGrid</Filter>
-    </ClInclude>
-    <ClInclude Include="Quad\Octree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Quad\QuadTree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Quad\QuadTreeApp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Quad\QuadTreeShader.h">
-      <Filter>Header Files</Filter>
+      <Filter>Feasibility\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="BoundingVolumeHierarchy.h">
-      <Filter>Header Files</Filter>
+      <Filter>Feasibility\Structures\BVH</Filter>
+    </ClInclude>
+    <ClInclude Include="Quad\QuadTree.h">
+      <Filter>Feasibility\Structures\Quadtree</Filter>
+    </ClInclude>
+    <ClInclude Include="Quad\Octree.h">
+      <Filter>Feasibility\Structures\Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="Quad\QuadTreeApp.h">
+      <Filter>Feasibility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Quad\QuadTreeShader.h">
+      <Filter>Feasibility\Structures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shaders\light_ps.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\light_vs.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="greyscale_ps.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="greyscale_vs.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="cameraspot_ps.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="cameraspot_vs.hlsl">
-      <Filter>Resource Files</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\texture_vs.hlsl">
-      <Filter>Prototype1</Filter>
-    </FxCompile>
-    <FxCompile Include="shaders\texture_ps.hlsl">
-      <Filter>Prototype1</Filter>
-    </FxCompile>
     <FxCompile Include="grid_vs.hlsl">
-      <Filter>3DGrid</Filter>
+      <Filter>Feasibility\Rendering</Filter>
     </FxCompile>
     <FxCompile Include="grid_ps.hlsl">
-      <Filter>3DGrid</Filter>
+      <Filter>Feasibility\Rendering</Filter>
     </FxCompile>
-    <FxCompile Include="Quad\quadtreeshader_ps.hlsl" />
-    <FxCompile Include="Quad\quadtreeshader_vs.hlsl" />
+    <FxCompile Include="Quad\quadtreeshader_ps.hlsl">
+      <Filter>Feasibility\Rendering</Filter>
+    </FxCompile>
+    <FxCompile Include="Quad\quadtreeshader_vs.hlsl">
+      <Filter>Feasibility\Rendering</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Tracer.hlsli">
-      <Filter>Prototype1</Filter>
-    </None>
     <None Include="GridShading.hlsli">
-      <Filter>3DGrid</Filter>
+      <Filter>Feasibility\Rendering</Filter>
+    </None>
+    <None Include="Tracer.hlsli">
+      <Filter>Feasibility\Rendering</Filter>
     </None>
   </ItemGroup>
 </Project>

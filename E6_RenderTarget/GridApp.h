@@ -4,10 +4,7 @@
 
 // Includes
 #include "DXF.h"	// include dxframework
-#include "LightShader.h"
 #include "GridShader.h"
-#include "GreyShader.h"
-#include "CameraSpot.h"
 class GridApp : public BaseApplication
 {
 public:

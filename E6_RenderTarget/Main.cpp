@@ -8,7 +8,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 {
 	//App1* app = new App1();
 	//GridApp* grid = new GridApp();
-	QuadTreeApp* grid = new QuadTreeApp();
+	//QuadTreeApp* grid = new QuadTreeApp();
 	System* system;
 
 	// Create the system object.
