@@ -3,12 +3,14 @@
 //#include "App1.h"
 #include "GridApp.h"
 #include "Quad/QuadTreeApp.h"
+#include "VoxModelApp.h"
 //#include "QuadTreeApp.h"
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
 	//App1* app = new App1();
 	//GridApp* grid = new GridApp();
 	//QuadTreeApp* grid = new QuadTreeApp();
+	VoxModelApp* grid = new VoxModelApp();
 	System* system;
 
 	// Create the system object.

@@ -1,7 +1,8 @@
 ﻿#include "Octree.h"
 
 #include <iostream>
-
+std::set<OctVoxel*> Octree::points;
+int Octree::minSize = 1;
 Octree::Octree()
 {
     topLeftFrontPoint = OctPoint(0, 4, 0);
@@ -39,7 +40,6 @@ Octree::~Octree()
 void Octree::insert(OctVoxel* vox)
 {
 
-    float minSize = 1.0f;
     // If the point is out of bounds
     if (!inBoundary(vox->point)) {
         cout << "Point is out of bound" << endl;
@@ -57,6 +57,7 @@ void Octree::insert(OctVoxel* vox)
            && abs(topLeftFrontPoint.GetZ() - bottomRightBackPoint.GetZ()) <= minSize) 
     {
         storedVoxel = vox;
+        points.insert(vox);
         return;
     }
         // Binary search to insert the point
@@ -67,11 +68,19 @@ void Octree::insert(OctVoxel* vox)
     float midz = ((topLeftFrontPoint.GetZ()
                 + bottomRightBackPoint.GetZ())/ 2.0f);
 
+    //X is for left and right
+    //Z is for front and back
+    //Y is for top and down
+    //T = TLF ,Y, BRB ,mY,
+    //B = TLF ,mY, BRB ,Y,
+    //R = TLF mX,, BRB X,,
+    //L = TLF X,, BRB mX,,
+
 
     OctPoint point = vox->point;
-        if (point.GetX() <= midx) {
+        if (point.GetZ() <= midz) {
             if (point.GetY() > midy) {
-                if (point.GetZ() <= midz)
+                if (point.GetX() <= midx)
                 {
                     if (TLF == nullptr)
                     {
@@ -93,7 +102,7 @@ void Octree::insert(OctVoxel* vox)
                 }
             }
             else {
-                if (point.GetZ() <= midz)
+                if (point.GetX() <= midx)
                 {
                     if (BLF == nullptr)
                     {
@@ -107,7 +116,7 @@ void Octree::insert(OctVoxel* vox)
                 {
                     if (BRF == nullptr)
                     {
-                        BRF = new Octree(OctPoint(midx, midy, topLeftFrontPoint.GetZ()), OctPoint(midx,bottomRightBackPoint.GetY(),midz));
+                        BRF = new Octree(OctPoint(midx, midy, topLeftFrontPoint.GetZ()), OctPoint(bottomRightBackPoint.GetX(), bottomRightBackPoint.GetY(), midz));
                         BRF->depth = depth  +1;
 
                     }
@@ -119,7 +128,7 @@ void Octree::insert(OctVoxel* vox)
         }
         else {
             if (point.GetY() > midy) {
-                if (point.GetZ() <= midz)
+                if (point.GetX() <= midx)
                 {
                     if (TLB == nullptr)
                     {
@@ -144,7 +153,7 @@ void Octree::insert(OctVoxel* vox)
                 
             }
             else {
-                if (point.GetZ() <= midz)
+                if (point.GetX() <= midx)
                 {
                     if (BLB == nullptr)
                     {
@@ -247,7 +256,7 @@ OctVoxel* Octree::search(OctPoint point)
                             return this->storedVoxel;
                         }
                     }
-                    return BLB->search(point);
+                    return BRF->search(point);
 
                 }
             }

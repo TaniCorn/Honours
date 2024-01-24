@@ -44,9 +44,10 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 		quadTree->insert(points[i]);
 	}
 
-	
+	maxDepth = GetMaxDepth(quadTree, 0);
 
-	OctVoxel* oct = new OctVoxel();
+
+	/*OctVoxel* oct = new OctVoxel();
 	oct->identifier = 0;
 	oct->point = OctPoint(1,1,1);
 	octpoints.push_back(oct);
@@ -70,10 +71,9 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 	for (int i = 0; i < octpoints.size(); ++i)
 	{
 		octree->insert(octpoints[i]);
-	}
+	}*/
 	//octree->insert(octpoints.back());
 
-	maxDepth = GetMaxDepth(quadTree, 0);
 
 
 
@@ -96,6 +96,9 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 
 	BVH->BuildBVH();
 	//BVH->ReverseResizeRecursion();
+
+
+	LoadVoxModel();
 }
 
 
@@ -133,7 +136,8 @@ bool QuadTreeApp::render()
 
 	//texturepass();
 	//octpass();
-	bvhpass();
+	RenderVoxModel();
+	//bvhpass();
 	return true;
 
 
@@ -522,3 +526,108 @@ void QuadTreeApp::gui()
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
+
+void QuadTreeApp::LoadVoxModel()
+{
+	VoxModelLoader = new magicavoxel::VoxFile(true, true);
+	VoxModelLoader->Load("res/monu1.vox");
+
+	const magicavoxel::VoxSparseModel& sparseModel = VoxModelLoader->sparseModels().at(0);// List of non-empty voxels
+
+
+	int xRes = sparseModel.size().x;
+	int yRes = sparseModel.size().y;
+	int zRes = sparseModel.size().z;
+	//resolution = xRes;
+	octree = new Octree(OctPoint(0, yRes, 0), OctPoint(xRes, 0, zRes));
+	Octree::minSize = 2;
+	colPalette = VoxModelLoader->denseModels().at(0).palette();
+
+
+	for (int i = 0; i < sparseModel.voxels().size(); i++)
+	{
+		uint8_t posX = sparseModel.voxels()[i].y;
+		uint8_t posY = sparseModel.voxels()[i].z;
+		uint8_t posZ = sparseModel.voxels()[i].x;
+		uint8_t col = sparseModel.voxels()[i].color;
+		OctVoxel* vox = new OctVoxel();
+		vox->identifier = i;
+		vox->point.SetPoint(posX, posY, posZ);
+		vox->color = col;
+
+		octree->insert(vox);
+		int octreevoxsize = Octree::points.size();
+		octpoints.push_back(vox);
+
+	}
+	yRes = sparseModel.size().y;
+
+	//OctVoxel* oct = new OctVoxel();
+	//oct->identifier = 0;
+	//oct->point = OctPoint(1, 1, 1);
+	//octpoints.push_back(oct);
+	//oct = new OctVoxel();
+	//oct->identifier = 1;
+	//oct->point = OctPoint(0.5, 3.5, 0.5);
+	//octpoints.push_back(oct);
+	//oct = new OctVoxel();
+	//oct->identifier = 2;
+	//oct->point = OctPoint(2, 2, 2);
+	//octpoints.push_back(oct);
+	//oct = new OctVoxel();
+	//oct->identifier = 2;
+	//oct->point = OctPoint(3.1, 0.9, 3.1);
+	//octpoints.push_back(oct);
+	//oct = new OctVoxel();
+	//oct->identifier = 2;
+	//oct->point = OctPoint(6.1, 0.9, 6.1);
+	//octpoints.push_back(oct);
+	//octree = new Octree(OctPoint(0, resolution, 0), OctPoint(resolution, 0, resolution));
+	//for (int i = 0; i < octpoints.size(); ++i)
+	//{
+	//	octree->insert(octpoints[i]);
+	//}
+	////octree->insert(octpoints.back());
+
+	//maxDepth = GetMaxDepth(quadTree, 0);
+}
+
+void QuadTreeApp::RenderVoxModel()
+{
+	// Clear the scene. (default blue colour)
+	renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
+
+	// Get matrices
+	camera->update();
+	XMMATRIX worldMatrix = renderer->getWorldMatrix();
+	XMMATRIX viewMatrix = camera->getViewMatrix();
+	XMMATRIX projectionMatrix = renderer->getProjectionMatrix();
+	//XMMATRIX scale = XMMatrixScaling(resolution / 2, resolution / 2, resolution / 2);
+	XMMATRIX localMoveMatrix = XMMatrixTranslation(1, -1, 1);
+	float depth = 1.0f;
+
+	//for (auto voxel : octree->points)
+	//{
+	//	float OctScale = Octree::minSize/2.0f;
+	//	int divis = Octree::minSize;
+	//	int fact = pow(2, divis);
+
+	//	const float res = Octree::minSize / static_cast<float>(fact);
+	//	XMMATRIX scale = XMMatrixScaling(res, res, res);
+	//	//XMMATRIX scale = XMMatrixScaling(OctScale, OctScale, OctScale);
+	//	OctVoxel* vox = voxel;
+	//	magicavoxel::Color col = colPalette.at(vox->color);
+	//	XMFLOAT4 rgba = XMFLOAT4(col.r /255.f, col.g/255.f, col.b/255.f, col.a/255.f);
+	//	cube->sendData(renderer->getDeviceContext());
+	//	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale * XMMatrixTranslation(vox->point.GetX(), vox->point.GetY(), vox->point.GetZ()), viewMatrix, projectionMatrix, rgba.x, rgba.y, rgba.z, rgba.w);
+	//	quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
+	//}
+
+	RecursiveOctreeLoop(octree, depth);
+
+	// Render GUI
+	gui();
+
+	// Present the rendered scene to the screen.
+	renderer->endScene();
+}

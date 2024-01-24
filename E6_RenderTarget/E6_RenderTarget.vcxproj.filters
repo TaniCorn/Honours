@@ -31,6 +31,9 @@
     <Filter Include="Feasibility\Structures\Octree">
       <UniqueIdentifier>{d6c61d28-208a-4fce-a170-4c23a2600f7e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="VoxelLoading">
+      <UniqueIdentifier>{5ab07cda-251b-4d08-bc62-8fefc32544ba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -57,6 +60,12 @@
     <ClCompile Include="Quad\QuadTreeShader.cpp">
       <Filter>Feasibility\Structures</Filter>
     </ClCompile>
+    <ClCompile Include="vox_file.cpp">
+      <Filter>VoxelLoading</Filter>
+    </ClCompile>
+    <ClCompile Include="VoxModelApp.cpp">
+      <Filter>VoxelLoading</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridShader.h">
@@ -79,6 +88,12 @@
     </ClInclude>
     <ClInclude Include="Quad\QuadTreeShader.h">
       <Filter>Feasibility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="vox_file.h">
+      <Filter>VoxelLoading</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxModelApp.h">
+      <Filter>VoxelLoading</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

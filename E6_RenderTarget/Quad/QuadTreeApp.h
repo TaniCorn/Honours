@@ -9,7 +9,7 @@
 #include "QuadTree.h"
 #include "Octree.h"
 #include "../BoundingVolumeHierarchy.h"
-
+#include "../vox_file.h"
 
 /*
  * Hello
@@ -59,6 +59,11 @@ private:
 	std::vector<OctVoxel*> octpoints;
 
 	BoundingVolumeHierarchy* BVH;
+
+	magicavoxel::VoxFile* VoxModelLoader;
+	magicavoxel::Palette colPalette;
+	void LoadVoxModel();
+	void RenderVoxModel();
 };
 
 #endif

@@ -71,7 +71,7 @@ void QuadTreeShader::initShader(const wchar_t* vsFilename, const wchar_t* psFile
 }
 
 
-void QuadTreeShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix, const XMMATRIX& projectionMatrix, float depth, int maxDepth)
+void QuadTreeShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix, const XMMATRIX& projectionMatrix, float depth, float maxDepth, float padding1, float padding2)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -97,7 +97,7 @@ void QuadTreeShader::setShaderParameters(ID3D11DeviceContext* deviceContext, con
 	quadPtr = (QuadBufferType*)mappedResource.pData;
 	quadPtr->depth = depth;
 	quadPtr->maxdepth = maxDepth;
-	quadPtr->padding = XMFLOAT2(1,1);
+	quadPtr->padding = XMFLOAT2(padding1,padding2);
 	deviceContext->Unmap(quadBuffer, 0);
 	
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);

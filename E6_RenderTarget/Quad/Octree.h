@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "DXF.h"
+
 struct OctPoint 
 {
 public:
@@ -39,7 +40,10 @@ struct OctVoxel
 {
     OctPoint point;
     int identifier;
+    uint8_t color;
 };
+
+#include <set>
 class Octree
 {
 public:
@@ -50,7 +54,7 @@ public:
     OctPoint topLeftFrontPoint;
     OctPoint bottomRightBackPoint;
     OctVoxel* storedVoxel;
-    std::vector<OctVoxel*> points;//not implemented yet
+    static std::set<OctVoxel*> points;//not implemented yet
 
     Octree* TLF;
     Octree* TRF;
@@ -66,6 +70,7 @@ public:
     OctVoxel* search(OctPoint point);
     bool inBoundary(OctPoint point);
     int depth = 0;
+    static int minSize;
 private:
     void internalInsert(Octree* child, OctPoint point);
 };

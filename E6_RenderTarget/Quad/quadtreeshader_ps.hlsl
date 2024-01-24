@@ -18,7 +18,8 @@ cbuffer QuadBuffer : register(b0)
 
 float4 main(InputType input) : SV_TARGET
 {
-    float col =  depth / maxDepth;
+    return float4(depth, maxDepth, padding.x, padding.y);
+    float col = depth / maxDepth;
     col *= 2;
     return float4(col,col, col, 1);
 
