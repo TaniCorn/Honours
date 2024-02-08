@@ -131,27 +131,15 @@ void VoxModelApp::RenderCubeTree(const float depth, Octree* childQuad)
 }
 
 
-void VoxModelApp::gui()
-{
-	// Force turn off unnecessary shader stages.
-	renderer->getDeviceContext()->GSSetShader(NULL, NULL, 0);
-	renderer->getDeviceContext()->HSSetShader(NULL, NULL, 0);
-	renderer->getDeviceContext()->DSSetShader(NULL, NULL, 0);
-
-	// Build UI
-	ImGui::Text("FPS: %.2f", timer->getFPS());
-	ImGui::Checkbox("Wireframe mode", &wireframeToggle);
-
-	// Render UI
-	ImGui::Render();
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-}
-
 
 void VoxModelApp::LoadVoxModel()
 {
-	VoxModelLoader = new magicavoxel::VoxFile(true, true);
-	VoxModelLoader->Load("res/monu1.vox");
+	if (VoxModelLoader == nullptr)
+	{
+		VoxModelLoader = new magicavoxel::VoxFile(true, true);
+		VoxModelLoader->Load("res/monu1.vox");
+	}
+
 
 	const magicavoxel::VoxSparseModel& sparseModel = VoxModelLoader->sparseModels().at(0);// List of non-empty voxels
 
@@ -164,7 +152,6 @@ void VoxModelApp::LoadVoxModel()
 	res.z = zRes;
 	//resolution = xRes;
 	octree = new Octree(OctPoint(0, yRes, 0), OctPoint(xRes, 0, zRes));
-	Octree::minSize = 2;
 	colPalette = VoxModelLoader->denseModels().at(0).palette();
 
 
@@ -185,6 +172,7 @@ void VoxModelApp::LoadVoxModel()
 
 	}
 	yRes = sparseModel.size().y;
+	Octree::minSize = 1;
 }
 
 void VoxModelApp::RenderVoxModel()
@@ -201,28 +189,64 @@ void VoxModelApp::RenderVoxModel()
 	XMMATRIX localMoveMatrix = XMMatrixTranslation(1, -1, 1);
 	float depth = 1.0f;
 
-	//for (auto voxel : octree->points)
-	//{
-	//	float OctScale = Octree::minSize/2.0f;
-	//	int divis = Octree::minSize;
-	//	int fact = pow(2, divis);
+	if (!bRenderOctree)
+	{
+		for (auto voxel : octree->points)
+		{
+			float OctScale = Octree::minSize / 2.0f;
+			int divis = Octree::minSize;
+			int fact = pow(2, divis);
 
-	//	const float res = Octree::minSize / static_cast<float>(fact);
-	//	XMMATRIX scale = XMMatrixScaling(res, res, res);
-	//	//XMMATRIX scale = XMMatrixScaling(OctScale, OctScale, OctScale);
-	//	OctVoxel* vox = voxel;
-	//	magicavoxel::Color col = colPalette.at(vox->color);
-	//	XMFLOAT4 rgba = XMFLOAT4(col.r /255.f, col.g/255.f, col.b/255.f, col.a/255.f);
-	//	cube->sendData(renderer->getDeviceContext());
-	//	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale * XMMatrixTranslation(vox->point.GetX(), vox->point.GetY(), vox->point.GetZ()), viewMatrix, projectionMatrix, rgba.x, rgba.y, rgba.z, rgba.w);
-	//	quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
-	//}
+			const float res = Octree::minSize / static_cast<float>(fact);
+			XMMATRIX scale = XMMatrixScaling(res, res, res);
+			//XMMATRIX scale = XMMatrixScaling(OctScale, OctScale, OctScale);
+			OctVoxel* vox = voxel;
+			magicavoxel::Color col = colPalette.at(vox->color);
+			XMFLOAT4 rgba = XMFLOAT4(col.r / 255.f, col.g / 255.f, col.b / 255.f, col.a / 255.f);
+			cube->sendData(renderer->getDeviceContext());
+			quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale * XMMatrixTranslation(vox->point.GetX(), vox->point.GetY(), vox->point.GetZ()), viewMatrix, projectionMatrix, rgba.x, rgba.y, rgba.z, rgba.w);
+			quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
+		}
 
-	RecursiveOctreeLoop(octree, depth);
+	}
+	else 
+	{
+		RecursiveOctreeLoop(octree, depth);
+
+	}
+
 
 	// Render GUI
 	gui();
 
 	// Present the rendered scene to the screen.
 	renderer->endScene();
+}
+
+
+void VoxModelApp::gui()
+{
+	// Force turn off unnecessary shader stages.
+	renderer->getDeviceContext()->GSSetShader(NULL, NULL, 0);
+	renderer->getDeviceContext()->HSSetShader(NULL, NULL, 0);
+	renderer->getDeviceContext()->DSSetShader(NULL, NULL, 0);
+
+	// Build UI
+	ImGui::Text("FPS: %.2f", timer->getFPS());
+	ImGui::Checkbox("Wireframe mode", &wireframeToggle);
+	ImGui::Checkbox("Octree Render", &bRenderOctree);
+	if (bRenderOctree)
+	{
+		wireframeToggle = true;
+	}
+	ImGui::SliderInt("VoxelSize", &Octree::minSize, 1, 20);
+
+	if (ImGui::Button("Reload")) 
+	{
+		delete octree;
+		LoadVoxModel();
+	}
+	// Render UI
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

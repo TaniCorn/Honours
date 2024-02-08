@@ -34,6 +34,9 @@
     <Filter Include="VoxelLoading">
       <UniqueIdentifier>{5ab07cda-251b-4d08-bc62-8fefc32544ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ComputeShader">
+      <UniqueIdentifier>{86adf695-f989-402e-80a4-353f22ce6c3e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -66,6 +69,18 @@
     <ClCompile Include="VoxModelApp.cpp">
       <Filter>VoxelLoading</Filter>
     </ClCompile>
+    <ClCompile Include="BaseComputeShader.cpp">
+      <Filter>ComputeShader</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeApp.cpp">
+      <Filter>ComputeShader</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputePipelineShader.cpp">
+      <Filter>ComputeShader</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseComputeTextureShader.cpp">
+      <Filter>ComputeShader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GridShader.h">
@@ -95,6 +110,18 @@
     <ClInclude Include="VoxModelApp.h">
       <Filter>VoxelLoading</Filter>
     </ClInclude>
+    <ClInclude Include="BaseComputeShader.h">
+      <Filter>ComputeShader</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeApp.h">
+      <Filter>ComputeShader</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputePipelineShader.h">
+      <Filter>ComputeShader</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseComputeTextureShader.h">
+      <Filter>ComputeShader</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="grid_vs.hlsl">
@@ -108,6 +135,18 @@
     </FxCompile>
     <FxCompile Include="Quad\quadtreeshader_vs.hlsl">
       <Filter>Feasibility\Rendering</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeTest_cs.hlsl">
+      <Filter>ComputeShader</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputePipeline_vs.hlsl">
+      <Filter>ComputeShader</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputePipeline_ps.hlsl">
+      <Filter>ComputeShader</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeTexture_cs.hlsl">
+      <Filter>ComputeShader</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

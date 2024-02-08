@@ -21,7 +21,7 @@ static const int ThreeDimensionGrid[3 * 3 * 3] =
 };
 #define SPHEREERROR 0.001f
 #include "Tracer.hlsli"
-float4 Render3DGrid(float3 camPos, float3 rayVector, bool raymarch)
+float4 Render3DGrid(float3 camPos, float3 rayVector, bool raymarch, float4 color)
 {
     for (int x = 0; x < 3; x++)
     {
@@ -48,7 +48,7 @@ float4 Render3DGrid(float3 camPos, float3 rayVector, bool raymarch)
 
                 if (hit >= 0)
                 {
-                    return float4(0, 1.0f, 1.0f, 1.0f);
+                    return color;
                 }
                 else
                 {

@@ -41,6 +41,10 @@ private:
 	magicavoxel::Palette colPalette;
 	void LoadVoxModel();
 	void RenderVoxModel();
+
+
+	bool bRenderOctree = false;
+	bool bReload = false;
 };
 
 #endif

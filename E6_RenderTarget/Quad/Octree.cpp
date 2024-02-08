@@ -35,6 +35,43 @@ Octree::Octree(OctPoint topLeft, OctPoint bottomRight)
 
 Octree::~Octree()
 {
+    for (auto vox : points)
+    {
+        delete vox;
+    }
+    points.clear();
+    if (TLF)
+    {
+        delete TLF;
+    }    
+    if (TRF)
+    {
+        delete TRF;
+    }
+    if (BLF)
+    {
+        delete BLF;
+    }
+    if (BRF)
+    {
+        delete BRF;
+    }
+    if (TLB)
+    {
+        delete TLB;
+    }
+    if (TRB)
+    {
+        delete TRB;
+    }
+    if (BLB)
+    {
+        delete BLB;
+    }
+    if (BRB)
+    {
+        delete BRB;
+    }
 }
 
 void Octree::insert(OctVoxel* vox)
