@@ -47,9 +47,9 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 	maxDepth = GetMaxDepth(quadTree, 0);
 
 
-	/*OctVoxel* oct = new OctVoxel();
+	OctVoxel* oct = new OctVoxel();
 	oct->identifier = 0;
-	oct->point = OctPoint(1,1,1);
+	oct->point = OctPoint(0.1,0.1,0.1);
 	octpoints.push_back(oct);
 	oct = new OctVoxel();
 	oct->identifier = 1;
@@ -71,7 +71,7 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 	for (int i = 0; i < octpoints.size(); ++i)
 	{
 		octree->insert(octpoints[i]);
-	}*/
+	}
 	//octree->insert(octpoints.back());
 
 
@@ -98,7 +98,7 @@ void QuadTreeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scre
 	//BVH->ReverseResizeRecursion();
 
 
-	LoadVoxModel();
+	//LoadVoxModel();
 }
 
 
@@ -135,8 +135,8 @@ bool QuadTreeApp::render()
 {
 
 	//texturepass();
-	//octpass();
-	RenderVoxModel();
+	octpass();
+	//RenderVoxModel();
 	//bvhpass();
 	return true;
 

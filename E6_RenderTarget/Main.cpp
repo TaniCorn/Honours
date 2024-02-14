@@ -6,13 +6,15 @@
 #include "VoxModelApp.h"
 //#include "QuadTreeApp.h"
 #include "ComputeApp.h"
+#include "ComputeVoxelApp.h"
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow)
 {
 	//App1* app = new App1();
 	//GridApp* grid = new GridApp();
 	//QuadTreeApp* grid = new QuadTreeApp();
 	//VoxModelApp* grid = new VoxModelApp();
-	ComputeApp* grid = new ComputeApp();
+	//ComputeApp* grid = new ComputeApp();
+	ComputeVoxelApp* grid = new ComputeVoxelApp();
 	System* system;
 
 	// Create the system object.

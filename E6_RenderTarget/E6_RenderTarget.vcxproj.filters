@@ -37,6 +37,9 @@
     <Filter Include="ComputeShader">
       <UniqueIdentifier>{86adf695-f989-402e-80a4-353f22ce6c3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ComputeVoxels">
+      <UniqueIdentifier>{6d257221-7b0e-471f-a443-0b42a6d01353}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -69,9 +72,6 @@
     <ClCompile Include="VoxModelApp.cpp">
       <Filter>VoxelLoading</Filter>
     </ClCompile>
-    <ClCompile Include="BaseComputeShader.cpp">
-      <Filter>ComputeShader</Filter>
-    </ClCompile>
     <ClCompile Include="ComputeApp.cpp">
       <Filter>ComputeShader</Filter>
     </ClCompile>
@@ -80,6 +80,18 @@
     </ClCompile>
     <ClCompile Include="BaseComputeTextureShader.cpp">
       <Filter>ComputeShader</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeVoxelShader.cpp">
+      <Filter>ComputeVoxels</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeVoxelApp.cpp">
+      <Filter>ComputeVoxels</Filter>
+    </ClCompile>
+    <ClCompile Include="VoxelShader.cpp">
+      <Filter>ComputeVoxels</Filter>
+    </ClCompile>
+    <ClCompile Include="ComputeOctreeShader.cpp">
+      <Filter>ComputeVoxels</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -110,9 +122,6 @@
     <ClInclude Include="VoxModelApp.h">
       <Filter>VoxelLoading</Filter>
     </ClInclude>
-    <ClInclude Include="BaseComputeShader.h">
-      <Filter>ComputeShader</Filter>
-    </ClInclude>
     <ClInclude Include="ComputeApp.h">
       <Filter>ComputeShader</Filter>
     </ClInclude>
@@ -121,6 +130,18 @@
     </ClInclude>
     <ClInclude Include="BaseComputeTextureShader.h">
       <Filter>ComputeShader</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeVoxelShader.h">
+      <Filter>ComputeVoxels</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeVoxelApp.h">
+      <Filter>ComputeVoxels</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxelShader.h">
+      <Filter>ComputeVoxels</Filter>
+    </ClInclude>
+    <ClInclude Include="ComputeOctreeShader.h">
+      <Filter>ComputeVoxels</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -147,6 +168,18 @@
     </FxCompile>
     <FxCompile Include="ComputeTexture_cs.hlsl">
       <Filter>ComputeShader</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeVoxelModel_cs.hlsl">
+      <Filter>ComputeVoxels</Filter>
+    </FxCompile>
+    <FxCompile Include="Voxel_vs.hlsl">
+      <Filter>ComputeVoxels</Filter>
+    </FxCompile>
+    <FxCompile Include="Voxel_ps.hlsl">
+      <Filter>ComputeVoxels</Filter>
+    </FxCompile>
+    <FxCompile Include="ComputeOctree_cs.hlsl">
+      <Filter>ComputeVoxels</Filter>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

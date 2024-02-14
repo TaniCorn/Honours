@@ -18,7 +18,7 @@ void ComputeApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int scree
 	orthoMesh = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth, screenHeight, 0, 0);
 
 
-	ComputeShader = new BaseComputeShader(renderer->getDevice(), hwnd, 10);
+	//ComputeShader = new BaseComputeShader(renderer->getDevice(), hwnd, 10);
 	computeTextureShader = new BaseComputeTextureShader(renderer->getDevice(), hwnd, 1,1);
 	computeRT = new RenderTexture(renderer->getDevice(), 1, 1, 0.1f, 100.f);
 }
@@ -96,7 +96,7 @@ void ComputeApp::gui()
 	ImGui::Checkbox("Wireframe mode", &wireframeToggle);
 	if (ImGui::Button("Compute")) 
 	{
-		ComputeShader->GPUSort(renderer->getDeviceContext());
+		//ComputeShader->GPUSort(renderer->getDeviceContext());
 		computeRT->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);
 		computeTextureShader->setShaderParameters(renderer->getDeviceContext(), SRV);
 		computeTextureShader->compute(renderer->getDeviceContext(), 1, 1, 1);

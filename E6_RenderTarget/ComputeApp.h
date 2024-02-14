@@ -6,7 +6,6 @@
 
 // Includes
 #include "DXF.h"	// include dxframework
-#include "BaseComputeShader.h"
 #include "ComputePipelineShader.h"
 #include "BaseComputeTextureShader.h"
 class ComputeApp : public BaseApplication
@@ -25,7 +24,7 @@ protected:
 
 private:
 	float screenw, screenh;
-	BaseComputeShader* ComputeShader;
+	//BaseComputeShader* ComputeShader;
 	OrthoMesh* orthoMesh;
 	ComputePipelineShader* textureShader;
 	RenderTexture* renderTexture;

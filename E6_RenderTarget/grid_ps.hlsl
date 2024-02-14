@@ -31,8 +31,7 @@ float4 main(InputType input) : SV_TARGET
     
     float4 v = UVPositionCalculation(res, input.tex, projectionMatrix, fov);
     float3 rayVector = CalculateViewVector(v, viewMatrix, worldMatrix);
-    
-    return Render3DGrid(camPos, rayVector, true, float4(1, 0, 1, 1));
+    //return Render3DGrid(camPos, rayVector, true, float4(1, 1, 1, 1));
     return Render2DGrid(camPos, rayVector, false);
     return Render1DGrid(camPos, rayVector, false);
 

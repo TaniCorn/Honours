@@ -3,6 +3,7 @@
 #include <iostream>
 std::set<OctVoxel*> Octree::points;
 int Octree::minSize = 1;
+int Octree::OctantAmount = 1;
 Octree::Octree()
 {
     topLeftFrontPoint = OctPoint(0, 4, 0);
@@ -123,6 +124,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         TLF = new Octree(topLeftFrontPoint, OctPoint(midx,midy,midz));
                         TLF->depth = depth  +1;
+                        OctantAmount++;
                     }
                     return TLF->insert(vox);
                 }
@@ -132,6 +134,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         TRF = new Octree(OctPoint(midx, topLeftFrontPoint.GetY(), topLeftFrontPoint.GetZ()), OctPoint(bottomRightBackPoint.GetX(),midy,midz));
                         TRF->depth = depth  +1;
+                        OctantAmount++;
 
                     }
                     return TRF->insert(vox);
@@ -145,6 +148,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         BLF = new Octree(OctPoint(topLeftFrontPoint.GetX(), midy, topLeftFrontPoint.GetZ()), OctPoint(midx,bottomRightBackPoint.GetY(),midz));
                         BLF->depth = depth  +1;
+                        OctantAmount++;
 
                     }
                     return BLF->insert(vox);
@@ -156,6 +160,7 @@ void Octree::insert(OctVoxel* vox)
                         BRF = new Octree(OctPoint(midx, midy, topLeftFrontPoint.GetZ()), OctPoint(bottomRightBackPoint.GetX(), bottomRightBackPoint.GetY(), midz));
                         BRF->depth = depth  +1;
 
+                        OctantAmount++;
                     }
                     return BRF->insert(vox);
                     
@@ -171,6 +176,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         TLB = new Octree(OctPoint(topLeftFrontPoint.GetX(), topLeftFrontPoint.GetY(), midz), OctPoint(midx,midy,bottomRightBackPoint.GetZ()));
                         TLB->depth = depth  +1;
+                        OctantAmount++;
 
                     }
                     return TLB->insert(vox);
@@ -182,6 +188,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         TRB = new Octree(OctPoint(midx, topLeftFrontPoint.GetY(), midz), OctPoint(bottomRightBackPoint.GetX(),midy,bottomRightBackPoint.GetZ()));
                         TRB->depth = depth  +1;
+                        OctantAmount++;
 
                     }
                     return TRB->insert(vox);
@@ -196,6 +203,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         BLB = new Octree(OctPoint(topLeftFrontPoint.GetX(), midy, midz), OctPoint(midx,bottomRightBackPoint.GetY(),bottomRightBackPoint.GetZ()));
                         BLB->depth = depth  +1;
+                        OctantAmount++;
 
                     }
                     return BLB->insert(vox);
@@ -206,6 +214,7 @@ void Octree::insert(OctVoxel* vox)
                     {
                         BRB = new Octree(OctPoint(midx, midy, midz), OctPoint(bottomRightBackPoint.GetX(),bottomRightBackPoint.GetY(),bottomRightBackPoint.GetZ()));
                         BRB->depth = depth  +1;
+                        OctantAmount++;
 
                     }
                     return BRB->insert(vox);
