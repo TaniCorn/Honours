@@ -9,6 +9,9 @@ public:
     OctPoint(float x, float y, float z) {
         point = XMFLOAT3(x, y, z);
     }
+    OctPoint(XMFLOAT3 p) {
+        point = p;
+    }
     void SetPoint(float x, float y, float z) 
     {
         point.x = x; point.y = y; point.z = z;

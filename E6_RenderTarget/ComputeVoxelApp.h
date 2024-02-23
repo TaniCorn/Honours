@@ -24,15 +24,23 @@ protected:
 	bool render();
 	void gui();
 
-	void RecursiveOctreeLoop(Octree* quad_tree, float depth);
-	void RenderCubeTree(const float depth, Octree* childQuad);
+	void CPURecursiveOctreeLoop(Octree* quad_tree, float depth);
+	void CPURenderCubeTree(const float depth, Octree* childQuad);
+	void CPURenderVoxModel();
+	void CopyGPUOctreeToCPU(ComputeOctreeShader* GPU, Octree* CPU);
 
+	void RecursiveWriteCSV(Octree* CPU, std::ofstream& file);
+	void WriteCPUToCSV(Octree* CPU, std::string name);
+	void WriteVoxelsToCSV(std::string name);
+	static int IDCSV;
 private:
+	void RecursiveAddOctree(ComputeOctreeShader::VoxelOctree* oc, UINT32 currentStride, Octree* currentOctree);
 	float screenw, screenh;
 	XMFLOAT3 res;
 	int maxDepth;
 
 	CubeMesh* cube;
+	QuadTreeShader* quadTreeShader;
 
 	Octree* octree;
 	std::vector<OctVoxel*> octpoints;

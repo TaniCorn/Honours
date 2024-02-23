@@ -12,12 +12,6 @@ ComputeOctreeShader::VoxelOctree* ComputeOctreeShader::GetVoxelOctreeOutput(ID3D
 	if (SUCCEEDED(hr))
 	{
 		VoxelOctree* dataView = reinterpret_cast<VoxelOctree*>(mappedResource.pData);
-		VoxelOctree* h1 = &dataView[0];
-		VoxelOctree* h2 = &dataView[1];
-		VoxelOctree* h3 = &dataView[2];
-		VoxelOctree* h4 = &dataView[3];
-		VoxelOctree* h5 = &dataView[4];
-		VoxelOctree* h6 = &dataView[5];
 		deviceContext->Unmap(out_voxelOctreeStagingBuffer, 0);
 		return dataView;
 	}
@@ -35,6 +29,13 @@ HRESULT ComputeOctreeShader::CreateInput()
 {
 //https://stackoverflow.com/questions/32049639/directx-11-compute-shader-writing-to-an-output-resource
 	HRESULT hr;
+	D3D11_BUFFER_DESC constant_buffer_desc = {};
+	constant_buffer_desc.ByteWidth = sizeof(VoxelModelDims);
+	constant_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+	constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constant_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	hr = device->CreateBuffer(&constant_buffer_desc, 0, &in_dimsBuffer);
+
 	D3D11_BUFFER_DESC constantDataDesc;
 	constantDataDesc.Usage = D3D11_USAGE_DYNAMIC;
 	constantDataDesc.ByteWidth = sizeof(VoxelOctree) * NumberOfOctants;
@@ -57,6 +58,8 @@ HRESULT ComputeOctreeShader::CreateInput()
 	srvDesc.BufferEx.NumElements = NumberOfVoxels;
 
 	hr = device->CreateShaderResourceView(in_voxelBuffer, &srvDesc, &m_SRV);
+
+
 	return hr;
 }
 
@@ -96,6 +99,7 @@ void ComputeOctreeShader::setShaderParameters(ID3D11DeviceContext* deviceContext
 {
 	deviceContext->CSSetShaderResources(0, 1, &m_SRV);
 	deviceContext->CSSetUnorderedAccessViews(0, 1, &m_UAV, 0);
+	deviceContext->CSSetConstantBuffers(0, 1, &in_dimsBuffer);
 }
 
 void ComputeOctreeShader::updateCPPOctree(ID3D11DeviceContext* deviceContext, Octree* ot)
@@ -106,17 +110,21 @@ void ComputeOctreeShader::updateCPPOctree(ID3D11DeviceContext* deviceContext, Oc
 	result = deviceContext->Map(in_voxelBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	GPUVoxel* invPtr = (GPUVoxel*)mappedResource.pData;
 	int i = 0;
-	/*for (auto vox : ot->points)
+	for (auto vox : ot->points)
 	{
 		invPtr[i].color = vox->color;
 		invPtr[i].point = XMFLOAT3(vox->point.GetX(), vox->point.GetY(), vox->point.GetZ());
 		i++;
-	}*/
-	invPtr[0].color = UINT32(224);
-	invPtr[1].color = UINT32(225);
-	invPtr[0].point = XMFLOAT3(0.1, 0.1, 0.1);
-	invPtr[1].point = XMFLOAT3(0.9, 0.9, 0.9);
+	}
 	deviceContext->Unmap(in_voxelBuffer, 0);
+
+	i = 0;
+	result = deviceContext->Map(in_dimsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	VoxelModelDims* dimsPtr = (VoxelModelDims*)mappedResource.pData;
+	dimsPtr->DimX = ot->bottomRightBackPoint.GetX();
+	dimsPtr->DimY = ot->topLeftFrontPoint.GetY();
+	dimsPtr->DimZ = ot->bottomRightBackPoint.GetZ();
+	deviceContext->Unmap(in_dimsBuffer, 0);
 }
 
 void ComputeOctreeShader::unbind(ID3D11DeviceContext* dc)

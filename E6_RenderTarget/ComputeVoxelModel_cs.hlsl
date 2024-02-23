@@ -21,6 +21,10 @@ struct Voxel
     float3 voxPosition;
     uint color;
 };
+struct Ray
+{
+    
+};
 #define TLF 0
 #define TRF 1
 #define BLF 2
@@ -54,46 +58,10 @@ Texture2D gInput : register(t0);
 StructuredBuffer<VoxelOctree> voxelOctree : register(t1);
 RWTexture2D<float4> gOutput : register(u0);
 
-int raySphere(float3 rayPosition, float3 rayDirection, float3 spherePosition)
+bool DoesRayIntersect(VoxelOctree Octree, Ray r)
 {
-    //https://www.youtube.com/watch?v=4NshnkzOdI0
-    //https://www.youtube.com/watch?v=Qz0KTGYJtUk
-    //(bx^2 + by^2)t^2 + (2(axbx + ayby))t + (ax^2 +ay^2 - r^2) = 0;
-    //a = ray origin
-    //b = ray direction
-    //r = radius
-    //t = hit distance
-    
-    //-b +- sqrt(b^2 - 4ac) / 2a
-    
-    //The upcoming values are calculated with test scenario sphere(0,0,5), rayd(0,0,1), rayp(0,0,0)
-    float sphereRadius = 2.0f;
-    float3 offsetRayOrigin = rayPosition - spherePosition; //-5
-    
-    float a = dot(rayDirection, rayDirection); //Always 1?
-    float b = 2 * dot(offsetRayOrigin, rayDirection); //-5*2= -10
-    float c = dot(offsetRayOrigin, offsetRayOrigin) - sphereRadius * sphereRadius; //25 - 2^2 = 21
-    
-    float discriminant = b * b - 4 * a * c; //100 - 4 * 21 * 1 = 100 - 84 = 16
-    
-    if (discriminant >= 0)
-    {
-        float dist = (-b - sqrt(discriminant)) / (2 * a); // (-(-10) - sqrt(16))/2*1 = (10 - 4) / 2 = 6 / 2 = 3...??
-        
-        if (dist >= 0)
-        {
-            return 1;
-        }
-        else
-        {
-            return -1;
-        }
-
-    }
-    return -1;
-
+    return false;
 }
-
 [numthreads(16, 16, 1)]
 void main(int3 groupThreadID : SV_GroupThreadID,
 	int3 dispatchThreadID : SV_DispatchThreadID)
@@ -143,9 +111,15 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     float4 v = UVPositionCalculation(res, float2(texx, texy), projectionMatrix, fov);
     float3 rayVector = CalculateViewVector(v, viewMatrix, worldMatrix);
     
-    for (int i = 0; )
-        int hit = raySphere(camPos, rayVector, )
-    gOutput[int2(x, y)] = Render3DGrid(camPos, rayVector, false, float4(1, 1, 1, 1));
+    Ray r;
+    if (DoesRayIntersect(voxelOctree[0],r))
+    {
+        gOutput[int2(x, y)] = float4(1,1,1,1);
+    }
+    else
+    {
+        gOutput[int2(x, y)] = float4(rayVector, 1);
+    }
 
 }
 

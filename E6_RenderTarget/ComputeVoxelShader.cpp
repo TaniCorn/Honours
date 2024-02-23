@@ -96,14 +96,15 @@ HRESULT ComputeVoxelShader::CreateInput()
 
 	hr = device->CreateBuffer(&constantDataDesc, 0, &in_octreeBuffer);
 
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	srvDesc.BufferEx.FirstElement = 0;
-	srvDesc.BufferEx.Flags = 0;
-	srvDesc.BufferEx.NumElements = NumberOfOctants;
+	D3D11_SHADER_RESOURCE_VIEW_DESC octreedesc;
+	octreedesc.Format = DXGI_FORMAT_UNKNOWN;
+	octreedesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	octreedesc.BufferEx.FirstElement = 0;
+	octreedesc.BufferEx.Flags = 0;
+	octreedesc.BufferEx.NumElements = NumberOfOctants;
 
-	hr = device->CreateShaderResourceView(in_octreeBuffer, &srvDesc, &m_OctreeSRV);
+	hr = device->CreateShaderResourceView(in_octreeBuffer, &octreedesc, &m_OctreeSRV);
+	return hr;
 
 }
 
@@ -116,6 +117,7 @@ HRESULT ComputeVoxelShader::CreateOutput()
 	descUAV.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 	descUAV.Texture2D.MipSlice = 0;
 	hr = renderer->CreateUnorderedAccessView(m_tex, &descUAV, &m_UAV);
+	return hr;
 }
 
 void ComputeVoxelShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture)

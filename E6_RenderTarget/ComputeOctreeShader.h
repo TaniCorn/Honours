@@ -25,6 +25,7 @@ public:
 
 	void setShaderParameters(ID3D11DeviceContext* deviceContext);
 	void updateCPPOctree(ID3D11DeviceContext* deviceContext, Octree* ot);
+
 	//struct VoxelOctree {
 	//	XMFLOAT4 position;
 	//};
@@ -32,6 +33,7 @@ public:
 	{
 		XMFLOAT3 TopLeftFrontPosition; // 4bytes*3 = 12bytes
 		XMFLOAT3 BottomRightBackPosition; //12 bytes
+		XMFLOAT3 VoxelPosition;
 		UINT32 RGB; //4bytes
 		UINT32 Octants[8];
 		//4bytes * 9 = 36bytes
@@ -41,6 +43,12 @@ public:
 	{
 		XMFLOAT3 point;
 		UINT32 color;
+	};
+	struct VoxelModelDims {
+		int DimX;
+		int DimY;
+		int DimZ;
+		int buffer;
 	};
 	int NumberOfOctants = 0;
 	int NumberOfVoxels = 0;
@@ -54,7 +62,7 @@ private:
 	ID3D11ComputeShader* g_pComputeShaderBitonic = nullptr;
 
 	ID3D11Buffer* in_voxelBuffer = nullptr;
-	//ID3D11Buffer* in_voxelOctreeBuffer = nullptr;
+	ID3D11Buffer* in_dimsBuffer = nullptr;
 	ID3D11Buffer* out_voxelOctreeBuffer = nullptr;
 	ID3D11Buffer* out_voxelOctreeStagingBuffer = nullptr;
 
