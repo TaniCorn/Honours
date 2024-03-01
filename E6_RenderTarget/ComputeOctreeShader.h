@@ -20,7 +20,9 @@ public:
 	ID3D11Device* device;
 	HWND hwnd;
 
-	ID3D11ShaderResourceView* getSRV() { return m_SRV; };
+	ID3D11ShaderResourceView* getSRV() { return m_outSRV; };
+	ID3D11UnorderedAccessView* getUAV() { return m_UAV; };
+	ID3D11Buffer* getOctreeBuffer() { return out_voxelOctreeBuffer; }
 	void unbind(ID3D11DeviceContext* dc);
 
 	void setShaderParameters(ID3D11DeviceContext* deviceContext);
@@ -35,6 +37,7 @@ public:
 		XMFLOAT3 BottomRightBackPosition; //12 bytes
 		XMFLOAT3 VoxelPosition;
 		UINT32 RGB; //4bytes
+		UINT32 Depth;
 		UINT32 Octants[8];
 		//4bytes * 9 = 36bytes
 		//36 + 12 + 12 = 60bytes per octree
@@ -53,7 +56,6 @@ public:
 	int NumberOfOctants = 0;
 	int NumberOfVoxels = 0;
 	VoxelOctree* GetVoxelOctreeOutput(ID3D11DeviceContext* deviceContext);
-
 private:
 	void initShader(const wchar_t* cfile, const wchar_t* blank);
 	HRESULT CreateInput();
@@ -68,6 +70,7 @@ private:
 
 	ID3D11Texture2D* m_tex;
 	ID3D11ShaderResourceView* m_SRV = nullptr;
+	ID3D11ShaderResourceView* m_outSRV = nullptr;
 	ID3D11UnorderedAccessView* m_UAV = nullptr;
 };
 

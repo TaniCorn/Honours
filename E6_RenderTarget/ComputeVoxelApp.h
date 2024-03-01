@@ -33,6 +33,7 @@ protected:
 	void WriteCPUToCSV(Octree* CPU, std::string name);
 	void WriteVoxelsToCSV(std::string name);
 	static int IDCSV;
+	bool outputFile = false;
 private:
 	void RecursiveAddOctree(ComputeOctreeShader::VoxelOctree* oc, UINT32 currentStride, Octree* currentOctree);
 	float screenw, screenh;
@@ -61,6 +62,11 @@ private:
 	OrthoMesh* voxelOM;
 
 	ComputeOctreeShader* GPUOctree;
+
+	int VoxelViewMode = 0;
+	int VoxelViewDepth = 0;
+	string ViewModeDisplay;
+	bool heatMap = false;
 };
 
 #endif

@@ -22,15 +22,35 @@ void ComputeVoxelApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 
 
 	voxelShader = new VoxelShader(renderer->getDevice(), hwnd);
-	computeVoxels = new ComputeVoxelShader(renderer->getDevice(), hwnd, 4,screenWidth, screenHeight);
 	voxelRT = new RenderTexture(renderer->getDevice(), screenw, screenh, 0.1f, 100.0f);
 	voxelOM = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth, screenHeight, 0, 0);
 	quadTreeShader = new QuadTreeShader(renderer->getDevice(), hwnd);
 
+	Octree::minSize = 1;
 	LoadVoxModel();
+	//octree = new Octree(OctPoint(0, 10, 0), OctPoint(10, 0, 10));
+	//Octree::OctantAmount = 1;
+	//Octree::minSize = 1;
+	//OctVoxel* v = new OctVoxel();
+	//v->point.SetPoint(5, 5, 5);
+	//octree->insert(v);
+	//v = new OctVoxel();
+	//v->point.SetPoint(9.2, 9.2, 9.2);
+	//octree->insert(v);
+	//v = new OctVoxel();
+	//v->point.SetPoint(6, 6, 6);
+	//octree->insert(v);
+	//v = new OctVoxel();
+	//v->point.SetPoint(5.5, 5.0, 5.0);
+	//octree->insert(v);
+	//v = new OctVoxel();
+	//v->point.SetPoint(6.0, 5.0, 5.0);
+	//octree->insert(v);
+
 	WriteCPUToCSV(octree, "CPUOctree.txt");
 	WriteVoxelsToCSV("CPUVoxels.txt");
-	GPUOctree = new ComputeOctreeShader(renderer->getDevice(), hwnd, 200000, octree->points.size());
+	computeVoxels = new ComputeVoxelShader(renderer->getDevice(), hwnd, Octree::OctantAmount, screenWidth, screenHeight);
+	GPUOctree = new ComputeOctreeShader(renderer->getDevice(), hwnd, Octree::OctantAmount, Octree::points.size());
 }
 
 
@@ -65,9 +85,9 @@ bool ComputeVoxelApp::frame()
 
 bool ComputeVoxelApp::render()
 {
-	//ComputeVoxelRender();
-	//RenderVoxModel();
-	CPURenderVoxModel();
+	ComputeVoxelRender();
+	RenderVoxModel();
+	//CPURenderVoxModel();
 	return true;
 }
 
@@ -79,7 +99,7 @@ void ComputeVoxelApp::LoadVoxModel()
 	if (VoxModelLoader == nullptr)
 	{
 		VoxModelLoader = new magicavoxel::VoxFile(true, true);
-		VoxModelLoader->Load("res/monu1.vox");
+		VoxModelLoader->Load("res/dragon.vox");
 	}
 
 
@@ -92,16 +112,18 @@ void ComputeVoxelApp::LoadVoxModel()
 	res.x = xRes;
 	res.y = yRes;
 	res.z = zRes;
+	//NOTE: Z is up in magicavoxel
 	//resolution = xRes;
-	octree = new Octree(OctPoint(0, yRes, 0), OctPoint(xRes, 0, zRes));
+	octree = new Octree(OctPoint(0, zRes, 0), OctPoint(xRes, 0, yRes));
 	colPalette = VoxModelLoader->denseModels().at(0).palette();
 	Octree::OctantAmount = 1;
+	Octree::minSize = 1;
 
 	for (int i = 0; i < sparseModel.voxels().size(); i++)
 	{
-		uint8_t posX = sparseModel.voxels()[i].y;
+		uint8_t posX = sparseModel.voxels()[i].x;
 		uint8_t posY = sparseModel.voxels()[i].z;
-		uint8_t posZ = sparseModel.voxels()[i].x;
+		uint8_t posZ = sparseModel.voxels()[i].y;
 		uint8_t col = sparseModel.voxels()[i].color;
 		OctVoxel* vox = new OctVoxel();
 		vox->identifier = i;
@@ -109,7 +131,6 @@ void ComputeVoxelApp::LoadVoxModel()
 		vox->color = col;
 
 		octree->insert(vox);
-		int octreevoxsize = Octree::points.size();
 		octpoints.push_back(vox);
 
 	}
@@ -150,7 +171,7 @@ void ComputeVoxelApp::ComputeVoxelRender()
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
 
 	voxelRT->clearRenderTarget(renderer->getDeviceContext(), 1,1,1,1);
-	computeVoxels->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), voxelRT->getShaderResourceView());
+	computeVoxels->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), voxelRT->getShaderResourceView(), VoxelViewMode, VoxelViewDepth, heatMap);
 	computeVoxels->compute(renderer->getDeviceContext(), 74, 40, 1);
 	computeVoxels->unbind(renderer->getDeviceContext());
 }
@@ -172,11 +193,43 @@ void ComputeVoxelApp::gui()
 		wireframeToggle = true;
 	}
 	ImGui::SliderInt("VoxelSize", &Octree::minSize, 1, 20);
+	ImGui::SliderInt("VoxelViewMode", &VoxelViewMode, 0,5);
+	ImGui::SliderInt("VoxelViewDepth", &VoxelViewDepth, 0, 20);
+	ImGui::Checkbox("Heatmap", &heatMap);
+	switch (VoxelViewMode)
+	{
+	case 0:
+		ViewModeDisplay = "Regular Octree Traversal Method";
+		break;
+	case 1:
+		ViewModeDisplay = "Will render all voxels found(provided the octant amounts are less than 9999)";
+		VoxelViewDepth = 1;
+		break;
+	case 2:
+		ViewModeDisplay = "Renders the octree boxes on different depths";
+		break;
+	case 3:
+		ViewModeDisplay = "Renders number 1 as wireframes";
+		VoxelViewDepth = 1;
+		break;
+	case 4:
+		ViewModeDisplay = "Renders number 2 as wireframes";
+		break;
+	case 5:
+		ViewModeDisplay = "Renders 2 as wireframes above depth";
+		break;
+	default:
+		ViewModeDisplay = "Renders number 2 as wireframes";
+		break;
+	}
+	ImGui::Text(ViewModeDisplay.c_str());
 
 	if (ImGui::Button("Reload"))
 	{
 		delete octree;
 		LoadVoxModel();
+		//computeVoxels = new ComputeVoxelShader(renderer->getDevice(), hwnd, Octree::OctantAmount, screenWidth, screenHeight);
+		//GPUOctree = new ComputeOctreeShader(renderer->getDevice(), hwnd, Octree::OctantAmount, Octree::points.size());
 	}
 
 	if (ImGui::Button("Compute"))
@@ -184,6 +237,8 @@ void ComputeVoxelApp::gui()
 		GPUOctree->setShaderParameters(renderer->getDeviceContext());
 		GPUOctree->updateCPPOctree(renderer->getDeviceContext(), octree);
 		GPUOctree->compute(renderer->getDeviceContext(), 1, 1, 1);
+		GPUOctree->GetVoxelOctreeOutput(renderer->getDeviceContext());
+		GPUOctree->unbind(renderer->getDeviceContext());
 		computeVoxels->setOctreeVoxels(renderer->getDeviceContext(), GPUOctree->getSRV());
 	}
 	if (ImGui::Button("Copy"))
@@ -366,6 +421,10 @@ void ComputeVoxelApp::RecursiveWriteCSV(Octree* CPU, std::ofstream& file)
 }
 void ComputeVoxelApp::WriteCPUToCSV(Octree* CPU, std::string name)
 {
+	if (!outputFile)
+	{
+		return;
+	}
 	std::ofstream myfile;
 	IDCSV = 0;
 	myfile.open(name);
@@ -374,6 +433,10 @@ void ComputeVoxelApp::WriteCPUToCSV(Octree* CPU, std::string name)
 }
 void ComputeVoxelApp::WriteVoxelsToCSV(std::string name)
 {
+	if (!outputFile)
+	{
+		return;
+	}
 	std::ofstream myfile;
 	IDCSV = 0;
 	myfile.open(name);

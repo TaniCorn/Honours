@@ -4,6 +4,7 @@ struct VoxelOctree
     float3 BottomRightBackPosition; //12 bytes
     float3 VoxelPosition;
     uint RGB; //4 bytes
+    uint Depth;
     //uint TLF;
     //uint TRF;
     //uint BLF;
@@ -35,7 +36,7 @@ cbuffer VoxelModeDims : register(b0)
 #define TRB 5
 #define BLB 6
 #define BRB 7
-#define MIN_SIZE 1.0f
+#define MIN_SIZE 1.0f//Currently size less than 5 will not construct properly
 #define MAX_DEPTH 50
 
 StructuredBuffer<Voxel> inputOctree : register(t0);
@@ -45,9 +46,9 @@ static uint MaxStride = 0;
 //AABB collisiondetection
 bool inBoundary(float3 voxPoint, float3 topLeftFrontPoint, float3 bottomRightBackPoint)
 {
-    return (voxPoint.x > topLeftFrontPoint.x && voxPoint.x <= bottomRightBackPoint.x &&
-        voxPoint.y > bottomRightBackPoint.y && voxPoint.y <= topLeftFrontPoint.y &&
-        voxPoint.z > topLeftFrontPoint.z && voxPoint.z <= bottomRightBackPoint.z);
+    return (voxPoint.x >= topLeftFrontPoint.x && voxPoint.x <= bottomRightBackPoint.x &&
+        voxPoint.y >= bottomRightBackPoint.y && voxPoint.y <= topLeftFrontPoint.y &&
+        voxPoint.z >= topLeftFrontPoint.z && voxPoint.z <= bottomRightBackPoint.z);
 
 }
 
@@ -228,32 +229,39 @@ void InsertVoxel(VoxelOctree RootNode, Voxel Vox, RWStructuredBuffer<VoxelOctree
     {
         if (!ShouldSubdivide(currentNode, Depth))
         {
-            Octree[currentIndex].RGB = Vox.color;
+            Octree[currentIndex].RGB = 1;
             Octree[currentIndex].VoxelPosition = Vox.voxPosition;
             return;
         }
-        Depth++;
         
         // Determine the octant containing the voxel position
         int octantIndex = DetermineOctant(currentNode, Vox.voxPosition);
         //Octree[currentIndex].RGB = octantIndex; //DEBUGGING PURPOSES
         if (octantIndex < 0)//Outside of octant
         {
+            currentNode.BottomRightBackPosition = float3(0, 0, 0);
             return;
         }
-        //If octant hasn't been created yet, allocate at the end of the buffer
-        if (currentNode.Octants[octantIndex] == 0)
+        if (false)
         {
-            MaxStride++;
-            //currentNode.Octants[octantIndex] = MaxStride;
-            Octree[currentIndex].Octants[octantIndex] = MaxStride;
-            Octree[MaxStride].BottomRightBackPosition = GetBRBBound(currentNode, octantIndex);
-            Octree[MaxStride].TopLeftFrontPosition = GetTLFBound(currentNode, octantIndex);
+            abort();
         }
+        //If octant hasn't been created yet, allocate at the end of the buffer
+            if (currentNode.Octants[octantIndex] == 0)
+            {
+                Depth++;
+                MaxStride++;
+            //currentNode.Octants[octantIndex] = MaxStride;
+                Octree[currentIndex].Octants[octantIndex] = MaxStride;
+                Octree[MaxStride].BottomRightBackPosition = GetBRBBound(currentNode, octantIndex);
+                Octree[MaxStride].TopLeftFrontPosition = GetTLFBound(currentNode, octantIndex);
+                Octree[MaxStride].Depth = Depth;
+            }
         uint strideIndex = currentNode.Octants[octantIndex];
         currentIndex = strideIndex;
             // Move to the child node in the appropriate octant
         currentNode = Octree[strideIndex];
+        Depth = currentNode.Depth;
 
     }
     
@@ -277,4 +285,9 @@ void main(int3 groupThreadID : SV_GroupThreadID,
         InsertVoxel(outputOctree[0], inputOctree[i], outputOctree);
         
     }
+    //for (int i = 0; i < 9999; i++)
+    //{
+    //    outputOctree[i].RGB = i;
+    //}
+
 }

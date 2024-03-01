@@ -94,6 +94,26 @@ int raySphere(float3 rayPosition, float3 rayDirection, float3 spherePosition, fl
     return -1;
 
 }
+
+bool rayBox(float3 rayPosition, float3 rayDirection, float3 tlfmin, float3 brbmax)
+{
+    //https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+    float3 t0 = (float3(tlfmin.x, brbmax.y, tlfmin.z) - rayPosition) / rayDirection;
+    float3 t1 = (float3(brbmax.x, tlfmin.y, brbmax.z) - rayPosition) / rayDirection;
+
+    float3 tMin = min(t0, t1);
+    float3 tMax = max(t0, t1);
+
+    float tExitMin = max(max(tMin.x, tMin.y), tMin.z);
+    float tEnterMax = min(min(tMax.x, tMax.y), tMax.z);
+
+    //Stops reflection on negative axis
+    float tEnter = max(tEnterMax, 0.0f);
+    float tExit = max(tExitMin, 0.0f);
+
+    return tEnter > tExit;
+}
+
 float4 UVPositionCalculation(float2 resolution, float2 uv, matrix proj, float fov)
 {
     ////https://rastertek.com/dx11tut47.html and 3D Game Programming with DirectX11 ByteAddressBuffer Frank Luna

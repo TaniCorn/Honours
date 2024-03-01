@@ -80,6 +80,7 @@ void Octree::insert(OctVoxel* vox)
 
     // If the point is out of bounds
     if (!inBoundary(vox->point)) {
+        inBoundary(vox->point);
         cout << "Point is out of bound" << endl;
         return;
     }
@@ -377,8 +378,10 @@ OctVoxel* Octree::search(OctPoint point)
 //AABB collision detection
 bool Octree::inBoundary(OctPoint point)
 {
-    return (point.GetX() > topLeftFrontPoint.GetX() && point.GetX() <= bottomRightBackPoint.GetX() &&
-        point.GetY() > bottomRightBackPoint.GetY() && point.GetY() <= topLeftFrontPoint.GetY() &&
-        point.GetZ() > topLeftFrontPoint.GetZ() && point.GetZ() <= bottomRightBackPoint.GetZ());
+    bool xCheck = point.GetX() >= topLeftFrontPoint.GetX() && point.GetX() <= bottomRightBackPoint.GetX();
+    bool yCheck = point.GetY() >= bottomRightBackPoint.GetY() && point.GetY() <= topLeftFrontPoint.GetY();
+    bool zCheck = point.GetZ() >= topLeftFrontPoint.GetZ() && point.GetZ() <= bottomRightBackPoint.GetZ();
+
+    return xCheck && yCheck && zCheck;
 
 }
