@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Resource Files\Temp">
+      <UniqueIdentifier>{6dec9bf1-5fed-42b3-9d84-84651fcd21a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OctreeConstruction">
+      <UniqueIdentifier>{a9cde1b8-9bdf-4f6e-b6cc-bd62534dcdef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OctreeTraversal">
+      <UniqueIdentifier>{ced6442c-bd67-4016-a936-b0222229e2f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{fc9adf1d-1d9f-4bc8-aaa2-086e4e4c2420}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ExternalLibs">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="HonoursOctree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeConstruction\OctreeConstructorShader.cpp">
+      <Filter>OctreeConstruction</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeConstruction\Octree.cpp">
+      <Filter>OctreeConstruction</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeTracerApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeTraversal\OctreeTracerShader.cpp">
+      <Filter>OctreeTraversal</Filter>
+    </ClCompile>
+    <ClCompile Include="vox_file.cpp">
+      <Filter>ExternalLibs</Filter>
+    </ClCompile>
+    <ClCompile Include="UtilShaders\TextureShader.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="VoxelModelLoader.cpp">
+      <Filter>Resource Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="OctreeConstruction\OctreeConstructor_cs.hlsl">
+      <Filter>OctreeConstruction</Filter>
+    </FxCompile>
+    <FxCompile Include="OctreeTraversal\OctreeTracer_cs.hlsl">
+      <Filter>OctreeTraversal</Filter>
+    </FxCompile>
+    <FxCompile Include="UtilShaders\Texture_ps.hlsl">
+      <Filter>Util</Filter>
+    </FxCompile>
+    <FxCompile Include="UtilShaders\Texture_vs.hlsl">
+      <Filter>Util</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OctreeConstruction\OctreeConstructorShader.h">
+      <Filter>OctreeConstruction</Filter>
+    </ClInclude>
+    <ClInclude Include="OctreeConstruction\Octree.h">
+      <Filter>OctreeConstruction</Filter>
+    </ClInclude>
+    <ClInclude Include="OctreeTracerApp.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OctreeTraversal\OctreeTracerShader.h">
+      <Filter>OctreeTraversal</Filter>
+    </ClInclude>
+    <ClInclude Include="vox_file.h">
+      <Filter>ExternalLibs</Filter>
+    </ClInclude>
+    <ClInclude Include="UtilShaders\TextureShader.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxelOctree.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VoxelModelLoader.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Raycasting.hlsli">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="GridShading.hlsli">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="VoxelOctree.hlsli">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>
