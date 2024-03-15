@@ -21,12 +21,12 @@ public:
 	XMFLOAT3 getModelDimensionsExact(std::string modelName);
 	//Color
 	const magicavoxel::Color getColorFromPalette(std::string modelName, uint8_t colorIndex);
-	const magicavoxel::Palette getPalette(std::string modelName);
+	magicavoxel::Palette& getPalette(std::string modelName);
 	static XMFLOAT4 getRGBAFromColor(magicavoxel::Color color);
 private:
 	magicavoxel::VoxFile* mvoxModelLoader;
 	
 	std::map<std::string, int> mVoxModels;
-	std::map<std::string, magicavoxel::Palette> mvoxColPalette;
+	std::map<std::string, magicavoxel::Palette*> mvoxColPalette;
 };
 

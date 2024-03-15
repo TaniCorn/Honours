@@ -87,7 +87,8 @@ https://stackoverflow.com/questions/44377201/directx-write-to-texture-with-compu
 
 	hr = CreateConstantBuffer(&in_matrixBuffer, sizeof(InvMatrixBuffer));
 	hr = CreateConstantBuffer(&in_cameraBuffer, sizeof(CameraBuffer));
-	hr = CreateConstantBuffer(&in_viewBuffer, sizeof(ViewMode));
+	hr = CreateConstantBuffer(&in_viewBuffer, sizeof(ViewModeBuffer));
+	hr = CreateConstantBuffer(&in_voxelPaletteBuffer, sizeof(VoxelPaletteBuffer));
 
 	return hr;
 
@@ -107,7 +108,7 @@ HRESULT OctreeTracerShader::CreateOutput()
 	return hr;
 }
 
-void OctreeTracerShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView, int voxelDepth, bool heat)
+void OctreeTracerShader::setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView, int voxelDepth, bool heat, int amountOfOctrees)
 {
 
 	HRESULT result;
@@ -138,11 +139,11 @@ void OctreeTracerShader::setShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->Unmap(in_cameraBuffer, 0);
 
 	result = deviceContext->Map(in_viewBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	ViewMode* viewPtr = (ViewMode*)mappedResource.pData;
+	ViewModeBuffer* viewPtr = (ViewModeBuffer*)mappedResource.pData;
 	viewPtr->mode = voxelView;
 	viewPtr->variable = voxelDepth;
 	viewPtr->heatmap = heat;
-	viewPtr->pad = 0;
+	viewPtr->amountOfOctrees = amountOfOctrees;
 	deviceContext->Unmap(in_viewBuffer, 0);
 
 	deviceContext->CSSetConstantBuffers(0, 1, &in_matrixBuffer);
@@ -153,9 +154,85 @@ void OctreeTracerShader::setShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->CSSetUnorderedAccessViews(0, 1, &m_UAV, 0);
 }
 
-void OctreeTracerShader::setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree)
+void OctreeTracerShader::setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree[8])
 {
-	deviceContext->CSSetShaderResources(1, 1, &octree);
+	deviceContext->CSSetShaderResources(1, 8, octree);
+}
+
+void OctreeTracerShader::setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8])
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	result = deviceContext->Map(in_voxelPaletteBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	VoxelPaletteBuffer* col = (VoxelPaletteBuffer*)mappedResource.pData;
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < 256; j++)
+		{
+			col->palettes[i].r[j] = palettes[i]->at(j).r;
+			col->palettes[i].g[j] = palettes[i]->at(j).g;
+			col->palettes[i].b[j] = palettes[i]->at(j).b;
+			col->palettes[i].a[j] = palettes[i]->at(j).a;
+		}
+	}
+	deviceContext->Unmap(in_voxelPaletteBuffer, 0);
+	deviceContext->CSSetConstantBuffers(3, 1, &in_voxelPaletteBuffer);
+
+}
+
+OctreeTracerShader::~OctreeTracerShader()
+{
+
+	if (g_pComputeShaderBitonic)
+	{
+		g_pComputeShaderBitonic->Release();
+		g_pComputeShaderBitonic = 0;
+	}
+	if (in_matrixBuffer)
+	{
+		in_matrixBuffer->Release();
+		in_matrixBuffer = 0;
+	}
+	if (in_cameraBuffer)
+	{
+		in_cameraBuffer->Release();
+		in_cameraBuffer = 0;
+	}
+	if (in_viewBuffer)
+	{
+		in_viewBuffer->Release();
+		in_viewBuffer = 0;
+	}	
+	if (in_octreeBuffer)
+	{
+		in_octreeBuffer->Release();
+		in_octreeBuffer = 0;
+	}
+	if (in_octreeStagingBuffer)
+	{
+		in_octreeStagingBuffer->Release();
+		in_octreeStagingBuffer = 0;
+	}
+	if (m_tex)
+	{
+		m_tex->Release();
+		m_tex = 0;
+	}
+	if (m_OctreeSRV)
+	{
+		m_OctreeSRV->Release();
+		m_OctreeSRV = 0;
+	}
+	if (m_SRV)
+	{
+		m_SRV->Release();
+		m_SRV = 0;
+	}
+	if (m_UAV)
+	{
+		m_UAV->Release();
+		m_UAV = 0;
+	}
 }
 
 void OctreeTracerShader::unbind(ID3D11DeviceContext* dc)

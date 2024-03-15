@@ -10,6 +10,8 @@
 #include "OctreeTraversal/OctreeTracerShader.h"
 #include "VoxelModelLoader.h"
 #include "UtilShaders/TextureShader.h"
+
+
 class OctreeTracerApp : public BaseApplication
 {
 public:
@@ -33,10 +35,12 @@ private:
 		CPPOctree* cppOctree;
 		OctreeConstructorShader* octreeConstructor;
 		ID3D11ShaderResourceView* voxelModel;
+		magicavoxel::Palette* pallette;
 	};
 
 	std::map<std::string, VoxelOctreeModels> voxelModels;
-	std::vector<ID3D11ShaderResourceView*> voxelModelResources;
+	ID3D11ShaderResourceView* voxelModelResources[8];
+	magicavoxel::Palette* voxelModelPalettes[8];
 	OctreeTracerShader* octreeTracer;
 
 	TextureShader* textureShader;
@@ -51,7 +55,7 @@ private:
 
 	int voxelModelView = -1;
 	VoxelModelLoader modelLoader;
-
+	int ind = 0;
 };
 
 #endif

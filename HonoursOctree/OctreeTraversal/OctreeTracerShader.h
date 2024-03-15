@@ -1,7 +1,13 @@
 #pragma once
 
+#ifndef OCTREETRACERSHADER_H
+#define OCTREETACERSHADER_H
+
 #include "BaseShader.h"
 #include "../VoxelOctree.h"
+#include "../vox_file.h"
+
+
 
 using namespace std;
 using namespace DirectX;
@@ -17,7 +23,10 @@ public:
 		screenWidth = inWidth;
 		screenHeight = inHeight;
 		initShader(L"OctreeTracer_cs.cso", NULL);
+
 	};
+
+	~OctreeTracerShader();
 	ID3D11Device* device;
 	HWND hwnd;
 	int screenWidth, screenHeight;
@@ -25,8 +34,9 @@ public:
 	ID3D11ShaderResourceView* getSRV() { return m_SRV; };
 	void unbind(ID3D11DeviceContext* dc);
 
-	void setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView = 0, int viewDepth = 0, bool heat = false);
-	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree);
+	void setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView = 0, int viewDepth = 0, bool heat = false, int amountOfOctrees = 2);
+	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree[8]);
+	void setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8]);
 	struct CameraBuffer {
 		XMFLOAT3 position;
 		float padding;
@@ -39,12 +49,21 @@ public:
 		XMMATRIX worldMatrix;
 		XMMATRIX invWorldMatrix;
 	};
-	struct ViewMode
+	struct ViewModeBuffer
 	{
 		int mode;
 		int variable;
 		int heatmap;
-		float pad;
+		int amountOfOctrees;
+	};
+	struct VoxelColor {
+		UINT32 r[256];
+		UINT32 g[256];
+		UINT32 b[256];
+		UINT32 a[256];
+	};
+	struct VoxelPaletteBuffer {
+		VoxelColor palettes[8];
 	};
 private:
 	void initShader(const wchar_t* cfile, const wchar_t* blank);
@@ -55,6 +74,7 @@ private:
 	ID3D11ComputeShader* g_pComputeShaderBitonic = nullptr;
 
 	ID3D11Buffer* in_matrixBuffer = nullptr;
+	ID3D11Buffer* in_voxelPaletteBuffer = nullptr;
 	ID3D11Buffer* in_cameraBuffer = nullptr;
 	ID3D11Buffer* in_viewBuffer = nullptr;
 	ID3D11Buffer* in_octreeBuffer = nullptr;
@@ -66,3 +86,4 @@ private:
 	ID3D11UnorderedAccessView* m_UAV = nullptr;
 };
 
+#endif // !OCTREETRACERSHADER_H

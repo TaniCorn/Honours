@@ -1,5 +1,22 @@
 #include "OctreeTracerApp.h"
 
+#define NV_PERF_ENABLE_INSTRUMENTATION             // use macro NV_PERF_ENABLE_INSTRUMENTATION to turn on the Nsight Perf instrumentation.
+
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+#include "NvPerfReportGeneratorD3D11.h"
+#endif
+
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+#include "nvperf_host_impl.h"
+#endif
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+nv::perf::profiler::ReportGeneratorD3D11 g_nvperf;
+NVPW_Device_ClockStatus g_clockStatus = NVPW_DEVICE_CLOCK_STATUS_UNKNOWN; // Used to restore clock state when exiting
+const ULONGLONG g_warmupTicks = 500u; /* milliseconds */
+ULONGLONG g_startTicks = 0u;
+ULONGLONG g_currentTicks = 0u;
+#endif
+
 OctreeTracerApp::OctreeTracerApp()
 {
 
@@ -16,15 +33,60 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	camera->setPosition(0, 0, 0);
 	camera->setRotation(0, 0, 0);
 
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_startTicks = GetTickCount64();
+	g_nvperf.InitializeReportGenerator(renderer->getDevice());
+	g_nvperf.SetFrameLevelRangeName("Frame");
+	g_nvperf.SetNumNestingLevels(2);
+	g_nvperf.SetMaxNumRanges(2); // "Frame" + "Draw"
+	g_nvperf.outputOptions.directoryName = "HtmlReports\\Honours";
+
+	// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
+	g_clockStatus = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
+	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
+	g_nvperf.StartCollectionOnNextFrame();
+
+#endif
 
 	textureShader = new TextureShader(renderer->getDevice(), hwnd);
 	rt = new RenderTexture(renderer->getDevice(), screenw, screenh, 0.1f, 100.0f);
 	om = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth, screenHeight, 0, 0);
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+#endif
 
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.PushRange("Computing Voxel Monument");
+#endif
 	generateVoxelModel(hwnd, "Monu1", "res/monu1.vox");
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.PopRange(); // Draw
+#endif
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.PushRange("Computing Voxel Dragon");
+#endif
 	generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.PopRange(); // Draw
+#endif
+
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameEnd();
+#endif
+
+	generateVoxelModel(hwnd, "Cars", "res/cars.vox");
+	generateVoxelModel(hwnd, "Chair", "res/chair.vox");
+	generateVoxelModel(hwnd, "Doom", "res/doom.vox");
+	generateVoxelModel(hwnd, "Menger", "res/menger.vox");
+	generateVoxelModel(hwnd, "teapot", "res/teapot.vox");
+	generateVoxelModel(hwnd, "room", "res/room.vox");
+
+	//generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
 
 	octreeTracer = new OctreeTracerShader(renderer->getDevice(), hwnd, 99999, screenWidth, screenHeight);
+
+
+
 }
 
 
@@ -32,7 +94,10 @@ OctreeTracerApp::~OctreeTracerApp()
 {
 	// Run base application deconstructor
 	BaseApplication::~BaseApplication();
-
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.Reset();
+	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), g_clockStatus);
+#endif
 }
 
 
@@ -52,7 +117,7 @@ bool OctreeTracerApp::frame()
 	{
 		return false;
 	}
-	camera->move(0.1);
+	camera->move(0.9);
 
 	return true;
 }
@@ -94,13 +159,28 @@ void OctreeTracerApp::computeTracer()
 
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();  // ortho matrix for 2D rendering
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
+//
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.OnFrameStart(renderer->getDeviceContext());
+#endif
 
-	rt->clearRenderTarget(renderer->getDeviceContext(), 1,1,1,1);
-	octreeTracer->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), rt->getShaderResourceView(), voxelViewMode, voxelViewDepth, heatMap);
-	octreeTracer->compute(renderer->getDeviceContext(), 74, 40, 1);
-	octreeTracer->unbind(renderer->getDeviceContext());
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.PushRange("RenderingVoxels");
+#endif
+
+		rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);
+		octreeTracer->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), rt->getShaderResourceView(), voxelViewMode, voxelViewDepth, heatMap, ind);
+		octreeTracer->compute(renderer->getDeviceContext(), 74, 40, 1);
+		octreeTracer->unbind(renderer->getDeviceContext());
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.PopRange(); // Draw
+#endif
+
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.OnFrameEnd();
+#endif
+
 }
-
 
 void OctreeTracerApp::gui()
 {
@@ -115,6 +195,9 @@ void OctreeTracerApp::gui()
 	ImGui::SliderInt("VoxelViewMode", &voxelViewMode, 0,5);
 	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 20);
 	ImGui::Checkbox("Heatmap", &heatMap);
+	if(ImGui::Button("Profile")) {
+		g_nvperf.StartCollectionOnNextFrame();
+	}
 	switch (voxelViewMode)
 	{
 	case 0:
@@ -148,10 +231,11 @@ void OctreeTracerApp::gui()
 	ImGui::SliderInt("VoxelModelView", &voxelModelView, 0, 10);
 	if (voxelModelView != vmvChanged)
 	{
-		if (voxelModelView < voxelModelResources.size())
-		{
-			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources[voxelModelView]);
-		}
+		//if (voxelModelView < voxelModelResources.size())
+		//{
+			
+			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
+		//}
 	}
 
 	// Render UI
@@ -197,5 +281,9 @@ void OctreeTracerApp::generateVoxelModel(HWND hwnd, std::string identifierName, 
 	voxelModels[identifierName].cppOctree = cppOctree;
 	voxelModels[identifierName].octreeConstructor = octreeConstructor;
 	voxelModels[identifierName].voxelModel = voxelModelView;
-	voxelModelResources.push_back(voxelModelView);
+	voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
+	//voxelModelResources.push_back(voxelModelView);
+	voxelModelResources[ind] = voxelModelView;
+	voxelModelPalettes[ind] = &modelLoader.getPalette(identifierName);
+	ind++;
 }

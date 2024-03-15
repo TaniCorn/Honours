@@ -4,9 +4,9 @@ struct Ray
     float3 RayPos;
     float3 RayDirection;
 };
-#define MAX_STACK_SIZE 500
+#define MAX_STACK_SIZE 100
 #define MAX_ITERATIONS 75
-#define MAX_DEBUG_ITERATIONS 9999
+#define MAX_DEBUG_ITERATIONS 999
 
 cbuffer InvMatrixBuffer : register(b0)
 {
@@ -28,20 +28,31 @@ cbuffer ViewModeBuffer : register(b2)
     int ViewMode;
     int ViewDepth;
     int heat;
-    float pad;
+    int amountOfOctrees;
 };
+//struct VoxelColor
+//{
+//    uint r[256];
+//    uint g[256];
+//    uint b[256];
+//    uint a[256];
+//};
+//cbuffer VoxelPaletteBuffer : register(b3)
+//{
+//    VoxelColor palette[8];
+//};
 #include "../GridShading.hlsli"
 
 // Input and output structures
 Texture2D gInput : register(t0);
-StructuredBuffer<VoxelOctree> voxelOctree : register(t1);
+StructuredBuffer<VoxelOctree> voxelOctree[8] : register(t1);
 RWTexture2D<float4> gOutput : register(u0);
 
-int DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree)
+int DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float offset)
 {
     // Traverse the octree to find the leaf node
     VoxelOctree currentNode = Octree[0];
-    if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition, currentNode.BottomRightBackPosition))
+    if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
     {
         return 0;
     }
@@ -69,7 +80,7 @@ int DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree)
                 {
                     break;
                 }
-                if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition, childNode.BottomRightBackPosition))
+                if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
                 {
                     stackIndexes[stackTop] = Stride;
                     stackTop++;
@@ -282,47 +293,53 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     Ray r;
     r.RayPos = camPos;
     r.RayDirection = rayVector;
+    gOutput[int2(x, y)] = float4(rayVector, 1);
+    int heatIterations = 0;
     
-    bool color = 0;
-    switch (ViewMode)
+    for (int i = 0; i < 8; i++)
     {
-        case 0:
-            if (heat)
-            {
-                gOutput[int2(x, y)] = float4(HeatmapColor((DoesRayIntersect(r, voxelOctree)), 0, MAX_ITERATIONS), 1);
-                return;
-            }
-            color = (DoesRayIntersect(r, voxelOctree));
-            break;
+        StructuredBuffer<VoxelOctree> vo = voxelOctree[i];
+        bool color = 0;
+        switch (ViewMode)
+        {
+            case 0:
+                if (heat)
+                {
+                    heatIterations += DoesRayIntersect(r, vo, (i - 4) * 50);
+                }
+                color = (DoesRayIntersect(r, vo, (i - 4) * 50));
+                break;
 
-        case 1:
-            color = (RenderBox(r, voxelOctree));
-            break;
-        case 2:
-            color = (RenderAtDepth(r, voxelOctree));
-            break;
-        case 3:
-            color = (RenderWireframeBox(r, voxelOctree));
-            break;
-        case 4:
-            color = (RenderWireframeAtDepth(r, voxelOctree));
-            break;
-        case 5:
-            color = (RenderWireframeAboveDepth(r, voxelOctree));
-            break;
-        default:
-            color = (RenderWireframeAtDepth(r, voxelOctree));
-            break;
+            case 1:
+                color = (RenderBox(r, vo));
+                break;
+            case 2:
+                color = (RenderAtDepth(r, vo));
+                break;
+            case 3:
+                color = (RenderWireframeBox(r, vo));
+                break;
+            case 4:
+                color = (RenderWireframeAtDepth(r, vo));
+                break;
+            case 5:
+                color = (RenderWireframeAboveDepth(r, vo));
+                break;
+            default:
+                color = (RenderWireframeAtDepth(r, vo));
+                break;
 
+        }
+
+        if (color)
+        {
+            gOutput[int2(x, y)] = float4(1, 1, 1, 1);
+        }
     }
-
-    if (color)
+    if (heat)
     {
-        gOutput[int2(x, y)] = float4(1,1,1,1);
-    }
-    else
-    {
-        gOutput[int2(x, y)] = float4(rayVector, 1);
+        gOutput[int2(x, y)] = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
+        
     }
 
 }
