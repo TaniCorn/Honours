@@ -57,13 +57,10 @@ public:
 		int amountOfOctrees;
 	};
 	struct VoxelColor {
-		UINT32 r[256];
-		UINT32 g[256];
-		UINT32 b[256];
-		UINT32 a[256];
+		UINT32 rgba[256];
 	};
 	struct VoxelPaletteBuffer {
-		VoxelColor palettes[8];
+		VoxelColor palettes[1];
 	};
 private:
 	void initShader(const wchar_t* cfile, const wchar_t* blank);
@@ -83,6 +80,7 @@ private:
 	ID3D11Texture2D* m_tex;
 	ID3D11ShaderResourceView* m_OctreeSRV = nullptr;
 	ID3D11ShaderResourceView* m_SRV = nullptr;
+	ID3D11ShaderResourceView* m_paletteSRV = nullptr;
 	ID3D11UnorderedAccessView* m_UAV = nullptr;
 };
 

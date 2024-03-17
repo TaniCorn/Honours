@@ -73,9 +73,10 @@ struct Color {
         b((val >> 16) & 0xff),
         a((val >> 24) & 0xff) {}
   constexpr Color(uint8_t _r, uint8_t _g, uint8_t _b, uint8_t _a)
-      : r(_r), g(_g), b(_b), a(_a) {}
+      : r(_r), g(_g), b(_b), a(_a)  {}
 
   uint8_t r, g, b, a;
+
 };
 
 // A MagicaVoxel color palette: 256 RGBA values.

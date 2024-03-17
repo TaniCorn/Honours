@@ -25,7 +25,9 @@ std::vector<Voxel> VoxelModelLoader::getModelVoxels(std::string name)
 	std::vector<Voxel> voxels;
 	voxels.reserve(amountOfVoxels);
 	//Voxel* voxels = new Voxel[amountOfVoxels];
-	mvoxColPalette[name] = &mvoxModelLoader->denseModels().at(0).palette();
+	mvoxColPalette[name] = mvoxModelLoader->denseModels().at(0).palette();
+	//mvoxColPalette[name] = mvoxModelLoader->sparseModels().back().palette();
+	//mvoxColPalette[name] = &mvoxModelLoader->denseModels().back().palette();
 
 	for (int i = 0; i < amountOfVoxels; i++)
 	{
@@ -88,12 +90,12 @@ XMFLOAT3 VoxelModelLoader::getModelDimensionsExact(std::string modelName)
 
 const magicavoxel::Color VoxelModelLoader::getColorFromPalette(std::string modelName, uint8_t colorIndex)
 {
-	return mvoxColPalette[modelName]->at(colorIndex);
+	return mvoxColPalette[modelName].at(colorIndex);
 }
 
 magicavoxel::Palette& VoxelModelLoader::getPalette(std::string modelName)
 {
-	return *mvoxColPalette[modelName];
+	return mvoxColPalette[modelName];
 }
 
 XMFLOAT4 VoxelModelLoader::getRGBAFromColor(magicavoxel::Color color)

@@ -22,7 +22,6 @@ void OctreeTracerShader::initShader(const wchar_t* cfile, const wchar_t* blank)
 	loadComputeShader(cfile);
 	CreateInput();
 	CreateOutput();
-
 }
 
 HRESULT OctreeTracerShader::CreateInput()
@@ -62,6 +61,9 @@ https://stackoverflow.com/questions/44377201/directx-write-to-texture-with-compu
 	constantDataDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 
 	hr = device->CreateBuffer(&constantDataDesc, 0, &in_octreeBuffer);
+	constantDataDesc.ByteWidth = sizeof(VoxelColor) * 8;
+	constantDataDesc.StructureByteStride = sizeof(VoxelColor);
+	hr = device->CreateBuffer(&constantDataDesc, 0, &in_voxelPaletteBuffer);
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC octreedesc;
 	octreedesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -69,8 +71,9 @@ https://stackoverflow.com/questions/44377201/directx-write-to-texture-with-compu
 	octreedesc.BufferEx.FirstElement = 0;
 	octreedesc.BufferEx.Flags = 0;
 	octreedesc.BufferEx.NumElements = NumberOfOctants;
-
 	hr = device->CreateShaderResourceView(in_octreeBuffer, &octreedesc, &m_OctreeSRV);
+	octreedesc.BufferEx.NumElements = 8;
+	hr = device->CreateShaderResourceView(in_voxelPaletteBuffer, &octreedesc, &m_paletteSRV);
 
 	D3D11_BUFFER_DESC outputDesc;
 	outputDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -88,7 +91,7 @@ https://stackoverflow.com/questions/44377201/directx-write-to-texture-with-compu
 	hr = CreateConstantBuffer(&in_matrixBuffer, sizeof(InvMatrixBuffer));
 	hr = CreateConstantBuffer(&in_cameraBuffer, sizeof(CameraBuffer));
 	hr = CreateConstantBuffer(&in_viewBuffer, sizeof(ViewModeBuffer));
-	hr = CreateConstantBuffer(&in_voxelPaletteBuffer, sizeof(VoxelPaletteBuffer));
+	//hr = CreateConstantBuffer(&in_voxelPaletteBuffer, sizeof(VoxelPaletteBuffer));
 
 	return hr;
 
@@ -149,6 +152,7 @@ void OctreeTracerShader::setShaderParameters(ID3D11DeviceContext* deviceContext,
 	deviceContext->CSSetConstantBuffers(0, 1, &in_matrixBuffer);
 	deviceContext->CSSetConstantBuffers(1, 1, &in_cameraBuffer);
 	deviceContext->CSSetConstantBuffers(2, 1, &in_viewBuffer);
+	deviceContext->CSSetConstantBuffers(3, 1, &in_voxelPaletteBuffer);
 
 	deviceContext->CSSetShaderResources(0, 1, &texture);
 	deviceContext->CSSetUnorderedAccessViews(0, 1, &m_UAV, 0);
@@ -169,15 +173,27 @@ void OctreeTracerShader::setVoxelPalette(ID3D11DeviceContext* deviceContext, mag
 	{
 		for (int j = 0; j < 256; j++)
 		{
-			col->palettes[i].r[j] = palettes[i]->at(j).r;
-			col->palettes[i].g[j] = palettes[i]->at(j).g;
-			col->palettes[i].b[j] = palettes[i]->at(j).b;
-			col->palettes[i].a[j] = palettes[i]->at(j).a;
+			magicavoxel::Color c = palettes[i]->at(j);
+			XMFLOAT4 rgba = XMFLOAT4(c.r / 255.f, c.g / 255.f, c.b / 255.f, c.a / 255.f);
+			UINT32 ucol =
+				((static_cast<UINT32>(c.r)) & 0x000000ff) |
+				((static_cast<UINT32>(c.g) << 8) & 0x0000ff00) |
+				((static_cast<UINT32>(c.b) << 16) & 0x00ff0000) |
+				((static_cast<UINT32>(c.a) << 24) & 0xff000000);
+			//ucol = 0x58bc4c;
+
+			const float coefficient = 1.f ;
+			float r = (ucol & 0x000000ff) * coefficient;
+			float g = ((ucol >> 8) & 0x000000ff) * coefficient;
+			float b = ((ucol >> 16) & 0x000000ff) * coefficient;
+			float a = ((ucol >> 24) & 0x000000ff) * coefficient;
+
+			col->palettes[i].rgba[j] = ucol;
 		}
 	}
 	deviceContext->Unmap(in_voxelPaletteBuffer, 0);
-	deviceContext->CSSetConstantBuffers(3, 1, &in_voxelPaletteBuffer);
 
+	deviceContext->CSSetShaderResources(9, 1, &m_paletteSRV);
 }
 
 OctreeTracerShader::~OctreeTracerShader()
@@ -213,6 +229,11 @@ OctreeTracerShader::~OctreeTracerShader()
 		in_octreeStagingBuffer->Release();
 		in_octreeStagingBuffer = 0;
 	}
+	if (in_voxelPaletteBuffer)
+	{
+		in_voxelPaletteBuffer->Release();
+		in_voxelPaletteBuffer = 0;
+	}
 	if (m_tex)
 	{
 		m_tex->Release();
@@ -227,6 +248,11 @@ OctreeTracerShader::~OctreeTracerShader()
 	{
 		m_SRV->Release();
 		m_SRV = 0;
+	}
+	if (m_paletteSRV)
+	{
+		m_paletteSRV->Release();
+		m_paletteSRV = 0;
 	}
 	if (m_UAV)
 	{

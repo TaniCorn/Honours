@@ -27,6 +27,6 @@ private:
 	magicavoxel::VoxFile* mvoxModelLoader;
 	
 	std::map<std::string, int> mVoxModels;
-	std::map<std::string, magicavoxel::Palette*> mvoxColPalette;
+	std::map<std::string, magicavoxel::Palette> mvoxColPalette;
 };
 

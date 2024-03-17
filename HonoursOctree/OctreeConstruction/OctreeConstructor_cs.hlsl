@@ -193,7 +193,7 @@ void InsertVoxel(VoxelOctree RootNode, Voxel Vox, RWStructuredBuffer<VoxelOctree
     {
         if (!ShouldSubdivide(currentNode.TopLeftFrontPosition, currentNode.BottomRightBackPosition, Depth))
         {
-            Octree[currentIndex].RGB = 1;
+            Octree[currentIndex].RGB = Vox.color;
             Octree[currentIndex].VoxelPosition = Vox.voxPosition;
             return;
         }

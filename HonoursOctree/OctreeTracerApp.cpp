@@ -51,28 +51,30 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	textureShader = new TextureShader(renderer->getDevice(), hwnd);
 	rt = new RenderTexture(renderer->getDevice(), screenw, screenh, 0.1f, 100.0f);
 	om = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth, screenHeight, 0, 0);
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-	g_nvperf.OnFrameStart(renderer->getDeviceContext());
-#endif
-
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-	g_nvperf.PushRange("Computing Voxel Monument");
-#endif
+//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+//	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+//#endif
+//
+//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+//	g_nvperf.PushRange("Computing Voxel Monument");
+//#endif
+//	generateVoxelModel(hwnd, "Monu1", "res/monu1.vox");
+//
+//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+//	g_nvperf.PushRange("Computing Voxel Dragon");
+//#endif
+//	generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
+//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+//	g_nvperf.PopRange(); // Draw
+//#endif
+//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+//	g_nvperf.PopRange(); // Draw
+//#endif
+//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+//	g_nvperf.OnFrameEnd();
+//#endif
 	generateVoxelModel(hwnd, "Monu1", "res/monu1.vox");
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-	g_nvperf.PopRange(); // Draw
-#endif
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-	g_nvperf.PushRange("Computing Voxel Dragon");
-#endif
 	generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-	g_nvperf.PopRange(); // Draw
-#endif
-
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-	g_nvperf.OnFrameEnd();
-#endif
 
 	generateVoxelModel(hwnd, "Cars", "res/cars.vox");
 	generateVoxelModel(hwnd, "Chair", "res/chair.vox");
@@ -84,7 +86,7 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	//generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
 
 	octreeTracer = new OctreeTracerShader(renderer->getDevice(), hwnd, 99999, screenWidth, screenHeight);
-
+	octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
 
 
 }
@@ -170,6 +172,7 @@ void OctreeTracerApp::computeTracer()
 
 		rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);
 		octreeTracer->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), rt->getShaderResourceView(), voxelViewMode, voxelViewDepth, heatMap, ind);
+		octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
 		octreeTracer->compute(renderer->getDeviceContext(), 74, 40, 1);
 		octreeTracer->unbind(renderer->getDeviceContext());
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
@@ -270,6 +273,7 @@ CPPOctree* OctreeTracerApp::loadVoxModel(std::string identifierName, std::string
 void OctreeTracerApp::generateVoxelModel(HWND hwnd, std::string identifierName, std::string filepath)
 {
 	CPPOctree* cppOctree = loadVoxModel(identifierName, filepath);
+
 	OctreeConstructorShader* octreeConstructor = new OctreeConstructorShader(renderer->getDevice(), hwnd, cppOctree->octantAmount, cppOctree->voxels.size());
 	ID3D11ShaderResourceView* voxelModelView;
 	octreeConstructor->setShaderParameters(renderer->getDeviceContext());

@@ -30,31 +30,57 @@ cbuffer ViewModeBuffer : register(b2)
     int heat;
     int amountOfOctrees;
 };
-//struct VoxelColor
-//{
-//    uint r[256];
-//    uint g[256];
-//    uint b[256];
-//    uint a[256];
-//};
-//cbuffer VoxelPaletteBuffer : register(b3)
-//{
-//    VoxelColor palette[8];
-//};
+float UnpackVoxelColor(uint color, int rgba)
+{
+    const float coefficient = 255.f;
+    switch (rgba)
+    {
+        case 0:
+            //return float((color & 0x000000ff)) * coefficient;
+            return float((color & 0x000000ff)) / coefficient;
+        case 1:
+            //return float((color & 0x0000ff00)) * coefficient;
+            return float(((color >> 8) & 0x000000ff)) / coefficient;
+        case 2:
+            //return float((color & 0x00ff0000)) * coefficient;
+            return float(((color >> 16) & 0x000000ff)) / coefficient;
+        case 3:
+            //return float((color & 0xff000000)) * coefficient;
+            return 1.0f;
+            return float(((color >> 24) & 0x000000ff)) / coefficient;
+        default:
+            return 1;
+    }
+    //
+
+}
+
+struct VoxelColor
+{
+    uint rgba[256];
+};
 #include "../GridShading.hlsli"
 
 // Input and output structures
 Texture2D gInput : register(t0);
 StructuredBuffer<VoxelOctree> voxelOctree[8] : register(t1);
+StructuredBuffer<VoxelColor> palette[8] : register(t9);
 RWTexture2D<float4> gOutput : register(u0);
 
-int DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float offset)
+uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float offset)
 {
     // Traverse the octree to find the leaf node
     VoxelOctree currentNode = Octree[0];
     if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
     {
-        return 0;
+        if (heat)
+        {
+            return 0; // Intersection found
+        }
+        else
+        {
+            return 300;
+        }
     }
     int stackIndexes[MAX_STACK_SIZE];
     int stackTop = 0;
@@ -68,7 +94,16 @@ int DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float offset)
             // If the node is not a leaf node, push its child nodes onto the stack
         if (currentNode.Depth == ViewDepth)
         {
-            return iterations; // Intersection found
+            if (heat)
+            {
+                return iterations; // Intersection found
+            }
+            else
+            {
+                return currentNode.RGB;
+            }
+                
+            
         }
         for (int i = 0; i < 8; i++)
         {
@@ -94,14 +129,17 @@ int DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float offset)
     {
         if (iterations == MAX_ITERATIONS)
         {
-            return -1;
+            return MAX_ITERATIONS;
         }
         else
         {
            return iterations; // No intersection found//Hit bounding octree
         }
     }
-        return 0; // No intersection found//Hit bounding octree
+    else
+    {
+        return 300; // No intersection found//Hit bounding octree
+    }
 }
 
 bool RenderAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree)
@@ -290,50 +328,84 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     float3 rayVector = CalculateViewVector(v, viewMatrix, worldMatrix);
     //gOutput[int2(x, y)] = float4(rayVector.x, rayVector.y, rayVector.z, 1);
     
-    Ray r;
-    r.RayPos = camPos;
-    r.RayDirection = rayVector;
+    Ray ray;
+    ray.RayPos = camPos;
+    ray.RayDirection = rayVector;
     gOutput[int2(x, y)] = float4(rayVector, 1);
     int heatIterations = 0;
+    //uint colPal = palette[4].rgba[45];
+    //colPal = 4294967295;
+    //colPal = 4456292;
+    ////colPal = 0x00ffffe6;
+    ////colPal = 1;
+    //float r1, g, b, a;
+    //r1 = UnpackVoxelColor(colPal, 0);
+    //g = UnpackVoxelColor(colPal, 1);
+    //b = UnpackVoxelColor(colPal, 2);
+    //a = UnpackVoxelColor(colPal, 3);
+    //gOutput[int2(x, y)] = float4(r1, g, b, a);
+    //return;
     
     for (int i = 0; i < 8; i++)
     {
         StructuredBuffer<VoxelOctree> vo = voxelOctree[i];
-        bool color = 0;
+        int color = 0;
+        uint colorback = 0;
         switch (ViewMode)
         {
             case 0:
                 if (heat)
                 {
-                    heatIterations += DoesRayIntersect(r, vo, (i - 4) * 50);
+                    heatIterations += DoesRayIntersect(ray, vo, (i - 4) * 50);
                 }
-                color = (DoesRayIntersect(r, vo, (i - 4) * 50));
+                colorback = (DoesRayIntersect(ray, vo, (i - 4) * 50));
                 break;
-
             case 1:
-                color = (RenderBox(r, vo));
+                color = (RenderBox(ray, vo));
                 break;
             case 2:
-                color = (RenderAtDepth(r, vo));
+                color = (RenderAtDepth(ray, vo));
                 break;
             case 3:
-                color = (RenderWireframeBox(r, vo));
+                color = (RenderWireframeBox(ray, vo));
                 break;
             case 4:
-                color = (RenderWireframeAtDepth(r, vo));
+                color = (RenderWireframeAtDepth(ray, vo));
                 break;
             case 5:
-                color = (RenderWireframeAboveDepth(r, vo));
+                color = (RenderWireframeAboveDepth(ray, vo));
                 break;
             default:
-                color = (RenderWireframeAtDepth(r, vo));
+                color = (RenderWireframeAtDepth(ray, vo));
                 break;
 
         }
 
-        if (color)
+        if (colorback < 299)
         {
-            gOutput[int2(x, y)] = float4(1, 1, 1, 1);
+            //float evalColor = float(color) / 255.0f;
+            
+            //gOutput[int2(x, y)] = float4(r, r, r, r);
+            //gOutput[int2(x, y)] = float4(g,g,g,g);
+            //gOutput[int2(x, y)] = float4(b,b,b,b);
+            //gOutput[int2(x, y)] = float4(a,a,a,a);
+            //gOutput[int2(x, y)] = float4(evalColor, evalColor, evalColor, 1);
+            //gOutput[int2(x, y)] = float4(r,g,b,1);
+                StructuredBuffer<VoxelColor> cl = palette[0];
+                
+                uint colPal = cl[i].rgba[colorback];
+                //colPal = 0x58bc4c;
+                float r, g, b, a;
+                r = UnpackVoxelColor(colPal, 0);
+                g = UnpackVoxelColor(colPal, 1);
+                b = UnpackVoxelColor(colPal, 2);
+                a = UnpackVoxelColor(colPal, 3);
+                //float he = 1.f / 255.0f;
+                //float c = 255.0f * he;
+                //gOutput[int2(x, y)] = float4(c,c,c,c);
+                gOutput[int2(x, y)] = float4(r, g, b, a);
+            //gOutput[int2(x, y)] = float4(HeatmapColor(color, 0, 255), 1);
+            //gOutput[int2(x, y)] = float4(1, 1, 1, 1);
         }
     }
     if (heat)
