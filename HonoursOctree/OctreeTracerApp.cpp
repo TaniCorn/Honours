@@ -38,41 +38,18 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	g_nvperf.InitializeReportGenerator(renderer->getDevice());
 	g_nvperf.SetFrameLevelRangeName("Frame");
 	g_nvperf.SetNumNestingLevels(2);
-	g_nvperf.SetMaxNumRanges(2); // "Frame" + "Draw"
+	g_nvperf.SetMaxNumRanges(2+8); // "Frame" + "Compute"2 + "Render"
 	g_nvperf.outputOptions.directoryName = "HtmlReports\\Honours";
 
 	// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
 	g_clockStatus = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
 	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
-	g_nvperf.StartCollectionOnNextFrame();
 
 #endif
 
 	textureShader = new TextureShader(renderer->getDevice(), hwnd);
 	rt = new RenderTexture(renderer->getDevice(), screenw, screenh, 0.1f, 100.0f);
 	om = new OrthoMesh(renderer->getDevice(), renderer->getDeviceContext(), screenWidth, screenHeight, 0, 0);
-//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-//	g_nvperf.OnFrameStart(renderer->getDeviceContext());
-//#endif
-//
-//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-//	g_nvperf.PushRange("Computing Voxel Monument");
-//#endif
-//	generateVoxelModel(hwnd, "Monu1", "res/monu1.vox");
-//
-//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-//	g_nvperf.PushRange("Computing Voxel Dragon");
-//#endif
-//	generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
-//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-//	g_nvperf.PopRange(); // Draw
-//#endif
-//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-//	g_nvperf.PopRange(); // Draw
-//#endif
-//#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-//	g_nvperf.OnFrameEnd();
-//#endif
 	generateVoxelModel(hwnd, "Monu1", "res/monu1.vox");
 	generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
 
@@ -113,8 +90,14 @@ bool OctreeTracerApp::frame()
 		return false;
 	}
 
-	// Render the graphics.
+	reconstructModels();
+	computeTracer();
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameEnd();
+#endif
 	result = render();
+
+
 	if (!result)
 	{
 		return false;
@@ -126,7 +109,6 @@ bool OctreeTracerApp::frame()
 
 bool OctreeTracerApp::render()
 {
-	computeTracer();
 		// Clear the scene. (default blue colour)
 		renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
 
@@ -162,9 +144,7 @@ void OctreeTracerApp::computeTracer()
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();  // ortho matrix for 2D rendering
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
 //
-#ifdef NV_PERF_ENABLE_INSTRUMENTATION
-		g_nvperf.OnFrameStart(renderer->getDeviceContext());
-#endif
+
 
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
 		g_nvperf.PushRange("RenderingVoxels");
@@ -179,9 +159,36 @@ void OctreeTracerApp::computeTracer()
 		g_nvperf.PopRange(); // Draw
 #endif
 
+
+}
+
+void OctreeTracerApp::reconstructModels()
+{
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
-		g_nvperf.OnFrameEnd();
+	g_nvperf.OnFrameStart(renderer->getDeviceContext());
 #endif
+	int i = 0;
+	for (auto comp : voxelModels) {
+		if (!construction)
+		{
+			break;
+		}
+		i++;
+		std::string name = "Computing: " + comp.first;
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.PushRange(name.c_str());
+#endif
+		OctreeConstructorShader* octreeConstructor = comp.second.octreeConstructor;
+		CPPOctree* oc = comp.second.cppOctree;
+		octreeConstructor->setShaderParameters(renderer->getDeviceContext());
+		octreeConstructor->updateCPPOctree(renderer->getDeviceContext(), oc);
+		octreeConstructor->compute(renderer->getDeviceContext(), 1, 1, 1);
+		octreeConstructor->unbind(renderer->getDeviceContext());
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.PopRange(); // Draw
+#endif
+
+	}
 
 }
 
@@ -200,6 +207,7 @@ void OctreeTracerApp::gui()
 	ImGui::Checkbox("Heatmap", &heatMap);
 	if(ImGui::Button("Profile")) {
 		g_nvperf.StartCollectionOnNextFrame();
+		construction = true;
 	}
 	switch (voxelViewMode)
 	{

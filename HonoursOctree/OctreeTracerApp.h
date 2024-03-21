@@ -28,6 +28,7 @@ private:
 	CPPOctree* loadVoxModel(std::string identifierName, std::string filepath);
 	void generateVoxelModel(HWND hwnd, std::string identifierName, std::string filepath);
 	void computeTracer();
+	void reconstructModels();
 
 	float screenw, screenh;
 	struct VoxelOctreeModels 
@@ -56,6 +57,9 @@ private:
 	int voxelModelView = -1;
 	VoxelModelLoader modelLoader;
 	int ind = 0;
+
+
+	bool construction = false;
 };
 
 #endif
