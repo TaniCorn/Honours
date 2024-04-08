@@ -62,8 +62,10 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 
 	//generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
 
-	octreeTracer = new OctreeTracerShader(renderer->getDevice(), hwnd, 99999, screenWidth, screenHeight);
+	octreeTracer = new OctreeTracerShader(renderer->getDevice(), hwnd, 200000, screenWidth, screenHeight);
 	octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
+	//octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
+	octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
 
 
 }
@@ -77,6 +79,7 @@ OctreeTracerApp::~OctreeTracerApp()
 	g_nvperf.Reset();
 	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), g_clockStatus);
 #endif
+
 }
 
 
@@ -89,8 +92,14 @@ bool OctreeTracerApp::frame()
 	{
 		return false;
 	}
-
-	reconstructModels();
+#if DYNAMICSCENE
+	recontime -= timer->getTime();
+	if (recontime < 0)
+	{
+		reconstructModels();
+		recontime = 0.1f;
+	}
+#endif
 	computeTracer();
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
 	g_nvperf.OnFrameEnd();
@@ -161,9 +170,9 @@ void OctreeTracerApp::computeTracer()
 
 
 }
-
 void OctreeTracerApp::reconstructModels()
 {
+#if GPURECONSTSRUCT
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
 	g_nvperf.OnFrameStart(renderer->getDeviceContext());
 #endif
@@ -189,6 +198,28 @@ void OctreeTracerApp::reconstructModels()
 #endif
 
 	}
+#else
+	GPUOctree* gpuOctree;
+	loadVoxModelGPU("Monu1", "res/monu1.vox", gpuOctreeRepresentation[0]);
+	loadVoxModelGPU("Dragon", "res/dragon.vox", gpuOctreeRepresentation[1]);
+	loadVoxModelGPU("Cars", "res/cars.vox", gpuOctreeRepresentation[2]);
+	loadVoxModelGPU("Chair", "res/chair.vox", gpuOctreeRepresentation[3]);
+	loadVoxModelGPU("Doom", "res/doom.vox", gpuOctreeRepresentation[4]);
+	loadVoxModelGPU("Menger", "res/menger.vox", gpuOctreeRepresentation[5]);
+	loadVoxModelGPU("teapot", "res/teapot.vox", gpuOctreeRepresentation[6]);
+	loadVoxModelGPU("room", "res/room.vox", gpuOctreeRepresentation[7]);
+#if TMMEASURE
+	tMeasure.CaptureStart();
+#endif
+	octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
+#if TMMEASURE
+	tMeasure.CaptureEnd();
+	tMeasure.SingleOutput("Passing CPU Octree to GPU");
+#endif
+#endif // GPURECONSTSRUCT
+
+
+
 
 }
 
@@ -239,15 +270,6 @@ void OctreeTracerApp::gui()
 
 
 	int vmvChanged = voxelModelView;
-	ImGui::SliderInt("VoxelModelView", &voxelModelView, 0, 10);
-	if (voxelModelView != vmvChanged)
-	{
-		//if (voxelModelView < voxelModelResources.size())
-		//{
-			
-			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
-		//}
-	}
 
 	// Render UI
 	ImGui::Render();
@@ -260,6 +282,9 @@ CPPOctree* OctreeTracerApp::loadVoxModel(std::string identifierName, std::string
 	modelLoader.loadModel(identifierName, filepath);
 	int res = modelLoader.getModelDimensions(identifierName);
 	std::vector<Voxel> voxels = modelLoader.getModelVoxels(identifierName);
+#if TMMEASURE
+	tMeasure.CaptureStart();
+#endif
 	CPPOctree* octree = new CPPOctree();
 	Octree* oc;
 	oc = new Octree(XMFLOAT3(0, res, 0), XMFLOAT3(res, 0, res));
@@ -275,6 +300,46 @@ CPPOctree* OctreeTracerApp::loadVoxModel(std::string identifierName, std::string
 	octree->minSize = 1;
 	octree->octantAmount = oc->getOctantAmount(oc);
 	octree->octree = oc;
+#if TMMEASURE
+	tMeasure.CaptureEnd();
+	tMeasure.SingleOutput(identifierName);
+#endif
+	return octree;
+}
+
+GPUOctree* OctreeTracerApp::loadVoxModelGPU(std::string identifierName, std::string filepath, GPUOctree* oc)
+{
+	//NOTE: Z is up in magicavoxel
+	modelLoader.loadModel(identifierName, filepath);
+	int res = modelLoader.getModelDimensions(identifierName);
+	std::vector<Voxel> voxels = modelLoader.getModelVoxels(identifierName);
+
+#if TMMEASURE
+	tMeasure.CaptureStart();
+#endif
+	GPUOctree* octree;
+	if (oc == nullptr)
+	{
+		octree = new GPUOctree(voxels.size());
+		octree->octree[0].TopLeftFrontPosition = XMFLOAT3(0, res, 0);
+		octree->octree[0].BottomRightBackPosition = XMFLOAT3(res, 0, res);
+	}
+	else {
+		octree = oc;
+		oc->Clear();
+	}
+
+
+	for (int i = 0; i < voxels.size(); i++)
+	{
+		Voxel* vox = new Voxel(voxels[i]);
+		octree->InsertVoxel(vox);
+		octree->voxels.push_back(vox);
+	}
+#if TMMEASURE
+	tMeasure.CaptureEnd();
+	tMeasure.SingleOutput("GPU" + identifierName);
+#endif
 	return octree;
 }
 
@@ -290,12 +355,16 @@ void OctreeTracerApp::generateVoxelModel(HWND hwnd, std::string identifierName, 
 	octreeConstructor->unbind(renderer->getDeviceContext());
 	voxelModelView = octreeConstructor->getSRV();
 
+	GPUOctree* gpuOctree = loadVoxModelGPU(identifierName, filepath);
+
 	voxelModels[identifierName].cppOctree = cppOctree;
+	voxelModels[identifierName].gpuOctree = gpuOctree;
 	voxelModels[identifierName].octreeConstructor = octreeConstructor;
 	voxelModels[identifierName].voxelModel = voxelModelView;
 	voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
 	//voxelModelResources.push_back(voxelModelView);
 	voxelModelResources[ind] = voxelModelView;
 	voxelModelPalettes[ind] = &modelLoader.getPalette(identifierName);
+	gpuOctreeRepresentation[ind] = gpuOctree;
 	ind++;
 }

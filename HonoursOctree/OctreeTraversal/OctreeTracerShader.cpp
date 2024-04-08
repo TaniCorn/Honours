@@ -51,7 +51,12 @@ https://stackoverflow.com/questions/44377201/directx-write-to-texture-with-compu
 	srvDesc.Texture2D.MipLevels = 1;
 	hr = renderer->CreateShaderResourceView(m_tex, &srvDesc, &m_SRV);
 
-
+	D3D11_SHADER_RESOURCE_VIEW_DESC octreedesc;
+	octreedesc.Format = DXGI_FORMAT_UNKNOWN;
+	octreedesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
+	octreedesc.BufferEx.FirstElement = 0;
+	octreedesc.BufferEx.Flags = 0;
+	octreedesc.BufferEx.NumElements = NumberOfOctants;
 	D3D11_BUFFER_DESC constantDataDesc;
 	constantDataDesc.Usage = D3D11_USAGE_DYNAMIC;
 	constantDataDesc.ByteWidth = sizeof(VoxelOctree) * NumberOfOctants;
@@ -59,19 +64,15 @@ https://stackoverflow.com/questions/44377201/directx-write-to-texture-with-compu
 	constantDataDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	constantDataDesc.StructureByteStride = sizeof(VoxelOctree);
 	constantDataDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	for (int i = 0; i < 8; i++)
+	{
+		hr = device->CreateBuffer(&constantDataDesc, 0, &in_octreeBuffer[i]);
+		hr = device->CreateShaderResourceView(in_octreeBuffer[i], &octreedesc, &m_OctreeSRV[i]);
+	}
 
-	hr = device->CreateBuffer(&constantDataDesc, 0, &in_octreeBuffer);
 	constantDataDesc.ByteWidth = sizeof(VoxelColor) * 8;
 	constantDataDesc.StructureByteStride = sizeof(VoxelColor);
 	hr = device->CreateBuffer(&constantDataDesc, 0, &in_voxelPaletteBuffer);
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC octreedesc;
-	octreedesc.Format = DXGI_FORMAT_UNKNOWN;
-	octreedesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	octreedesc.BufferEx.FirstElement = 0;
-	octreedesc.BufferEx.Flags = 0;
-	octreedesc.BufferEx.NumElements = NumberOfOctants;
-	hr = device->CreateShaderResourceView(in_octreeBuffer, &octreedesc, &m_OctreeSRV);
 	octreedesc.BufferEx.NumElements = 8;
 	hr = device->CreateShaderResourceView(in_voxelPaletteBuffer, &octreedesc, &m_paletteSRV);
 
@@ -163,6 +164,37 @@ void OctreeTracerShader::setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3
 	deviceContext->CSSetShaderResources(1, 8, octree);
 }
 
+void OctreeTracerShader::setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPUOctree* octree[8])
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+
+	for (int i = 0; i < 8; i++)
+	{
+		result = deviceContext->Map(in_octreeBuffer[i], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+		VoxelOctree* oct = (VoxelOctree*)mappedResource.pData;
+		const int octreeLength = octree[i]->maxStride;
+		for (int j = 0; j < octreeLength; j++)
+		{
+			int index = j;
+
+			oct[index].BottomRightBackPosition = octree[i]->octree[j].BottomRightBackPosition;
+			oct[index].TopLeftFrontPosition = octree[i]->octree[j].TopLeftFrontPosition;
+			oct[index].Depth = octree[i]->octree[j].depth;
+			oct[index].RGB = octree[i]->octree[j].colorIndex;
+			oct[index].VoxelPosition = octree[i]->octree[j].voxelPosition;
+			for (int k = 0; k < 8; k++)
+			{
+				oct[index].Octants[k] = octree[i]->octree[j].octantsStride[k];
+			}
+		}
+		deviceContext->Unmap(in_octreeBuffer[i], 0);
+		deviceContext->CSSetShaderResources(1+i, 1, &m_OctreeSRV[i]);
+
+	}
+
+}
+
 void OctreeTracerShader::setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8])
 {
 	HRESULT result;
@@ -219,11 +251,20 @@ OctreeTracerShader::~OctreeTracerShader()
 		in_viewBuffer->Release();
 		in_viewBuffer = 0;
 	}	
-	if (in_octreeBuffer)
+	for (int i = 0; i < 8; i++)
 	{
-		in_octreeBuffer->Release();
-		in_octreeBuffer = 0;
+		if (in_octreeBuffer[i])
+		{
+			in_octreeBuffer[i]->Release();
+			in_octreeBuffer[i] = 0;
+		}
+		if (m_OctreeSRV[i])
+		{
+			m_OctreeSRV[i]->Release();
+			m_OctreeSRV[i] = 0;
+		}
 	}
+
 	if (in_octreeStagingBuffer)
 	{
 		in_octreeStagingBuffer->Release();
@@ -239,11 +280,7 @@ OctreeTracerShader::~OctreeTracerShader()
 		m_tex->Release();
 		m_tex = 0;
 	}
-	if (m_OctreeSRV)
-	{
-		m_OctreeSRV->Release();
-		m_OctreeSRV = 0;
-	}
+
 	if (m_SRV)
 	{
 		m_SRV->Release();

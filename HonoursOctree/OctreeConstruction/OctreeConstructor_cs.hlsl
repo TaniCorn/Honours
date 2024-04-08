@@ -1,4 +1,4 @@
-#include "../VoxelOctree.hlsli"
+#include "../Resources/VoxelOctree.hlsli"
 #define MIN_SIZE 1
 #define MAX_DEPTH 500
 static uint MaxStride = 0;
@@ -239,10 +239,10 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     }
     outputOctree[0].TopLeftFrontPosition = float3(0, DimY, 0);
     outputOctree[0].BottomRightBackPosition = float3(DimX, 0, DimZ);
+    
     for (int i = 0; i < numVoxels; i++)
     {
-        InsertVoxel(outputOctree[0], inputOctree[i], outputOctree);
-        
+            InsertVoxel(outputOctree[0], inputOctree[i], outputOctree);
     }
     //for (int i = 0; i < 9999; i++)
     //{

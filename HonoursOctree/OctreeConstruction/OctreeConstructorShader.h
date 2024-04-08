@@ -1,7 +1,7 @@
 #pragma once
 
 #include "BaseShader.h"
-#include "../VoxelOctree.h"
+#include "../Resources/VoxelOctree.h"
 class CPPOctree;
 using namespace std;
 using namespace DirectX;

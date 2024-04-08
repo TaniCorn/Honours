@@ -25,6 +25,12 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
+    <Filter Include="ParallelOctreeConstruction">
+      <UniqueIdentifier>{08fbfe91-3828-4c6c-b9ba-0f0899975df1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\NewFilter1">
+      <UniqueIdentifier>{011233c0-2373-47df-bfd9-f943db33022c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HonoursOctree.cpp">
@@ -42,14 +48,23 @@
     <ClCompile Include="OctreeTraversal\OctreeTracerShader.cpp">
       <Filter>OctreeTraversal</Filter>
     </ClCompile>
-    <ClCompile Include="vox_file.cpp">
-      <Filter>ExternalLibs</Filter>
-    </ClCompile>
-    <ClCompile Include="UtilShaders\TextureShader.cpp">
+    <ClCompile Include="Utility\TextureShader.cpp">
       <Filter>Util</Filter>
     </ClCompile>
-    <ClCompile Include="VoxelModelLoader.cpp">
+    <ClCompile Include="Utility\TimeMeasure.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Resources\VoxelModelLoader.cpp">
       <Filter>Resource Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MagicalVox\vox_file.cpp">
+      <Filter>ExternalLibs</Filter>
+    </ClCompile>
+    <ClCompile Include="ParallelOctreeConstruction\CPPParallelOctree.cpp">
+      <Filter>ParallelOctreeConstruction</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeConstruction\OctreeGPURepresentation.cpp">
+      <Filter>OctreeConstruction</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,10 +74,10 @@
     <FxCompile Include="OctreeTraversal\OctreeTracer_cs.hlsl">
       <Filter>OctreeTraversal</Filter>
     </FxCompile>
-    <FxCompile Include="UtilShaders\Texture_ps.hlsl">
+    <FxCompile Include="Utility\Texture_ps.hlsl">
       <Filter>Util</Filter>
     </FxCompile>
-    <FxCompile Include="UtilShaders\Texture_vs.hlsl">
+    <FxCompile Include="Utility\Texture_vs.hlsl">
       <Filter>Util</Filter>
     </FxCompile>
   </ItemGroup>
@@ -79,27 +94,36 @@
     <ClInclude Include="OctreeTraversal\OctreeTracerShader.h">
       <Filter>OctreeTraversal</Filter>
     </ClInclude>
-    <ClInclude Include="vox_file.h">
-      <Filter>ExternalLibs</Filter>
-    </ClInclude>
-    <ClInclude Include="UtilShaders\TextureShader.h">
+    <ClInclude Include="Utility\TextureShader.h">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="VoxelOctree.h">
+    <ClInclude Include="Utility\TimeMeasure.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Resources\VoxelModelLoader.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="VoxelModelLoader.h">
+    <ClInclude Include="Resources\VoxelOctree.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MagicalVox\vox_file.h">
+      <Filter>ExternalLibs</Filter>
+    </ClInclude>
+    <ClInclude Include="ParallelOctreeConstruction\CPPParallelOctree.h">
+      <Filter>ParallelOctreeConstruction</Filter>
+    </ClInclude>
+    <ClInclude Include="OctreeConstruction\OctreeGPURepresentation.h">
+      <Filter>OctreeConstruction</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Raycasting.hlsli">
+    <None Include="Resources\GridShading.hlsli">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="GridShading.hlsli">
+    <None Include="Resources\Raycasting.hlsli">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="VoxelOctree.hlsli">
+    <None Include="Resources\VoxelOctree.hlsli">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

@@ -8,10 +8,14 @@
 #include "OctreeConstruction/Octree.h"
 #include "OctreeConstruction/OctreeConstructorShader.h"
 #include "OctreeTraversal/OctreeTracerShader.h"
-#include "VoxelModelLoader.h"
-#include "UtilShaders/TextureShader.h"
+#include "Resources/VoxelModelLoader.h"
+#include "Utility/TextureShader.h"
+#include "Utility/TimeMeasure.h"
+#include "OctreeConstruction/OctreeGPURepresentation.h"
 
-
+#define GPURECONSTRUCT 1
+#define TMMEASURE 0
+#define DYNAMICSCENE 0
 class OctreeTracerApp : public BaseApplication
 {
 public:
@@ -26,6 +30,7 @@ protected:
 	void gui();
 private:
 	CPPOctree* loadVoxModel(std::string identifierName, std::string filepath);
+	GPUOctree* loadVoxModelGPU(std::string identifierName, std::string filepath, GPUOctree* oc = nullptr);
 	void generateVoxelModel(HWND hwnd, std::string identifierName, std::string filepath);
 	void computeTracer();
 	void reconstructModels();
@@ -34,6 +39,7 @@ private:
 	struct VoxelOctreeModels 
 	{
 		CPPOctree* cppOctree;
+		GPUOctree* gpuOctree;
 		OctreeConstructorShader* octreeConstructor;
 		ID3D11ShaderResourceView* voxelModel;
 		magicavoxel::Palette* pallette;
@@ -41,6 +47,7 @@ private:
 
 	std::map<std::string, VoxelOctreeModels> voxelModels;
 	ID3D11ShaderResourceView* voxelModelResources[8];
+	GPUOctree* gpuOctreeRepresentation[8];
 	magicavoxel::Palette* voxelModelPalettes[8];
 	OctreeTracerShader* octreeTracer;
 
@@ -59,7 +66,9 @@ private:
 	int ind = 0;
 
 
+	float recontime = 0.1f;
 	bool construction = false;
+	TimeMeasure tMeasure;
 };
 
 #endif

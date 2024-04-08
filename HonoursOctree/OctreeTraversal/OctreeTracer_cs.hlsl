@@ -1,4 +1,5 @@
-#include "../VoxelOctree.hlsli"
+#include "../Resources/VoxelOctree.hlsli"
+#include "../Resources/GridShading.hlsli"
 struct Ray
 {
     float3 RayPos;
@@ -59,7 +60,6 @@ struct VoxelColor
 {
     uint rgba[256];
 };
-#include "../GridShading.hlsli"
 
 // Input and output structures
 Texture2D gInput : register(t0);

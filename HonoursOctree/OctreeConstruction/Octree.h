@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "DXF.h"
 #include <set>
-#include "../VoxelOctree.h"
+#include "../Resources/VoxelOctree.h"
 
 class Octree
 {

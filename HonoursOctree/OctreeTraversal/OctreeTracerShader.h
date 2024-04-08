@@ -4,9 +4,9 @@
 #define OCTREETACERSHADER_H
 
 #include "BaseShader.h"
-#include "../VoxelOctree.h"
-#include "../vox_file.h"
-
+#include "../Resources/VoxelOctree.h"
+#include "../MagicalVox/vox_file.h"
+#include "../OctreeConstruction/OctreeGPURepresentation.h"
 
 
 using namespace std;
@@ -36,6 +36,7 @@ public:
 
 	void setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView = 0, int viewDepth = 0, bool heat = false, int amountOfOctrees = 2);
 	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree[8]);
+	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPUOctree* octree[8]);
 	void setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8]);
 	struct CameraBuffer {
 		XMFLOAT3 position;
@@ -60,7 +61,7 @@ public:
 		UINT32 rgba[256];
 	};
 	struct VoxelPaletteBuffer {
-		VoxelColor palettes[1];
+		VoxelColor palettes[8];
 	};
 private:
 	void initShader(const wchar_t* cfile, const wchar_t* blank);
@@ -74,11 +75,11 @@ private:
 	ID3D11Buffer* in_voxelPaletteBuffer = nullptr;
 	ID3D11Buffer* in_cameraBuffer = nullptr;
 	ID3D11Buffer* in_viewBuffer = nullptr;
-	ID3D11Buffer* in_octreeBuffer = nullptr;
+	ID3D11Buffer* in_octreeBuffer[8];
 	ID3D11Buffer* in_octreeStagingBuffer = nullptr;
 
 	ID3D11Texture2D* m_tex;
-	ID3D11ShaderResourceView* m_OctreeSRV = nullptr;
+	ID3D11ShaderResourceView* m_OctreeSRV[8];
 	ID3D11ShaderResourceView* m_SRV = nullptr;
 	ID3D11ShaderResourceView* m_paletteSRV = nullptr;
 	ID3D11UnorderedAccessView* m_UAV = nullptr;
