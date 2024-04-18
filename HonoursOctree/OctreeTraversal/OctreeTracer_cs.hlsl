@@ -204,6 +204,52 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
     }
     return -1; // No intersection found, return invalid color index
 }
+int OctantBitmask(int octant)
+{
+    //Childmasks
+    switch (octant)
+    {
+        case TLF://4
+            return int((1 << 0 || 0 << 1 || 0 << 2));
+        case TRF://5
+            return int((1 << 0 || 0 << 1 || 1 << 2));
+        case BLF://0
+            return int((0 << 0 || 0 << 1 || 0 << 2));
+        case BRF://1
+            return int((0 << 0 || 0 << 1 || 1 << 2));
+        case TLB://6
+            return int((1 << 0 || 1 << 1 ||0 << 2));
+        case TRB://7
+            return int((1 << 0 || 1 << 1 || 1 << 2));
+        case BLB://2
+            return int((0 << 0 || 1 << 1 || 0 << 2));
+        case BRB://3
+            return int((0 << 0 || 1 << 1 || 1 << 2));
+    }
+}
+int BitmaskToOctant(int bitmask)
+{
+    //Childmasks
+    switch (bitmask)
+    {
+        case 4: //4
+            return TLF;
+        case 5: //5
+            return TRF;
+        case 0: //0
+            return BLF;
+        case 1: //1
+            return BRF;
+        case 6: //6
+            return TLB;
+        case 7: //7
+            return TRB;
+        case 2: //2
+            return BLB;
+        case 3: //3
+            return BRB;
+    }
+}
 uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
 {
     // Traverse the octree to find the leaf node
@@ -212,42 +258,233 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
     {
        return 300;//No intersections with bounding box, Return invalid color index
     }
-    int stackIndexes[MAX_STACK_SIZE];
-    int stackTop = 0;
-    stackIndexes[stackTop] = 0;
-    stackTop++;
-    for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
+    if (currentNode.RGB >= 0 && currentNode.RGB <= 256)
     {
-        //Get top of stack
-        int OctreeStride = stackIndexes[--stackTop];
-        currentNode = Octree[OctreeStride];
+        return currentNode.RGB;
+    }
+    float3 tlfmin = currentNode.TopLeftFrontPosition;
+    float3 brbmax = currentNode.BottomRightBackPosition;
+    //planes
+    float t0x = (tlfmin.x - r.RayPos.x) / r.RayDirection.x;
+    float t0y = (brbmax.y - r.RayPos.y) / r.RayDirection.y;
+    float t0z = (tlfmin.z - r.RayPos.z) / r.RayDirection.z;
+    float t1x = (brbmax.x - r.RayPos.x) / r.RayDirection.x;
+    float t1y = (tlfmin.y - r.RayPos.y) / r.RayDirection.y;
+    float t1z = (brbmax.z - r.RayPos.z) / r.RayDirection.z;
+    float3 smin0 = float3(t0x, t0y, t0z);
+    float3 smax0 = float3(t1x, t1y, t1z);
+    float3 smin = min(smin0, smax0);
+    float3 smax = max(smin0, smax0);
+    //mid
+    float midx = (brbmax.x - tlfmin.x) / 2.0f;
+    float midy = (tlfmin.y - brbmax.y) / 2.0f;
+    float midz = (brbmax.z - tlfmin.z) / 2.0f;
+    float sxmid0 = (midx - r.RayPos.x) * (1.0f / r.RayDirection.x);
+    float symid0 = (midy - r.RayPos.y) * (1.0f / r.RayDirection.y);
+    float szmid0 = (midz - r.RayPos.z) * (1.0f / r.RayDirection.z);
+    float3 smid = float3(sxmid0, symid0, szmid0);
+
+    float tMin = ((smin.x > smin.z ? smin.x : smin.z) > smin.y ? (smin.x > smin.z ? smin.x : smin.z) : smin.y);
+    float tMax = ((smax.x < smax.z ? smax.x : smax.z) < smax.y ? (smax.x < smax.z ? smax.x : smax.z) : smax.y);
     
-        if (currentNode.RGB >= 0 && currentNode.RGB <= 256)
-        {
-           return currentNode.RGB;
-        }
+    float tEnter = max(tMax, 0.0f);
+    float tExit = max(tMin, 0.0f);
+    
+    bool intersection = tMin <= tMax;
+    int xind = 0;
+    int yind = 1;
+    int zind = 2;
+    if (smid.x > smid.y)
+    {
+        int oldXInd = xind;
+        xind = yind;
+        yind = oldXInd;
+    }
+    if (smid.x > smid.z)
+    {
+        int oldXInd = xind;
+        xind = zind;
+        zind = oldXInd;
+    }
+
+    if (smin.y > smin.z)
+    {
+        int oldYInd = yind;
+        yind = zind;
+        zind = oldYInd;
+    }
+
+    int maskslist[3];
+    maskslist[xind] = (0 << 1 | 0 << 2 | 1 << 0);
+    maskslist[yind] = (0 << 1 | 1 << 2 | 0 << 0);
+    maskslist[zind] = (1 << 1 | 0 << 2 | 0 << 0);
+    int lastmask = ((smid.z < tMax) << 1 | (smid.y < tMax) << 2 | (smid.x < tMax) << 0);
+    int childmask = ((smid.z < tMin) << 1 | (smid.y < tMin) << 2 | (smid.x < tMin) << 0);
+    int vmask = ((r.RayDirection.z < 0) << 1 | (r.RayDirection.y < 0) << 2 | (r.RayDirection.x < 0) << 0);
+    int octantno = BitmaskToOctant(childmask);
+    return Octree[currentNode.Octants[octantno]].RGB;
+    
+ //   float3 tMin = float3(t0x < t1x ? t0x : t1x, t0y < t1y ? t0y : t1y, t0z < t1z ? t0z : t1z);
+ //   float3 tMax = float3(t0x > t1x ? t0x : t1x, t0y > t1y ? t0y : t1y, t0z > t1z ? t0z : t1z);
+
+ //   float tem0 = tMin.x > tMin.y ? tMin.x : tMin.y;
+ //   float tExitMin = tem0 > tMin.z ? tem0 : tMin.z;
+ //   float tem1 = tMax.x > tMax.y ? tMax.x : tMax.y;
+ //   float tEnterMax = tem1 > tMax.z ? tem1 : tMax.z;
+
+ //   float sxmin0 = (tMin.x - r.RayPos.x) / r.RayDirection.x;
+ //   float symin0 = (tMin.y - r.RayPos.y) / r.RayDirection.y;
+ //   float szmin0 = (tMin.z - r.RayPos.z) / r.RayDirection.z;
+ //   float3 smin = float3(sxmin0, symin0, szmin0);
+ //   float sxmax0 = (tMax.x - r.RayPos.x) / r.RayDirection.x;
+ //   float symax0 = (tMax.y - r.RayPos.y) / r.RayDirection.y;
+ //   float szmax0 = (tMax.z - r.RayPos.z) / r.RayDirection.z;
+ //   float3 smax = float3(sxmin0, symin0, szmin0);
+
+	////smd
+ //   float midx = (brbmax.x - tlfmin.x) / 2;
+ //   float midy = (tlfmin.y - brbmax.y) / 2;
+ //   float midz = (brbmax.z - tlfmin.z) / 2;
+
+ //   float sxmid0 = (midx - r.RayPos.x) / r.RayDirection.x;
+ //   float symid0 = (midy - r.RayPos.y) / r.RayDirection.y;
+ //   float szmid0 = (midz - r.RayPos.z) / r.RayDirection.z;
+ //   float3 smid = float3(sxmid0, symid0, szmid0);
+
+	////int childmask = ((smid.y < smax.y) << 0 || (smid.z < smax.z) <<  || (smid.x < smax.x) << 2);
+ //   int childmask = ((smid.y < tMax.y) << 0 | (smid.z < tMax.z) << 1 | (smid.x < tMax.x) << 2);
+    
+    
+    
+    
+    
+    
+    //float3 smn = float3(tlfmin.x, brbmax.y, tlfmin.z);
+    //float3 smd = float3((brbmax.x - tlfmin.x) / 2, (tlfmin.y - brbmax.y) / 2, (brbmax.z - tlfmin.z) / 2);
+    //float3 smx = float3(brbmax.x, tlfmin.y, brbmax.z);
+    
+    //    //6 bounding planes
+    //float3 smin = (smn - r.RayPos) / r.RayDirection;
+    //float3 smax = (smx - r.RayPos) / r.RayDirection;
+    ////mid planes
+    //float3 smid = (smd - r.RayPos) / r.RayDirection;
         
-        // If the node is not a leaf node, push its child nodes onto the stack
-        for (int i = 0; i < 8; i++)
-        {
-            //Check all octant indexes
-            int Stride = currentNode.Octants[i];
-            if (Stride != 0)
-            {
-                //Grab child octant
-                VoxelOctree childNode = Octree[Stride];
-                //If we can hit the childoctant, add it to the stack
-                if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
-                {
-                    stackIndexes[stackTop] = Stride;
-                    stackTop++;
-                }
+    //float tMin = ((smin.x > smin.y ? smin.x : smin.y) > smin.z ? (smin.x > smin.y ? smin.x : smin.y) : smin.z);
+    //float tMax = ((smax.x < smax.y ? smax.x : smax.y) < smax.z ? (smax.x < smax.y ? smax.x : smax.y) : smax.z);
+    
+    //int childmask = ((smid.y < tMax) << 0 | (smid.z < tMax) << 1 | (smid.x < tMax) << 2);
+    
+    //    //Assuming x < y < z then sort
+    //int xind = 2;
+    //int yind = 1;
+    //int zind = 0;
+    //if (smid.x > smid.y)
+    //{
+    //    int oldXInd = xind;
+    //    xind = yind;
+    //    yind = oldXInd;
+    //}
+    //if (smid.x > smid.z)
+    //{
+    //    int oldXInd = xind;
+    //    xind = zind;
+    //    zind = oldXInd;
+    //}
+        
+    //if (smin.y > smin.z)
+    //{
+    //    int oldYInd = yind;
+    //    yind = zind;
+    //    zind = oldYInd;
+    //}
+        
+    //int maskslist[3];
+    //maskslist[xind] = (0 << 0 || 0 << 1 || 1 << 2);
+    //maskslist[yind] = (1 << 0 || 0 << 1 || 0 << 2);
+    //maskslist[zind] = (0 << 0 || 1 << 1 || 0 << 2);
+        
+    ////int childmask = ((smid.y < smax.y) << 0 || (smid.z < smax.z) << 1 || (smid.x < smax.x) << 2);
+    
+    //int nextChildren[3];
+    //int octantno = BitmaskToOctant(childmask);
+    //return Octree[currentNode.Octants[childmask]].RGB;
+    
+    
+    
+    
+    
     
 
-            }
-        }
-    }
-    return 300; // No intersection found, return invalid color index
+    //int stackIndexes[MAX_STACK_SIZE];
+    //int stackTop = 0;
+    //stackIndexes[stackTop] = 0;
+    //stackTop++;
+    //for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
+    //{
+    //    //Get top of stack
+    //    int OctreeStride = stackIndexes[--stackTop];
+    //    currentNode = Octree[OctreeStride];
+    
+        
+    //    //nextChildren[0] = 
+    //    //masks[0] = zMask ? 3 : yMask ? 2 : xMask ? 1 : 0;
+    //    //masks[0] = zMask ? 3 : yMask ? 2 : xMask ? 1 : 0;
+    //    //masks[0] = zMask ? 3 : yMask ? 2 : xMask ? 1 : 0;
+        
+    //    //float3 t0 = (float3(tlfmin.x, brbmax.y, tlfmin.z) - r.RayPos) / r.RayDirection;
+    //    //float3 t1 = (float3(brbmax.x, tlfmin.y, brbmax.z) - r.RayPos) / r.RayDirection;
+
+    //    //float3 tMin = min(t0, t1);
+    //    //float3 tMax = max(t0, t1);
+        
+    //    //float tExitMin = max(max(tMin.x, tMin.y), tMin.z);
+    //    //float tEnterMax = min(min(tMax.x, tMax.y), tMax.z);
+        
+    //    //Calculate the ray
+    //    //Calculate the distance the ray has to travel to hit xmid, ymid, zmid
+        
+    //    //switch (index)
+    //    //{
+    //    //    case TLF:
+    //    //        return float4(0, 1, 0, 1);
+    //    //    case TRF:
+    //    //        return float4(1, 1, 0, 1);
+    //    //    case BLF:
+    //    //        return float4(0, 0, 0, 1);
+    //    //    case BRF:
+    //    //        return float4(1, 0, 0, 1);
+    //    //    case TLB:
+    //    //        return float4(0, 1, 1, 1);
+    //    //    case TRB:
+    //    //        return float4(1, 1, 1, 1);
+    //    //    case BLB:
+    //    //        return float4(0, 0, 1, 1);
+    //    //    case BRB:
+    //    //        return float4(1, 0, 1, 1);
+    //    //    default:
+    //    //        return float4(0, 0, 0, 0);
+    //    //}
+    //    // If the node is not a leaf node, push its child nodes onto the stack
+    //    for (int i = 0; i < 8; i++)
+    //    {
+    //        //Check all octant indexes
+    //        int Stride = currentNode.Octants[i];
+    //        if (Stride != 0)
+    //        {
+    //            //Grab child octant
+    //            VoxelOctree childNode = Octree[Stride];
+    //            //If we can hit the childoctant, add it to the stack
+    //            if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
+    //            {
+    //                stackIndexes[stackTop] = Stride;
+    //                stackTop++;
+    //            }
+    
+
+    //        }
+    //    }
+    //}
+    //return 300; // No intersection found, return invalid color index
 }
 uint HeatDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
 {
@@ -474,17 +711,21 @@ void main(int3 groupThreadID : SV_GroupThreadID,
         }
 
         //For case 0
-        if (ViewMode == 0 && color < 299)
+        if (ViewMode == 0)
         {
-            StructuredBuffer<VoxelColor> cl = palette[0];
-            uint colPal = cl[i].rgba[color];//Get RGBA from pallette of model and color index
+            if (color >= 500)
+            {
+                gOutput[int2(x, y)] = GetColorFromOctant(color - 500);
+            }
+            //StructuredBuffer<VoxelColor> cl = palette[0];
+            //uint colPal = cl[i].rgba[color];//Get RGBA from pallette of model and color index
             
-            float r, g, b, a;
-            r = UnpackVoxelColor(colPal, 0);
-            g = UnpackVoxelColor(colPal, 1);
-            b = UnpackVoxelColor(colPal, 2);
-            a = UnpackVoxelColor(colPal, 3);
-            gOutput[int2(x, y)] = float4(r, g, b, a);
+            //float r, g, b, a;
+            //r = UnpackVoxelColor(colPal, 0);
+            //g = UnpackVoxelColor(colPal, 1);
+            //b = UnpackVoxelColor(colPal, 2);
+            //a = UnpackVoxelColor(colPal, 3);
+            //gOutput[int2(x, y)] = float4(r, g, b, a);
         }
         else if(ViewMode > 0)
         {

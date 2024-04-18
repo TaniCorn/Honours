@@ -21,7 +21,9 @@ OctreeTracerApp::OctreeTracerApp()
 {
 
 }
-
+float dot(XMFLOAT3 a, XMFLOAT3 b) {
+	return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
+}
 void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight, Input* in, bool VSYNC, bool FULL_SCREEN)
 {
 	// Call super/parent init function (required!)
@@ -64,7 +66,120 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
 	octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
 
+	XMFLOAT3 tlfmin = XMFLOAT3(0, 2, 0);
+	XMFLOAT3 brbmax = XMFLOAT3(2, 0, 2);
+	/*XMFLOAT3 raypos = XMFLOAT3(3,1.5,0.5);
+	XMFLOAT3 raydir = XMFLOAT3(-0.982683f, -0.131024f, -0.131024f);*/
+	/*XMFLOAT3 raypos = XMFLOAT3(1.6, 0.5, -1);
+	XMFLOAT3 raydir = XMFLOAT3(0, 0, 1);*/
+	//XMFLOAT3 raypos = XMFLOAT3(1.5, 0.5, 3);//FLIP child and last
+	//XMFLOAT3 raydir = XMFLOAT3(0, 0, -1);
+	//XMFLOAT3 raypos = XMFLOAT3(3, 0.5, 0.5);//FLIP child and last
+	//XMFLOAT3 raydir = XMFLOAT3(-1, 0, 0);
+	//XMFLOAT3 raypos = XMFLOAT3(0.5, 3, 0.5);//FLIP child and last
+	//XMFLOAT3 raydir = XMFLOAT3(0, -1, 0);
+	XMFLOAT3 raypos = XMFLOAT3(0.5, 3, 0.5);//FLIP child and last
+	XMFLOAT3 raydir = XMFLOAT3(1, -1, 0);
+	float t0x = (tlfmin.x - raypos.x) / raydir.x;
+	float t0y = (brbmax.y - raypos.y) / raydir.y;
+	float t0z = (tlfmin.z - raypos.z) / raydir.z;	
+	float t1x = (brbmax.x - raypos.x) / raydir.x;
+	float t1y = (tlfmin.y - raypos.y) / raydir.y;
+	float t1z = (brbmax.z - raypos.z) / raydir.z;
 
+	XMFLOAT3 smin = XMFLOAT3(t0x < t1x ? t0x : t1x,t0y < t1y ? t0y : t1y,t0z < t1z ? t0z : t1z);
+	XMFLOAT3 smax = XMFLOAT3(t0x > t1x ? t0x : t1x, t0y > t1y ? t0y : t1y, t0z > t1z ? t0z : t1z);
+
+	//smd
+	float midx = (brbmax.x - tlfmin.x) / 2.0f;
+	float midy = (tlfmin.y - brbmax.y) / 2.0f;
+	float midz = (brbmax.z - tlfmin.z) / 2.0f;
+
+	float sxmid0 = (midx - raypos.x) * (1.0f/ raydir.x);
+	float symid0 = (midy - raypos.y) * (1.0f/ raydir.y);
+	float szmid0 = (midz - raypos.z) * (1.0f/ raydir.z);
+	XMFLOAT3 smid = XMFLOAT3(sxmid0, symid0, szmid0);
+
+	float tMin = ((smin.x > smin.y ? smin.x : smin.y) > smin.z ? (smin.x > smin.y ? smin.x : smin.y) : smin.z);
+	float tMax = ((smax.x < smax.y ? smax.x : smax.y) < smax.z ? (smax.x < smax.y ? smax.x : smax.y) : smax.z);
+	
+	float tEnter = (tMax > 0.0f) ? tMax : 0.0f;
+	float tExit = (tMin > 0.0f) ? tMin : 0.0f;
+
+
+	bool intersection = tMin <= tMax;
+	int xind = 0;
+	int yind = 1;
+	int zind = 2;
+	if (smid.x > smid.y)
+	{
+	    int oldXInd = xind;
+	    xind = yind;
+	    yind = oldXInd;
+	}
+	if (smid.x > smid.z)
+	{
+	    int oldXInd = xind;
+	    xind = zind;
+	    zind = oldXInd;
+	}
+
+	if (smin.y > smin.z)
+	{
+	    int oldYInd = yind;
+	    yind = zind;
+	    zind = oldYInd;
+	}
+
+	int maskslist[3];
+	/*maskslist[xind] = (0 << 2 | 0 << 1 | 1 << 0);
+	maskslist[yind] = (0 << 2 | 1 << 1 | 0 << 0);
+	maskslist[zind] = (1 << 2 | 0 << 1 | 0 << 0);*/
+	//int vmask = ((raydir.z < 0) << 2 | (raydir.y < 0) << 1 | (raydir.x < 0) << 0);
+	//int childmask = ((smid.z < tMax) << 2 | (smid.y < tMax) << 1 | (smid.x < tMax) << 0);
+	//int lastmask = ((smid.z < tMin) << 2 | (smid.y < tMin) << 1 | (smid.x < tMin) << 0);
+
+
+	/*float tem0 = tMin.x > tMin.y ? tMin.x : tMin.y;
+	float tExitMin = tem0 > tMin.z ? tem0 : tMin.z;
+	float tem1 = tMax.x > tMax.y ? tMax.x : tMax.y;
+	float tEnterMax = tem1 > tMax.z ? tem1 : tMax.z;*/
+	//int childmask = ((smid.y < smax.y) << 0 || (smid.z < smax.z) <<  || (smid.x < smax.x) << 2);
+
+	maskslist[xind] = (0 << 1 | 0 << 2 | 1 << 0);
+	maskslist[yind] = (0 << 1 | 1 << 2 | 0 << 0);
+	maskslist[zind] = (1 << 1 | 0 << 2 | 0 << 0);
+	int lastmask = ((smid.z < tMax) << 1 | (smid.y < tMax) << 2 | (smid.x < tMax) << 0 );
+	int childmask = ((smid.z < tMin) << 1 | (smid.y < tMin) << 2 | (smid.x < tMin) << 0);
+	int vmask = ((raydir.z < 0) << 1 | (raydir.y < 0) << 2 | (raydir.x < 0) << 0);
+	int i = 0;
+	//while(true){
+	//	int c = childmask ^ vmask;
+	//	//check next intersected chil
+	//	if (childmask == lastmask)
+	//	{
+	//		//exit
+	//	}
+	//	else
+	//	{
+	//		int id = maskslist[i] & childmask;
+	//		while (id != 0)
+	//		{
+	//			i++;
+	//			id = maskslist[i] & childmask;
+	//		}
+	//		childmask = childmask | maskslist[i];
+	//	}
+	//}
+
+	//0 000
+	//1 001
+	//2 010
+	//3 011
+	//4 100
+	//5 101
+	//6 110
+	//7 111
 }
 
 
