@@ -7,6 +7,9 @@
 #include "../Resources/VoxelOctree.h"
 #define MAX_DEPTH 20
 
+/// <summary>
+/// Offset based octree implementation
+/// </summary>
 class OctreeGPURepresentation
 {
 public:
@@ -23,10 +26,15 @@ public:
     XMFLOAT3 getChildTLFBound(const UINT32 octant) const;
     XMFLOAT3 getChildBRBBound(const UINT32 octant) const;
     int determineOctant(XMFLOAT3 position) const;
-    bool inBoundary(const XMFLOAT3 position) const;
     bool shouldSubdivide() const;
+private:
+    bool inBoundary(const XMFLOAT3 position) const;
+
 };
 
+/// <summary>
+/// Constructs an octree from scratch in an SRV format for usage in a compute shader.
+/// </summary>
 class GPUOctree {
 public:
     GPUOctree(int amountOfVoxels) {

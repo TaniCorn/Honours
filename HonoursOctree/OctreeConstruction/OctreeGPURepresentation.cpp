@@ -23,9 +23,11 @@ OctreeGPURepresentation::~OctreeGPURepresentation()
 }
 void GPUOctree::InsertVoxel(Voxel* Vox)
 {
+    //Depth first insertion
     OctreeGPURepresentation* currentNode = &octree[0];
     UINT32 depth = 0;
     UINT32 currentIndex = 0;
+
     // Traverse the octree to find the leaf node
     for (int i = 0; i < MAX_DEPTH; i++)
     {
@@ -38,7 +40,6 @@ void GPUOctree::InsertVoxel(Voxel* Vox)
 
         // Determine the octant containing the voxel position
         int octantIndex = currentNode->determineOctant(Vox->point);
-        //Octree[currentIndex].RGB = octantIndex; //DEBUGGING PURPOSES
         if (octantIndex < 0)//Outside of octant
         {
             return;
@@ -48,16 +49,19 @@ void GPUOctree::InsertVoxel(Voxel* Vox)
         {
             depth++;
             maxStride++;
-            //currentNode.Octants[octantIndex] = MaxStride;
-            currentNode->octantsStride[octantIndex] = maxStride;
+            currentNode->octantsStride[octantIndex] = maxStride;//Octant will point to the new octant in MaxStride
+
+            //New octant get's created
             octree[maxStride].BottomRightBackPosition = currentNode->getChildBRBBound(octantIndex);
             octree[maxStride].TopLeftFrontPosition = currentNode->getChildTLFBound(octantIndex);
             octree[maxStride].depth = depth;
+            octree[maxStride].colorIndex = 500 + octantIndex;
         }
+        //Set currentNode and currentIndex to the next pointer octant
         UINT32 strideIndex = currentNode->octantsStride[octantIndex];
         currentIndex = strideIndex;
-        // Move to the child node in the appropriate octant
         currentNode = &octree[currentIndex];
+
         depth = currentNode->depth;
 
     }
@@ -84,11 +88,11 @@ void GPUOctree::Clear()
 
 bool OctreeGPURepresentation::shouldSubdivide() const
 {
+    //Will stop subdividing based on size of voxel or depth of octree
     if (depth >= MAX_DEPTH)
     {
         return false;
     }
-    //Could replace with depth
     if (abs(TopLeftFrontPosition.x - BottomRightBackPosition.x) <= MIN_SIZE
         && abs(TopLeftFrontPosition.y - BottomRightBackPosition.y) <= MIN_SIZE
         && abs(TopLeftFrontPosition.z - BottomRightBackPosition.z) <= MIN_SIZE)
@@ -107,6 +111,7 @@ bool OctreeGPURepresentation::inBoundary(const XMFLOAT3 position) const
 
 XMFLOAT3 OctreeGPURepresentation::getChildTLFBound(const UINT32 octant) const
 {
+    //Returns the new TLF coordinate of OctantIndex octant
     XMFLOAT3 TLFBound = TopLeftFrontPosition;
     XMFLOAT3 BRBBound = BottomRightBackPosition;
 
@@ -143,6 +148,7 @@ XMFLOAT3 OctreeGPURepresentation::getChildTLFBound(const UINT32 octant) const
 }
 XMFLOAT3 OctreeGPURepresentation::getChildBRBBound(const UINT32 octant) const
 {
+    //Returns the new BRB coordinate of OctantIndex octant
     XMFLOAT3 TLFBound = TopLeftFrontPosition;
     XMFLOAT3 BRBBound = BottomRightBackPosition;
 
@@ -178,73 +184,79 @@ XMFLOAT3 OctreeGPURepresentation::getChildBRBBound(const UINT32 octant) const
 }
 int OctreeGPURepresentation::determineOctant(XMFLOAT3 position) const
 {
-        XMFLOAT3 TLFBound = TopLeftFrontPosition;
-        XMFLOAT3 BRBBound = BottomRightBackPosition;
+    XMFLOAT3 TLFBound = TopLeftFrontPosition;
+    XMFLOAT3 BRBBound = BottomRightBackPosition;
 
-        // If the point is out of bounds
-        if (!inBoundary(position))
+    // If the point is out of bounds
+    if (!inBoundary(position))
+    {
+        return -1;
+    }
+
+    float midx = ((TLFBound.x
+        + BRBBound.x) / 2.0f);
+    float midy = ((TLFBound.y
+        + BRBBound.y) / 2.0f);
+    float midz = ((TLFBound.z
+        + BRBBound.z) / 2.0f);
+    //X is for left and right
+    //Z is for front and back
+    //Y is for top and down
+    //T = TLF ,Y, BRB ,mY,
+    //B = TLF ,mY, BRB ,Y,
+    //R = TLF mX,, BRB X,,
+    //L = TLF X,, BRB mX,,
+    if (position.z <= midz)
+    {
+        if (position.y > midy)
         {
-            return -1;
-        }
-
-        float midx = ((TLFBound.x
-            + BRBBound.x) / 2.0f);
-        float midy = ((TLFBound.y
-            + BRBBound.y) / 2.0f);
-        float midz = ((TLFBound.z
-            + BRBBound.z) / 2.0f);
-
-        if (position.z <= midz)
-        {
-            if (position.y > midy)
+            if (position.x <= midx)
             {
-                if (position.x <= midx)
-                {
-                    return TLF;
-                }
-                else
-                {
-                    return TRF;
-                }
+                return TLF;
             }
             else
             {
-                if (position.x <= midx)
-                {
-                    return BLF;
-                }
-                else
-                {
-                    return BRF;
-                }
+                return TRF;
             }
         }
         else
         {
-            if (position.y > midy)
+            if (position.x <= midx)
             {
-                if (position.x <= midx)
-                {
-                    return TLB;
-                }
-                else
-                {
-                    return TRB;
-                }
-
+                return BLF;
             }
             else
             {
-                if (position.x <= midx)
-                {
-                    return BLB;
-                }
-                else
-                {
-                    return BRB;
-                }
+                return BRF;
             }
         }
+    }
+    else
+    {
+        if (position.y > midy)
+        {
+            if (position.x <= midx)
+            {
+                return TLB;
+            }
+            else
+            {
+                return TRB;
+            }
+
+        }
+        else
+        {
+            if (position.x <= midx)
+            {
+                return BLB;
+            }
+            else
+            {
+                return BRB;
+            }
+        }
+    }
 }
 
 #undef TLF 0

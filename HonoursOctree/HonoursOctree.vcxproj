@@ -140,7 +140,6 @@
     <ClCompile Include="OctreeConstruction\OctreeConstructorShader.cpp" />
     <ClCompile Include="OctreeConstruction\Octree.cpp" />
     <ClCompile Include="OctreeTraversal\OctreeTracerShader.cpp" />
-    <ClCompile Include="ParallelOctreeConstruction\CPPParallelOctree.cpp" />
     <ClCompile Include="Resources\VoxelModelLoader.cpp" />
     <ClCompile Include="Utility\TextureShader.cpp" />
     <ClCompile Include="Utility\TimeMeasure.cpp" />
@@ -180,14 +179,12 @@
     <ClInclude Include="OctreeConstruction\OctreeConstructorShader.h" />
     <ClInclude Include="OctreeConstruction\Octree.h" />
     <ClInclude Include="OctreeTraversal\OctreeTracerShader.h" />
-    <ClInclude Include="ParallelOctreeConstruction\CPPParallelOctree.h" />
     <ClInclude Include="Resources\VoxelModelLoader.h" />
     <ClInclude Include="Resources\VoxelOctree.h" />
     <ClInclude Include="Utility\TextureShader.h" />
     <ClInclude Include="Utility\TimeMeasure.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\GridShading.hlsli" />
     <None Include="Resources\Raycasting.hlsli" />
     <None Include="Resources\VoxelOctree.hlsli" />
   </ItemGroup>

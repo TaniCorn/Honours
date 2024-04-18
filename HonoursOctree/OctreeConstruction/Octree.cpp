@@ -77,10 +77,10 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
         return;
     }
     // If the point already exists in the octree
-        if (search(vox->point) != nullptr) {
-            std::cout << "Voxel already exists in octree" << std::endl;
-            return;
-        }
+    if (search(vox->point) != nullptr) {
+        std::cout << "Voxel already exists in octree" << std::endl;
+        return;
+    }
  
         
     if (abs(topLeftFrontPoint.x - bottomRightBackPoint.x) <= sizeOfVoxels
@@ -105,8 +105,6 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
     //B = TLF ,mY, BRB ,Y,
     //R = TLF mX,, BRB X,,
     //L = TLF X,, BRB mX,,
-
-
     XMFLOAT3 point = vox->point;
         if (point.z <= midz) {
             if (point.y > midy) {

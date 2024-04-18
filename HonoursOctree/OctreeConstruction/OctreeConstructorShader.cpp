@@ -25,31 +25,30 @@ HRESULT OctreeConstructorShader::createInput()
 	constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	constant_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	hr = device->CreateBuffer(&constant_buffer_desc, 0, &in_dimsBuffer);
+	if (hr != S_OK)
+	{
+		return  hr;
+	}
 
 	D3D11_BUFFER_DESC constantDataDesc;
 	constantDataDesc.Usage = D3D11_USAGE_DYNAMIC;
-	constantDataDesc.ByteWidth = sizeof(VoxelOctree) * numberOfOctants;
 	constantDataDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	constantDataDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	constantDataDesc.StructureByteStride = sizeof(VoxelOctree);
 	constantDataDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-
-	//hr = device->CreateBuffer(&constantDataDesc, 0, &in_voxelOctreeBuffer);
-
 	constantDataDesc.ByteWidth = sizeof(Voxel) * numberOfVoxels;
 	constantDataDesc.StructureByteStride = sizeof(Voxel);
 	hr = device->CreateBuffer(&constantDataDesc, 0, &in_voxelBuffer);
-
+	if (hr != S_OK)
+	{
+		return  hr;
+	}
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
 	srvDesc.BufferEx.FirstElement = 0;
 	srvDesc.BufferEx.Flags = 0;
 	srvDesc.BufferEx.NumElements = numberOfVoxels;
-
 	hr = device->CreateShaderResourceView(in_voxelBuffer, &srvDesc, &m_SRV);
-
-
 
 	return hr;
 }
@@ -66,14 +65,20 @@ HRESULT OctreeConstructorShader::createOutput()
 	outputDesc.CPUAccessFlags = 0;
 	outputDesc.StructureByteStride = sizeof(VoxelOctree);
 	outputDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-
 	hr = (device->CreateBuffer(&outputDesc, 0, &out_voxelOctreeBuffer));
-
+	if (hr != S_OK)
+	{
+		return  hr;
+	}
+	
 	outputDesc.Usage = D3D11_USAGE_DEFAULT;
 	outputDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	outputDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-
 	hr = (device->CreateBuffer(&outputDesc, 0, &out_voxelOctreeStagingBuffer));
+	if (hr != S_OK)
+	{
+		return  hr;
+	}
 
 	D3D11_UNORDERED_ACCESS_VIEW_DESC uavDesc;
 	uavDesc.Buffer.FirstElement = 0;
@@ -81,8 +86,11 @@ HRESULT OctreeConstructorShader::createOutput()
 	uavDesc.Buffer.NumElements = numberOfOctants;
 	uavDesc.Format = DXGI_FORMAT_UNKNOWN;
 	uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-
 	hr = device->CreateUnorderedAccessView(out_voxelOctreeBuffer, &uavDesc, &m_UAV);
+	if (hr != S_OK)
+	{
+		return  hr;
+	}
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -90,7 +98,6 @@ HRESULT OctreeConstructorShader::createOutput()
 	srvDesc.BufferEx.FirstElement = 0;
 	srvDesc.BufferEx.Flags = 0;
 	srvDesc.BufferEx.NumElements = numberOfOctants;
-
 	hr = device->CreateShaderResourceView(out_voxelOctreeStagingBuffer, &srvDesc, &m_outSRV);
 
 	return hr;
@@ -129,12 +136,60 @@ void OctreeConstructorShader::updateCPPOctree(ID3D11DeviceContext* deviceContext
 	deviceContext->Unmap(in_dimsBuffer, 0);
 }
 
+OctreeConstructorShader::~OctreeConstructorShader()
+{
+
+	if (g_pComputeShaderBitonic)
+	{
+		g_pComputeShaderBitonic->Release();
+		g_pComputeShaderBitonic = 0;
+	}
+	if (m_tex)
+	{
+		m_tex->Release();
+		m_tex = 0;
+	}
+	if (m_SRV)
+	{
+		m_SRV->Release();
+		m_SRV = 0;
+	}
+	if (m_UAV)
+	{
+		m_UAV->Release();
+		m_UAV = 0;
+	}	
+	if (m_outSRV)
+	{
+		m_outSRV->Release();
+		m_outSRV = 0;
+	}	
+	if (out_voxelOctreeStagingBuffer)
+	{
+		out_voxelOctreeStagingBuffer->Release();
+		out_voxelOctreeStagingBuffer = 0;
+	}
+	if (out_voxelOctreeBuffer)
+	{
+		out_voxelOctreeBuffer->Release();
+		out_voxelOctreeBuffer = 0;
+	}	
+	if (in_dimsBuffer)
+	{
+		in_dimsBuffer->Release();
+		in_dimsBuffer = 0;
+	}	
+	if (in_voxelBuffer)
+	{
+		in_voxelBuffer->Release();
+		in_voxelBuffer = 0;
+	}
+}
+
 void OctreeConstructorShader::unbind(ID3D11DeviceContext* dc)
 {
 	ID3D11ShaderResourceView* nullSRV[] = { NULL };
 	dc->CSSetShaderResources(0, 1, nullSRV);
-
-	// Unbind output from compute shader
 	ID3D11UnorderedAccessView* nullUAV[] = { NULL };
 	dc->CSSetUnorderedAccessViews(0, 1, nullUAV, 0);
 

@@ -7,6 +7,8 @@
 #define BLB 6
 #define BRB 7
 
+//Reminder: Make sure this matches VoxelOctree.h
+
 struct VoxelOctree
 {
     float3 TopLeftFrontPosition;

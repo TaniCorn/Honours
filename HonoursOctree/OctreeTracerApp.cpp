@@ -60,11 +60,8 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	generateVoxelModel(hwnd, "teapot", "res/teapot.vox");
 	generateVoxelModel(hwnd, "room", "res/room.vox");
 
-	//generateVoxelModel(hwnd, "Dragon", "res/dragon.vox");
-
 	octreeTracer = new OctreeTracerShader(renderer->getDevice(), hwnd, 200000, screenWidth, screenHeight);
 	octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
-	//octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
 	octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
 
 
@@ -125,11 +122,9 @@ bool OctreeTracerApp::render()
 		XMMATRIX orthoMatrix = renderer->getOrthoMatrix();  // ortho matrix for 2D rendering
 		XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
 
-		//renderer->setZBuffer(false);
 		om->sendData(renderer->getDeviceContext());
 		textureShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, octreeTracer->getSRV());
 		textureShader->render(renderer->getDeviceContext(), om->getIndexCount());
-		//renderer->setZBuffer(true);
 
 		// Render GUI
 		gui();
@@ -232,44 +227,41 @@ void OctreeTracerApp::gui()
 
 	// Build UI
 	ImGui::Text("FPS: %.2f", timer->getFPS());
-	ImGui::SliderFloat("VoxelSize", &minSize, 0, 10);
+	//ImGui::SliderFloat("VoxelSize", &minSize, 0, 10);
 	ImGui::SliderInt("VoxelViewMode", &voxelViewMode, 0,5);
-	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 20);
-	ImGui::Checkbox("Heatmap", &heatMap);
+	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 10);
 	if(ImGui::Button("Profile")) {
 		g_nvperf.StartCollectionOnNextFrame();
 		construction = true;
 	}
+	heatMap = false;
 	switch (voxelViewMode)
 	{
 	case 0:
-		viewModeDisplay = "Regular Octree Traversal Method";
+		viewModeDisplay = "Octree Tracer";
 		break;
 	case 1:
-		viewModeDisplay = "Will render all voxels found(provided the octant amounts are less than 9999)";
-		voxelViewDepth = 1;
-		break;
+		viewModeDisplay = "Heatmap additive";
+		heatMap = true;
+		break;	
 	case 2:
-		viewModeDisplay = "Renders the octree boxes on different depths";
+		viewModeDisplay = "Heatmap Average";
+		heatMap = true;
 		break;
 	case 3:
-		viewModeDisplay = "Renders number 1 as wireframes";
-		voxelViewDepth = 1;
+		viewModeDisplay = "Box render at depth";
 		break;
 	case 4:
-		viewModeDisplay = "Renders number 2 as wireframes";
+		viewModeDisplay = "Wireframe render at depth";
 		break;
 	case 5:
-		viewModeDisplay = "Renders 2 as wireframes above depth";
+		viewModeDisplay = "Wireframe render above depth";
 		break;
 	default:
-		viewModeDisplay = "Renders number 2 as wireframes";
+		viewModeDisplay = "Octree Tracer";
 		break;
 	}
 	ImGui::Text(viewModeDisplay.c_str());
-
-
-	int vmvChanged = voxelModelView;
 
 	// Render UI
 	ImGui::Render();

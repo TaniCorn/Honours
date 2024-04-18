@@ -15,29 +15,6 @@ using namespace DirectX;
 class OctreeTracerShader : public BaseShader
 {
 public:
-	OctreeTracerShader(ID3D11Device* device, HWND hwnd, int octantNumber, int inWidth, int inHeight) : BaseShader(device, hwnd)
-	{
-		this->device = device;
-		this->hwnd = hwnd;
-		NumberOfOctants = octantNumber;
-		screenWidth = inWidth;
-		screenHeight = inHeight;
-		initShader(L"OctreeTracer_cs.cso", NULL);
-
-	};
-
-	~OctreeTracerShader();
-	ID3D11Device* device;
-	HWND hwnd;
-	int screenWidth, screenHeight;
-	int NumberOfOctants;
-	ID3D11ShaderResourceView* getSRV() { return m_SRV; };
-	void unbind(ID3D11DeviceContext* dc);
-
-	void setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView = 0, int viewDepth = 0, bool heat = false, int amountOfOctrees = 2);
-	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree[8]);
-	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPUOctree* octree[8]);
-	void setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8]);
 	struct CameraBuffer {
 		XMFLOAT3 position;
 		float padding;
@@ -63,6 +40,31 @@ public:
 	struct VoxelPaletteBuffer {
 		VoxelColor palettes[8];
 	};
+	OctreeTracerShader(ID3D11Device* device, HWND hwnd, int octantNumber, int inWidth, int inHeight) : BaseShader(device, hwnd)
+	{
+		this->device = device;
+		this->hwnd = hwnd;
+		NumberOfOctants = octantNumber;
+		screenWidth = inWidth;
+		screenHeight = inHeight;
+		initShader(L"OctreeTracer_cs.cso", NULL);
+
+	};
+
+	~OctreeTracerShader();
+	ID3D11ShaderResourceView* getSRV() { return m_SRV; };
+	void unbind(ID3D11DeviceContext* dc);
+
+	void setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView = 0, int viewDepth = 0, bool heat = false, int amountOfOctrees = 2);
+	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree[8]);
+	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPUOctree* octree[8]);
+	void setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8]);
+	
+	ID3D11Device* device;
+	HWND hwnd;
+	int screenWidth, screenHeight;
+	int NumberOfOctants;
+
 private:
 	void initShader(const wchar_t* cfile, const wchar_t* blank);
 	HRESULT CreateInput();

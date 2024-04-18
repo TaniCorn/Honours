@@ -24,10 +24,7 @@ std::vector<Voxel> VoxelModelLoader::getModelVoxels(std::string name)
 	const int amountOfVoxels = sparseModel.voxels().size();
 	std::vector<Voxel> voxels;
 	voxels.reserve(amountOfVoxels);
-	//Voxel* voxels = new Voxel[amountOfVoxels];
 	mvoxColPalette[name] = mvoxModelLoader->denseModels().at(0).palette();
-	//mvoxColPalette[name] = mvoxModelLoader->sparseModels().back().palette();
-	//mvoxColPalette[name] = &mvoxModelLoader->denseModels().back().palette();
 
 	for (int i = 0; i < amountOfVoxels; i++)
 	{
@@ -35,8 +32,6 @@ std::vector<Voxel> VoxelModelLoader::getModelVoxels(std::string name)
 		uint8_t posY = sparseModel.voxels()[i].z;
 		uint8_t posZ = sparseModel.voxels()[i].y;
 		uint8_t color = sparseModel.voxels()[i].color;
-		//magicavoxel::Color col = mvoxColPalette.at(color);
-		//XMFLOAT4 rgba = 
 
 		Voxel vox;
 		vox.color = color;

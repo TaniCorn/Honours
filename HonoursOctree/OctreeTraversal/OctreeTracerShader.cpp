@@ -201,6 +201,7 @@ void OctreeTracerShader::setVoxelPalette(ID3D11DeviceContext* deviceContext, mag
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	result = deviceContext->Map(in_voxelPaletteBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	VoxelPaletteBuffer* col = (VoxelPaletteBuffer*)mappedResource.pData;
+	//Convert RGBA to UINT
 	for (int i = 0; i < 8; i++)
 	{
 		for (int j = 0; j < 256; j++)
@@ -212,7 +213,6 @@ void OctreeTracerShader::setVoxelPalette(ID3D11DeviceContext* deviceContext, mag
 				((static_cast<UINT32>(c.g) << 8) & 0x0000ff00) |
 				((static_cast<UINT32>(c.b) << 16) & 0x00ff0000) |
 				((static_cast<UINT32>(c.a) << 24) & 0xff000000);
-			//ucol = 0x58bc4c;
 
 			const float coefficient = 1.f ;
 			float r = (ucol & 0x000000ff) * coefficient;
@@ -296,6 +296,7 @@ OctreeTracerShader::~OctreeTracerShader()
 		m_UAV->Release();
 		m_UAV = 0;
 	}
+
 }
 
 void OctreeTracerShader::unbind(ID3D11DeviceContext* dc)

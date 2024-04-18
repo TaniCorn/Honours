@@ -25,9 +25,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="ParallelOctreeConstruction">
-      <UniqueIdentifier>{08fbfe91-3828-4c6c-b9ba-0f0899975df1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\NewFilter1">
       <UniqueIdentifier>{011233c0-2373-47df-bfd9-f943db33022c}</UniqueIdentifier>
     </Filter>
@@ -59,9 +56,6 @@
     </ClCompile>
     <ClCompile Include="MagicalVox\vox_file.cpp">
       <Filter>ExternalLibs</Filter>
-    </ClCompile>
-    <ClCompile Include="ParallelOctreeConstruction\CPPParallelOctree.cpp">
-      <Filter>ParallelOctreeConstruction</Filter>
     </ClCompile>
     <ClCompile Include="OctreeConstruction\OctreeGPURepresentation.cpp">
       <Filter>OctreeConstruction</Filter>
@@ -109,17 +103,11 @@
     <ClInclude Include="MagicalVox\vox_file.h">
       <Filter>ExternalLibs</Filter>
     </ClInclude>
-    <ClInclude Include="ParallelOctreeConstruction\CPPParallelOctree.h">
-      <Filter>ParallelOctreeConstruction</Filter>
-    </ClInclude>
     <ClInclude Include="OctreeConstruction\OctreeGPURepresentation.h">
       <Filter>OctreeConstruction</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\GridShading.hlsli">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="Resources\Raycasting.hlsli">
       <Filter>Resource Files</Filter>
     </None>

@@ -3,6 +3,9 @@
 #include <set>
 #include "../Resources/VoxelOctree.h"
 
+/// <summary>
+/// Naive pointer based octree implementation
+/// </summary>
 class Octree
 {
 public:
@@ -27,18 +30,22 @@ public:
     void insert(Voxel* point, const float sizeOfVoxels);
 
     int depth = 0;
-    /// <summary>
-    /// Recursively adds up all the child octrees in this octree
-    /// </summary>
+
     int getOctantAmount(Octree* oc);
-    /// <summary>
-    /// Recursively checks all child octrees to find the max depth
-    /// </summary>
     int getMaxDepth(Octree* oc, int depth);
 private:
+    /// <summary>
+    /// Searches for a voxel at point, and returns it if there is one there
+    /// </summary>
     Voxel* search(XMFLOAT3 point);
+    /// <summary>
+    /// Checks if the point is within the TLF and BRB bounds
+    /// </summary>
     bool inBoundary(XMFLOAT3 point);
 
+    /// <summary>
+    /// returns the bigger betweent the two numbers
+    /// </summary>
     int bigger(int a, int b);
 };
 

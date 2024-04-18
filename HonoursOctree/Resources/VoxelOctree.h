@@ -4,6 +4,7 @@
 #define VOXELOCTREE_H
 
 #include "DXF.h"
+//Reminder: Make sure this matches VoxelOctree.hlsli
 struct VoxelOctree
 {
 	DirectX::XMFLOAT3 TopLeftFrontPosition;
