@@ -5,9 +5,8 @@ struct Ray
     float3 RayPos;
     float3 RayDirection;
 };
-#define MAX_STACK_SIZE 100
-#define MAX_ITERATIONS 75
-#define MAX_DEBUG_ITERATIONS 999
+#define MAX_STACK_SIZE 40
+#define MAX_ITERATIONS 150
 
 cbuffer InvMatrixBuffer : register(b0)
 {
@@ -66,10 +65,9 @@ float UnpackVoxelColor(uint color, int rgba)
             return 1;
     }
 }
-bool HitWireframe(Ray r, float3 tlf, float3 brb)
+bool HitWireframe(Ray r, float3 tlf, float3 brb, float width)
 {
     bool hitflag = false;
-    float width = 0.2f;
     //Top
     float3 tlb = float3(tlf.x + width, tlf.y - width, brb.z + width);
     float3 blf = float3(tlf.x + width, brb.y + width, tlf.z + width);
@@ -123,7 +121,7 @@ bool VoxelDoesRayIntersectAboveDepth(Ray r, StructuredBuffer<VoxelOctree> Octree
     
         if (currentNode.Depth <= ViewDepth)
         {
-            if (HitWireframe(r, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
+            if (HitWireframe(r, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset, 0.05))
             {
                 return true;
             }
@@ -161,7 +159,7 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
     VoxelOctree currentNode = Octree[0];
     if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
     {
-        return -1; //No intersections with bounding box, Return invalid color index
+        return -1;
     }
     int stackIndexes[MAX_STACK_SIZE];
     int stackTop = 0;
@@ -172,37 +170,83 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
         //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
-    
+        //if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
+        //{
+        //    continue;
+        //}
+            
+        //if (currentNode.RGB >= 0 && currentNode.RGB <= 256)
         if (currentNode.Depth == ViewDepth)
         {
             return OctreeStride;
         }
         
-        // If the node is not a leaf node, push its child nodes onto the stack
+        float closest[8];
         for (int i = 0; i < 8; i++)
         {
+            closest[i] = 99999;
             //Check all octant indexes
             int Stride = currentNode.Octants[i];
             if (Stride != 0)
             {
                 //Grab child octant
                 VoxelOctree childNode = Octree[Stride];
-                if (childNode.Depth > ViewDepth)
-                {
-                    break;
-                }
                 //If we can hit the childoctant, add it to the stack
-                if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
-                {
-                    stackIndexes[stackTop] = Stride;
-                    stackTop++;
-                }
-    
 
+                float3 tlf = childNode.TopLeftFrontPosition + offset;
+                float3 brb = childNode.BottomRightBackPosition + offset;
+                float3 loc = float3(brb.x - tlf.x, tlf.y - brb.y, brb.z - tlf.z) / 2.0f;
+                loc = loc - r.RayPos;
+                float3 t0 = (float3(tlf.x, brb.y, tlf.z) - r.RayPos) / r.RayDirection;
+                float3 t1 = (float3(brb.x, tlf.y, brb.z) - r.RayPos) / r.RayDirection;
+
+                float3 tMax = max(t0, t1);
+
+                float tEnterMax = min(min(tMax.x, tMax.y), tMax.z);
+                closest[i] = tEnterMax;
             }
         }
+        
+        float closestindex[8];
+        float close;
+        for (int i = 0; i < 8; i++)
+        {
+            close = 99999;
+            for (int j = 0; j < 8; j++)
+            {
+                if (closest[j] < close)
+                {
+                    close = closest[j];
+                    closestindex[i] = j;
+                }
+            }
+            closest[closestindex[i]] = 999999;
+            
+        }
+        
+        
+        for (int i = 7; i >= 0; i--)
+        {
+            
+            int Stride = currentNode.Octants[closestindex[i]];
+
+            
+            if (Stride != 0)
+            {
+                VoxelOctree childNode = Octree[Stride];
+                
+                if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
+                {
+                        stackIndexes[stackTop] = Stride;
+                        stackTop++;
+
+                }
+
+            }
+
+        }
     }
-    return -1; // No intersection found, return invalid color index
+    return -1;
 }
 uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
 {
@@ -210,7 +254,15 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
     VoxelOctree currentNode = Octree[0];
     if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
     {
-       return 300;//No intersections with bounding box, Return invalid color index
+        if (heat)
+        {
+            return 0;
+        }
+        else
+        {
+            return 300; //No intersections with bounding box, Return invalid color index
+            
+        }
     }
     int stackIndexes[MAX_STACK_SIZE];
     int stackTop = 0;
@@ -221,15 +273,24 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
         //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
-    
-        if (currentNode.RGB >= 0 && currentNode.RGB <= 256)
+        //if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
+        //{
+        //    continue;
+        //}
+            
+        if (currentNode.RGB >= 0 && currentNode.RGB <= 256 && !heat)
         {
-           return currentNode.RGB;
+                return currentNode.RGB;
+        }
+        if (currentNode.Depth == ViewDepth && heat)
+        {
+                return iterations;
         }
         
-        // If the node is not a leaf node, push its child nodes onto the stack
+        float closest[8];
         for (int i = 0; i < 8; i++)
         {
+            closest[i] = 99999;
             //Check all octant indexes
             int Stride = currentNode.Octants[i];
             if (Stride != 0)
@@ -237,17 +298,68 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
                 //Grab child octant
                 VoxelOctree childNode = Octree[Stride];
                 //If we can hit the childoctant, add it to the stack
+
+                    float3 tlf = childNode.TopLeftFrontPosition + offset;
+                    float3 brb = childNode.BottomRightBackPosition + offset;
+                    float3 loc = float3(brb.x - tlf.x, tlf.y - brb.y, brb.z - tlf.z) / 2.0f;
+                loc = loc - r.RayPos;
+                float3 t0 = (float3(tlf.x, brb.y, tlf.z) - r.RayPos) / r.RayDirection;
+                float3 t1 = (float3(brb.x, tlf.y, brb.z) - r.RayPos) / r.RayDirection;
+
+                float3 tMax = max(t0, t1);
+
+                float tEnterMax = min(min(tMax.x, tMax.y), tMax.z);
+                closest[i] = tEnterMax;
+            }
+        }
+        
+        float closestindex[8];
+        float close;
+        for (int i = 0; i < 8; i++)
+        {
+            close = 99999;
+            for (int j = 0; j < 8; j++)
+            {
+                if (closest[j] < close)
+                {
+                    close = closest[j];
+                    closestindex[i] = j;
+                }
+            }
+            closest[closestindex[i]] = 999999;
+            
+        }
+        
+        
+        for (int i = 7; i >= 0; i--)
+        {
+            
+            int Stride = currentNode.Octants[closestindex[i]];
+
+            
+            if (Stride != 0)
+            {
+                VoxelOctree childNode = Octree[Stride];
+                
                 if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
                 {
                     stackIndexes[stackTop] = Stride;
                     stackTop++;
                 }
-    
 
             }
+
         }
     }
-    return 300; // No intersection found, return invalid color index
+    if (heat)
+    {
+        return iterations;
+    }
+    else
+    {
+        return 300; //No intersections with bounding box, Return invalid color index
+            
+    }
 }
 uint HeatDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
 {
@@ -320,7 +432,7 @@ bool RenderWireframeAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 
     //Renders octree wireframe at depths
     if (rayBox(r.RayPos, r.RayDirection, Octree[stride].TopLeftFrontPosition + offset, Octree[stride].BottomRightBackPosition + offset))
     {
-        if (HitWireframe(r, Octree[stride].TopLeftFrontPosition + offset, Octree[stride].BottomRightBackPosition + offset))
+        if (HitWireframe(r, Octree[stride].TopLeftFrontPosition + offset, Octree[stride].BottomRightBackPosition + offset, 0.2f))
         {
             return true;
         }
@@ -452,7 +564,7 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 color = DoesRayIntersect(ray, vo, offset);
                 break;
             case 1:
-                heatIterations += HeatDoesRayIntersect(ray, vo, offset);
+                heatIterations += DoesRayIntersect(ray, vo, offset);
                 break;
             case 2:
                 int heat = HeatDoesRayIntersect(ray, vo, offset);

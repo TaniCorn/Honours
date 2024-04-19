@@ -241,11 +241,11 @@ void OctreeTracerApp::gui()
 		viewModeDisplay = "Octree Tracer";
 		break;
 	case 1:
-		viewModeDisplay = "Heatmap additive";
+		viewModeDisplay = "Heatmap";
 		heatMap = true;
 		break;	
 	case 2:
-		viewModeDisplay = "Heatmap Average";
+		viewModeDisplay = "Old Tracer Heatmap";
 		heatMap = true;
 		break;
 	case 3:
