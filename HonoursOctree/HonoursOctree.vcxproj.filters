@@ -28,16 +28,19 @@
     <Filter Include="Resource Files\NewFilter1">
       <UniqueIdentifier>{011233c0-2373-47df-bfd9-f943db33022c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="OctreeConstruction\GPU Construction">
+      <UniqueIdentifier>{d3caf833-742c-4641-9de7-4ff4ba1c39be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OctreeConstruction\NaiveConstruction">
+      <UniqueIdentifier>{53d25a79-bc47-4e98-9ef0-4b97406c915d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OctreeConstruction\CPU Construction">
+      <UniqueIdentifier>{dcab68cb-e0b1-4868-9f92-46bd67e3ff5d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HonoursOctree.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="OctreeConstruction\OctreeConstructorShader.cpp">
-      <Filter>OctreeConstruction</Filter>
-    </ClCompile>
-    <ClCompile Include="OctreeConstruction\Octree.cpp">
-      <Filter>OctreeConstruction</Filter>
     </ClCompile>
     <ClCompile Include="OctreeTracerApp.cpp">
       <Filter>Source Files</Filter>
@@ -57,14 +60,17 @@
     <ClCompile Include="MagicalVox\vox_file.cpp">
       <Filter>ExternalLibs</Filter>
     </ClCompile>
-    <ClCompile Include="OctreeConstruction\OctreeGPURepresentation.cpp">
-      <Filter>OctreeConstruction</Filter>
+    <ClCompile Include="OctreeConstruction\OctreeConstructorShader.cpp">
+      <Filter>OctreeConstruction\GPU Construction</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeConstruction\NaiveOctree.cpp">
+      <Filter>OctreeConstruction\NaiveConstruction</Filter>
+    </ClCompile>
+    <ClCompile Include="OctreeConstruction\OctreeCPUConstructor.cpp">
+      <Filter>OctreeConstruction\CPU Construction</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="OctreeConstruction\OctreeConstructor_cs.hlsl">
-      <Filter>OctreeConstruction</Filter>
-    </FxCompile>
     <FxCompile Include="OctreeTraversal\OctreeTracer_cs.hlsl">
       <Filter>OctreeTraversal</Filter>
     </FxCompile>
@@ -74,14 +80,11 @@
     <FxCompile Include="Utility\Texture_vs.hlsl">
       <Filter>Util</Filter>
     </FxCompile>
+    <FxCompile Include="OctreeConstruction\OctreeConstructor_cs.hlsl">
+      <Filter>OctreeConstruction\GPU Construction</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="OctreeConstruction\OctreeConstructorShader.h">
-      <Filter>OctreeConstruction</Filter>
-    </ClInclude>
-    <ClInclude Include="OctreeConstruction\Octree.h">
-      <Filter>OctreeConstruction</Filter>
-    </ClInclude>
     <ClInclude Include="OctreeTracerApp.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -103,8 +106,14 @@
     <ClInclude Include="MagicalVox\vox_file.h">
       <Filter>ExternalLibs</Filter>
     </ClInclude>
-    <ClInclude Include="OctreeConstruction\OctreeGPURepresentation.h">
-      <Filter>OctreeConstruction</Filter>
+    <ClInclude Include="OctreeConstruction\OctreeConstructorShader.h">
+      <Filter>OctreeConstruction\GPU Construction</Filter>
+    </ClInclude>
+    <ClInclude Include="OctreeConstruction\NaiveOctree.h">
+      <Filter>OctreeConstruction\NaiveConstruction</Filter>
+    </ClInclude>
+    <ClInclude Include="OctreeConstruction\OctreeCPUConstructor.h">
+      <Filter>OctreeConstruction\CPU Construction</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -5,13 +5,13 @@
 
 // Includes
 #include "DXF.h"	// include dxframework
-#include "OctreeConstruction/Octree.h"
+#include "OctreeConstruction/NaiveOctree.h"
 #include "OctreeConstruction/OctreeConstructorShader.h"
 #include "OctreeTraversal/OctreeTracerShader.h"
 #include "Resources/VoxelModelLoader.h"
 #include "Utility/TextureShader.h"
 #include "Utility/TimeMeasure.h"
-#include "OctreeConstruction/OctreeGPURepresentation.h"
+#include "OctreeConstruction/OctreeCPUConstructor.h"
 
 #define GPURECONSTRUCT 1
 #define TMMEASURE 0
@@ -29,19 +29,24 @@ protected:
 	bool render();
 	void gui();
 private:
-	CPPOctree* loadVoxModel(std::string identifierName, std::string filepath);
-	GPUOctree* loadVoxModelGPU(std::string identifierName, std::string filepath, GPUOctree* oc = nullptr);
-	void generateVoxelModel(HWND hwnd, std::string identifierName, std::string filepath);
+	void loadModels();
+	/// <summary>
+	/// Calculates the tracer algorithm
+	/// </summary>
 	void computeTracer();
-	void reconstructModels();
+
+	void gpuReconstruction(HWND hwnd);
+	void cpuReconstruction();
+	GPUOctree* constructInCPU(std::string identifierName, GPUOctree* oc = nullptr);
+	OctreeConstructorShader* constructInGPU(HWND hwnd, std::string identifierName, OctreeConstructorShader* oc = nullptr);
 
 	float screenw, screenh;
 	struct VoxelOctreeModels 
 	{
-		CPPOctree* cppOctree;
+		//NaiveCPUOctree* cppOctree;
 		GPUOctree* gpuOctree;
 		OctreeConstructorShader* octreeConstructor;
-		ID3D11ShaderResourceView* voxelModel;
+		//ID3D11ShaderResourceView* voxelModel;
 		magicavoxel::Palette* pallette;
 	};
 
@@ -49,6 +54,7 @@ private:
 	ID3D11ShaderResourceView* voxelModelResources[8];
 	GPUOctree* gpuOctreeRepresentation[8];
 	magicavoxel::Palette* voxelModelPalettes[8];
+
 	OctreeTracerShader* octreeTracer;
 
 	TextureShader* textureShader;
@@ -67,7 +73,7 @@ private:
 
 
 	float recontime = 0.1f;
-	bool construction = false;
+	int construction = 0;
 	TimeMeasure tMeasure;
 };
 

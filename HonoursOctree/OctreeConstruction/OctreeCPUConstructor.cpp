@@ -1,4 +1,4 @@
-#include "OctreeGPURepresentation.h"
+#include "OctreeCPUConstructor.h"
 #define MAX_DEPTH 20
 #define MIN_SIZE 1
 #define TLF 0

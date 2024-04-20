@@ -16,6 +16,7 @@ void VoxelModelLoader::loadModel(std::string name, std::string path)
 	{
 		mvoxModelLoader->Load(path);
 		mVoxModels[name] = mvoxModelLoader->sparseModels().size() - 1;
+		mvoxColPalette[name] = mvoxModelLoader->denseModels().at(0).palette();
 	}
 }
 std::vector<Voxel> VoxelModelLoader::getModelVoxels(std::string name)

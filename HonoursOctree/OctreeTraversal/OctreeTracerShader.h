@@ -6,7 +6,7 @@
 #include "BaseShader.h"
 #include "../Resources/VoxelOctree.h"
 #include "../MagicalVox/vox_file.h"
-#include "../OctreeConstruction/OctreeGPURepresentation.h"
+#include "../OctreeConstruction/OctreeCPUConstructor.h"
 
 
 using namespace std;
