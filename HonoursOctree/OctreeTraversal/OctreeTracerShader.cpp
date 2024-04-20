@@ -171,7 +171,13 @@ void OctreeTracerShader::setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPU
 
 	for (int i = 0; i < 8; i++)
 	{
+		GPUOctree* oc = octree[i];
+		if (oc == NULL)
+		{
+			return;
+		}
 		result = deviceContext->Map(in_octreeBuffer[i], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
 		VoxelOctree* oct = (VoxelOctree*)mappedResource.pData;
 		const int octreeLength = octree[i]->maxStride;
 		for (int j = 0; j < octreeLength; j++)
@@ -193,6 +199,31 @@ void OctreeTracerShader::setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPU
 
 	}
 
+}
+
+void OctreeTracerShader::setOctreeVoxel(ID3D11DeviceContext* deviceContext, GPUOctree* octree)
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	result = deviceContext->Map(in_octreeBuffer[0], 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	VoxelOctree* oct = (VoxelOctree*)mappedResource.pData;
+	const int octreeLength = octree->maxStride;
+	for (int j = 0; j < octreeLength; j++)
+	{
+		int index = j;
+
+		oct[index].BottomRightBackPosition = octree->octree[j].BottomRightBackPosition;
+		oct[index].TopLeftFrontPosition = octree->octree[j].TopLeftFrontPosition;
+		oct[index].Depth = octree->octree[j].depth;
+		oct[index].RGB = octree->octree[j].colorIndex;
+		oct[index].VoxelPosition = octree->octree[j].voxelPosition;
+		for (int k = 0; k < 8; k++)
+		{
+			oct[index].Octants[k] = octree->octree[j].octantsStride[k];
+		}
+	}
+	deviceContext->Unmap(in_octreeBuffer[0], 0);
+	deviceContext->CSSetShaderResources(1, 1, &m_OctreeSRV[0]);
 }
 
 void OctreeTracerShader::setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8])

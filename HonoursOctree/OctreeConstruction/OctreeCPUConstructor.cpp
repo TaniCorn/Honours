@@ -1,6 +1,5 @@
 #include "OctreeCPUConstructor.h"
 #define MAX_DEPTH 20
-#define MIN_SIZE 1
 #define TLF 0
 #define TRF 1
 #define BLF 2
@@ -31,7 +30,7 @@ void GPUOctree::InsertVoxel(Voxel* Vox)
     // Traverse the octree to find the leaf node
     for (int i = 0; i < MAX_DEPTH; i++)
     {
-        if (!currentNode->shouldSubdivide())
+        if (!currentNode->shouldSubdivide(minSize))
         {
             currentNode->colorIndex = Vox->color;
             currentNode->voxelPosition = Vox->point;
@@ -86,16 +85,16 @@ void GPUOctree::Clear()
     voxels.clear();
 }
 
-bool OctreeGPURepresentation::shouldSubdivide() const
+bool OctreeGPURepresentation::shouldSubdivide(int minSize) const
 {
     //Will stop subdividing based on size of voxel or depth of octree
     if (depth >= MAX_DEPTH)
     {
         return false;
     }
-    if (abs(TopLeftFrontPosition.x - BottomRightBackPosition.x) <= MIN_SIZE
-        && abs(TopLeftFrontPosition.y - BottomRightBackPosition.y) <= MIN_SIZE
-        && abs(TopLeftFrontPosition.z - BottomRightBackPosition.z) <= MIN_SIZE)
+    if (abs(TopLeftFrontPosition.x - BottomRightBackPosition.x) <= minSize
+        && abs(TopLeftFrontPosition.y - BottomRightBackPosition.y) <= minSize
+        && abs(TopLeftFrontPosition.z - BottomRightBackPosition.z) <= minSize)
     {
         return false;
     }
@@ -268,5 +267,5 @@ int OctreeGPURepresentation::determineOctant(XMFLOAT3 position) const
 #undef BLB 6
 #undef BRB 7
 #undef MAX_DEPTH
-#undef MIN_SIZE
+#undef minSize
 

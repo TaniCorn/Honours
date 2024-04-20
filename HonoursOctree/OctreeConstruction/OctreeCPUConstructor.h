@@ -26,7 +26,7 @@ public:
     XMFLOAT3 getChildTLFBound(const UINT32 octant) const;
     XMFLOAT3 getChildBRBBound(const UINT32 octant) const;
     int determineOctant(XMFLOAT3 position) const;
-    bool shouldSubdivide() const;
+    bool shouldSubdivide(int size) const;
 private:
     bool inBoundary(const XMFLOAT3 position) const;
 
@@ -49,7 +49,7 @@ public:
         voxels.clear();
     };
     void InsertVoxel(Voxel* Vox);
-
+    int minSize = 1;
     UINT32 maxStride = 0;
     OctreeGPURepresentation* octree;
     std::vector<Voxel*> voxels;

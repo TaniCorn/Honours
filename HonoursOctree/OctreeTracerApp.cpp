@@ -70,6 +70,17 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 }
 void OctreeTracerApp::loadModels()
 {
+	memMeasure.CaptureStart();
+
+	modelNames[0] = "monu1";
+	modelNames[1] = "dragon";
+	modelNames[2] = "cars";
+	modelNames[3] = "chair";
+	modelNames[4] = "doom";
+	modelNames[5] = "menger";
+	modelNames[6] = "teapot";
+	modelNames[7] = "room";
+
 	modelLoader.loadModel("monu1", "res/monu1.vox");
 	modelLoader.loadModel("dragon", "res/dragon.vox");
 	modelLoader.loadModel("cars", "res/cars.vox");
@@ -87,8 +98,9 @@ void OctreeTracerApp::loadModels()
 	voxelModels["menger"] = VoxelOctreeModels();
 	voxelModels["teapot"] = VoxelOctreeModels();
 	voxelModels["room"] = VoxelOctreeModels();
-
+	memMeasure.CaptureEnd();
 	//magicavoxel::Palette* g = &modelLoader.getPalette("monu1");
+
 
 }
 
@@ -103,7 +115,6 @@ OctreeTracerApp::~OctreeTracerApp()
 
 }
 
-
 bool OctreeTracerApp::frame()
 {
 	bool result;
@@ -115,6 +126,7 @@ bool OctreeTracerApp::frame()
 	}
 	//recontime -= timer->getTime();
 	//if (recontime < 0 && construction)
+
 	if (construction == 0)
 	{
 		computeTracer();
@@ -213,42 +225,9 @@ void OctreeTracerApp::gui()
 	// Build UI
 	ImGui::Text("FPS: %.2f", timer->getFPS());
 	//ImGui::SliderFloat("VoxelSize", &minSize, 0, 10);
+	ImGui::Text(viewModeDisplay.c_str());
 	ImGui::SliderInt("VoxelViewMode", &voxelViewMode, 0,5);
 	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 8);
-
-	if(ImGui::Button("Construct Octree in CPU")) {
-		cpuReconstruction();
-		octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
-	}
-	if (ImGui::Button("Construct Octree in GPU")) {
-		gpuReconstruction(wnd);
-		octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
-	}
-	
-	if(ImGui::Button("Profile Tracer")) {
-		g_nvperf.StartCollectionOnNextFrame();
-	}
-	if (ImGui::Button("Profile CPU Construction")) {
-		g_nvperf.StartCollectionOnNextFrame();
-		construction = 1;
-	}
-	if (ImGui::Button("Profile GPU Construction")) {
-		g_nvperf.StartCollectionOnNextFrame();
-		construction = 2;
-	}
-	if (ImGui::Button("Profile CPU Construction and Tracer")) {
-		g_nvperf.StartCollectionOnNextFrame();
-		construction = 3;
-	}
-	if (ImGui::Button("Profile GPU Construction and Tracer")) {
-		g_nvperf.StartCollectionOnNextFrame();
-		construction = 4;
-	}
-	if (g_nvperf.IsCollectingReport()) 
-	{
-		construction = 0;
-	}
-
 	heatMap = false;
 	switch (voxelViewMode)
 	{
@@ -258,7 +237,7 @@ void OctreeTracerApp::gui()
 	case 1:
 		viewModeDisplay = "Heatmap";
 		heatMap = true;
-		break;	
+		break;
 	case 2:
 		viewModeDisplay = "Old Tracer Heatmap";
 		heatMap = true;
@@ -276,8 +255,65 @@ void OctreeTracerApp::gui()
 		viewModeDisplay = "Octree Tracer";
 		break;
 	}
-	ImGui::Text(viewModeDisplay.c_str());
+	if (ImGui::TreeNode("Construction"))
+	{
+		if (ImGui::Button("Construct all octrees in CPU")) {
+			cpuReconstruction();
+			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
+		}
+		if (ImGui::Button("Construct all octrees in GPU")) {
+			gpuReconstruction(wnd);
+			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
+		}
 
+		ImGui::SliderInt("Model Number", &modelToConstruct, 0, 8);
+		if (ImGui::Button("Construct single octree in GPU")) {
+			specificGPUConstruction(wnd, modelNames[modelToConstruct], voxelModels[modelNames[modelToConstruct]].octreeConstructor);
+			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
+		}
+		if (ImGui::Button("Construct single octree in CPU")) {
+			specificCPUConstruction(modelNames[modelToConstruct], voxelModels[modelNames[modelToConstruct]].gpuOctree);
+			octreeTracer->setOctreeVoxel(renderer->getDeviceContext(), voxelModels[modelNames[modelToConstruct]].gpuOctree);
+		}
+		ImGui::TreePop();
+	}
+
+	if (ImGui::TreeNode("Profiling"))
+	{
+		if (ImGui::Button("Profile Tracer")) {
+			g_nvperf.StartCollectionOnNextFrame();
+		}
+		if (ImGui::Button("Profile CPU Construction")) {
+			g_nvperf.StartCollectionOnNextFrame();
+			construction = 1;
+		}
+		if (ImGui::Button("Profile GPU Construction")) {
+			g_nvperf.StartCollectionOnNextFrame();
+			construction = 2;
+		}
+		if (ImGui::Button("Profile CPU Construction and Tracer")) {
+			g_nvperf.StartCollectionOnNextFrame();
+			construction = 3;
+		}
+		if (ImGui::Button("Profile GPU Construction and Tracer")) {
+			g_nvperf.StartCollectionOnNextFrame();
+			construction = 4;
+		}
+		if (g_nvperf.IsCollectingReport())
+		{
+			construction = 0;
+		}
+		ImGui::InputText("MemorySaveFile", userinput, 40);
+		if (ImGui::Button("Memory Capture Start")) {
+			memMeasure.CaptureStart();
+		}
+		if (ImGui::Button("Memory Capture End")) {
+			memMeasure.CaptureEnd();
+			std::string s = userinput;
+			memMeasure.SingleOutputWithRam(userinput);
+		}
+		ImGui::TreePop();
+	}
 	// Render UI
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -405,4 +441,47 @@ OctreeConstructorShader* OctreeTracerApp::constructInGPU(HWND hwnd, std::string 
 #endif
 
 	return octreeConstructor;
+}
+
+void OctreeTracerApp::specificGPUConstruction(HWND hwnd, std::string identifierName, OctreeConstructorShader* oc)
+{
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+#endif
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.PushRange(identifierName.c_str());
+#endif
+		voxelModels[identifierName].octreeConstructor = constructInGPU(hwnd, identifierName, voxelModels[identifierName].octreeConstructor);
+		voxelModelResources[0] = voxelModels[identifierName].octreeConstructor->getSRV();
+		voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
+		voxelModelPalettes[0] = &modelLoader.getPalette(identifierName);
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+		g_nvperf.PopRange(); // Draw
+#endif
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameEnd();
+#endif
+}
+
+void OctreeTracerApp::specificCPUConstruction(std::string identifierName, GPUOctree* oc)
+{
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+#endif
+#if TMMEASURE
+	tMeasure.CaptureStart();
+#endif
+		voxelModels[identifierName].gpuOctree = constructInCPU(identifierName, voxelModels[identifierName].gpuOctree);
+		gpuOctreeRepresentation[0] = voxelModels[identifierName].gpuOctree;
+		voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
+		voxelModelPalettes[0] = &modelLoader.getPalette(identifierName);
+		octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
+#if TMMEASURE
+	tMeasure.CaptureEnd();
+	tMeasure.SingleOutput("Passing CPU Octree to GPU");
+#endif
+
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.OnFrameEnd();
+#endif
 }
