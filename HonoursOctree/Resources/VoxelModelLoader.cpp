@@ -25,7 +25,7 @@ std::vector<Voxel> VoxelModelLoader::getModelVoxels(std::string name)
 	const int amountOfVoxels = sparseModel.voxels().size();
 	std::vector<Voxel> voxels;
 	voxels.reserve(amountOfVoxels);
-	mvoxColPalette[name] = mvoxModelLoader->denseModels().at(0).palette();
+	//mvoxColPalette[name] = mvoxModelLoader->denseModels().at(0).palette();
 
 	for (int i = 0; i < amountOfVoxels; i++)
 	{

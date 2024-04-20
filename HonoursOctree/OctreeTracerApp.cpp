@@ -62,6 +62,7 @@ void OctreeTracerApp::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int 
 	}
 
 	octreeTracer = new OctreeTracerShader(renderer->getDevice(), hwnd, 200000, screenWidth, screenHeight);
+	//cpuReconstruction();
 	octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
 	//octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
 
@@ -294,8 +295,8 @@ void OctreeTracerApp::gpuReconstruction(HWND hwnd)
 		g_nvperf.PushRange(comp.first.c_str());
 #endif
 		std::string identifierName = comp.first;
-		comp.second.octreeConstructor = constructInGPU(hwnd, identifierName, comp.second.octreeConstructor);
-		voxelModelResources[i] = comp.second.octreeConstructor->getSRV();
+		voxelModels[identifierName].octreeConstructor = constructInGPU(hwnd, identifierName, voxelModels[identifierName].octreeConstructor);
+		voxelModelResources[i] = voxelModels[identifierName].octreeConstructor->getSRV();
 		voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
 		voxelModelPalettes[i] = &modelLoader.getPalette(identifierName);
 		i++;
@@ -321,10 +322,10 @@ void OctreeTracerApp::cpuReconstruction()
 	for (auto comp : voxelModels)
 	{
 		std::string identifierName = comp.first;
-		comp.second.gpuOctree = constructInCPU(identifierName, comp.second.gpuOctree);
-		gpuOctreeRepresentation[i] = comp.second.gpuOctree;
-		//voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
-		//voxelModelPalettes[i] = &modelLoader.getPalette(identifierName);
+		voxelModels[identifierName].gpuOctree = constructInCPU(identifierName, voxelModels[identifierName].gpuOctree);
+		gpuOctreeRepresentation[i] = voxelModels[identifierName].gpuOctree;
+		voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
+		voxelModelPalettes[i] = &modelLoader.getPalette(identifierName);
 		i++;
 	}
 	octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
