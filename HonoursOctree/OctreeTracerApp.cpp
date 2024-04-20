@@ -214,7 +214,7 @@ void OctreeTracerApp::gui()
 	ImGui::Text("FPS: %.2f", timer->getFPS());
 	//ImGui::SliderFloat("VoxelSize", &minSize, 0, 10);
 	ImGui::SliderInt("VoxelViewMode", &voxelViewMode, 0,5);
-	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 10);
+	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 8);
 
 	if(ImGui::Button("Construct Octree in CPU")) {
 		cpuReconstruction();

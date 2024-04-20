@@ -257,4 +257,6 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     {
         InsertVoxel(outputOctree[0], inputOctree[i], outputOctree);
     }
+    outputOctree[0].RGB = 501;
+
 }
