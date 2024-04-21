@@ -225,8 +225,10 @@ void OctreeTracerApp::gui()
 	// Build UI
 	ImGui::Text("FPS: %.2f", timer->getFPS());
 	//ImGui::SliderFloat("VoxelSize", &minSize, 0, 10);
-	ImGui::Text(viewModeDisplay.c_str());
+	ImGui::Text("Step 1. Construct a model");
+	ImGui::Text("Step 2. Mess around with VoxelViewMode and VoxelViewDepth");
 	ImGui::SliderInt("VoxelViewMode", &voxelViewMode, 0,5);
+	ImGui::Text(viewModeDisplay.c_str());
 	ImGui::SliderInt("VoxelViewDepth", &voxelViewDepth, 0, 8);
 	heatMap = false;
 	switch (voxelViewMode)
@@ -266,7 +268,8 @@ void OctreeTracerApp::gui()
 			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
 		}
 
-		ImGui::SliderInt("Model Number", &modelToConstruct, 0, 8);
+		ImGui::SliderInt("Model Number", &modelToConstruct, 0, 7);
+		ImGui::Text(modelNames[modelToConstruct].c_str());
 		if (ImGui::Button("Construct single octree in GPU")) {
 			specificGPUConstruction(wnd, modelNames[modelToConstruct], voxelModels[modelNames[modelToConstruct]].octreeConstructor);
 			octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), voxelModelResources);
