@@ -134,11 +134,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MagicalVox\vox_file.cpp" />
-    <ClCompile Include="OctreeConstruction\OctreeGPURepresentation.cpp" />
+    <ClCompile Include="OctreeConstruction\OctreeCPUConstructor.cpp" />
     <ClCompile Include="OctreeTracerApp.cpp" />
     <ClCompile Include="HonoursOctree.cpp" />
     <ClCompile Include="OctreeConstruction\OctreeConstructorShader.cpp" />
-    <ClCompile Include="OctreeConstruction\Octree.cpp" />
+    <ClCompile Include="OctreeConstruction\NaiveOctree.cpp" />
     <ClCompile Include="OctreeTraversal\OctreeTracerShader.cpp" />
     <ClCompile Include="Resources\VoxelModelLoader.cpp" />
     <ClCompile Include="Utility\TextureShader.cpp" />
@@ -174,10 +174,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MagicalVox\vox_file.h" />
-    <ClInclude Include="OctreeConstruction\OctreeGPURepresentation.h" />
+    <ClInclude Include="OctreeConstruction\OctreeCPUConstructor.h" />
     <ClInclude Include="OctreeTracerApp.h" />
     <ClInclude Include="OctreeConstruction\OctreeConstructorShader.h" />
-    <ClInclude Include="OctreeConstruction\Octree.h" />
+    <ClInclude Include="OctreeConstruction\NaiveOctree.h" />
     <ClInclude Include="OctreeTraversal\OctreeTracerShader.h" />
     <ClInclude Include="Resources\VoxelModelLoader.h" />
     <ClInclude Include="Resources\VoxelOctree.h" />

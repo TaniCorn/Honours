@@ -6,7 +6,7 @@
 #include "BaseShader.h"
 #include "../Resources/VoxelOctree.h"
 #include "../MagicalVox/vox_file.h"
-#include "../OctreeConstruction/OctreeGPURepresentation.h"
+#include "../OctreeConstruction/OctreeCPUConstructor.h"
 
 
 using namespace std;
@@ -58,6 +58,7 @@ public:
 	void setShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& world, const XMMATRIX& orthoView, const XMMATRIX& ortho, const XMMATRIX& view, const XMMATRIX& projection, XMFLOAT3 camerapos, ID3D11ShaderResourceView* texture, int voxelView = 0, int viewDepth = 0, bool heat = false, int amountOfOctrees = 2);
 	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, ID3D11ShaderResourceView* octree[8]);
 	void setOctreeVoxels(ID3D11DeviceContext* deviceContext, GPUOctree* octree[8]);
+	void setOctreeVoxel(ID3D11DeviceContext* deviceContext, GPUOctree* octree);
 	void setVoxelPalette(ID3D11DeviceContext* deviceContext, magicavoxel::Palette* palettes[8]);
 	
 	ID3D11Device* device;

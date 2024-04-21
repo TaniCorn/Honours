@@ -1,7 +1,7 @@
-﻿#include "Octree.h"
+﻿#include "NaiveOctree.h"
 
 #include <iostream>
-Octree::Octree()
+NaiveOctree::NaiveOctree()
 {
     topLeftFrontPoint = XMFLOAT3(0, 4, 0);
     bottomRightBackPoint = XMFLOAT3(4, 0,4);
@@ -16,7 +16,7 @@ Octree::Octree()
      BRB= nullptr;
 }
 
-Octree::Octree(XMFLOAT3 topLeft, XMFLOAT3 bottomRight)
+NaiveOctree::NaiveOctree(XMFLOAT3 topLeft, XMFLOAT3 bottomRight)
 {
     topLeftFrontPoint = topLeft;
     bottomRightBackPoint = bottomRight;
@@ -31,7 +31,7 @@ Octree::Octree(XMFLOAT3 topLeft, XMFLOAT3 bottomRight)
     BRB= nullptr;
 }
 
-Octree::~Octree()
+NaiveOctree::~NaiveOctree()
 {
     if (TLF)
     {
@@ -67,7 +67,7 @@ Octree::~Octree()
     }
 }
 
-void Octree::insert(Voxel* vox, const float sizeOfVoxels)
+void NaiveOctree::insert(Voxel* vox, const float sizeOfVoxels)
 {
 
     // If the point is out of bounds
@@ -112,7 +112,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (TLF == nullptr)
                     {
-                        TLF = new Octree(topLeftFrontPoint, XMFLOAT3(midx,midy,midz));
+                        TLF = new NaiveOctree(topLeftFrontPoint, XMFLOAT3(midx,midy,midz));
                         TLF->depth = depth  +1;
                     }
                     return TLF->insert(vox, sizeOfVoxels);
@@ -121,7 +121,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (TRF == nullptr)
                     {
-                        TRF = new Octree(XMFLOAT3(midx, topLeftFrontPoint.y, topLeftFrontPoint.z), XMFLOAT3(bottomRightBackPoint.x,midy,midz));
+                        TRF = new NaiveOctree(XMFLOAT3(midx, topLeftFrontPoint.y, topLeftFrontPoint.z), XMFLOAT3(bottomRightBackPoint.x,midy,midz));
                         TRF->depth = depth  +1;
                     }
                     return TRF->insert(vox, sizeOfVoxels);
@@ -133,7 +133,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (BLF == nullptr)
                     {
-                        BLF = new Octree(XMFLOAT3(topLeftFrontPoint.x, midy, topLeftFrontPoint.z), XMFLOAT3(midx,bottomRightBackPoint.y,midz));
+                        BLF = new NaiveOctree(XMFLOAT3(topLeftFrontPoint.x, midy, topLeftFrontPoint.z), XMFLOAT3(midx,bottomRightBackPoint.y,midz));
                         BLF->depth = depth  +1;
 
                     }
@@ -143,7 +143,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (BRF == nullptr)
                     {
-                        BRF = new Octree(XMFLOAT3(midx, midy, topLeftFrontPoint.z), XMFLOAT3(bottomRightBackPoint.x, bottomRightBackPoint.y, midz));
+                        BRF = new NaiveOctree(XMFLOAT3(midx, midy, topLeftFrontPoint.z), XMFLOAT3(bottomRightBackPoint.x, bottomRightBackPoint.y, midz));
                         BRF->depth = depth  +1;
                     }
                     return BRF->insert(vox, sizeOfVoxels);
@@ -158,7 +158,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (TLB == nullptr)
                     {
-                        TLB = new Octree(XMFLOAT3(topLeftFrontPoint.x, topLeftFrontPoint.y, midz), XMFLOAT3(midx,midy,bottomRightBackPoint.z));
+                        TLB = new NaiveOctree(XMFLOAT3(topLeftFrontPoint.x, topLeftFrontPoint.y, midz), XMFLOAT3(midx,midy,bottomRightBackPoint.z));
                         TLB->depth = depth  +1;
 
                     }
@@ -169,7 +169,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (TRB == nullptr)
                     {
-                        TRB = new Octree(XMFLOAT3(midx, topLeftFrontPoint.y, midz), XMFLOAT3(bottomRightBackPoint.x,midy,bottomRightBackPoint.z));
+                        TRB = new NaiveOctree(XMFLOAT3(midx, topLeftFrontPoint.y, midz), XMFLOAT3(bottomRightBackPoint.x,midy,bottomRightBackPoint.z));
                         TRB->depth = depth  +1;
 
                     }
@@ -183,7 +183,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (BLB == nullptr)
                     {
-                        BLB = new Octree(XMFLOAT3(topLeftFrontPoint.x, midy, midz), XMFLOAT3(midx,bottomRightBackPoint.y,bottomRightBackPoint.z));
+                        BLB = new NaiveOctree(XMFLOAT3(topLeftFrontPoint.x, midy, midz), XMFLOAT3(midx,bottomRightBackPoint.y,bottomRightBackPoint.z));
                         BLB->depth = depth  +1;
 
                     }
@@ -193,7 +193,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
                 {
                     if (BRB == nullptr)
                     {
-                        BRB = new Octree(XMFLOAT3(midx, midy, midz), XMFLOAT3(bottomRightBackPoint.x,bottomRightBackPoint.y,bottomRightBackPoint.z));
+                        BRB = new NaiveOctree(XMFLOAT3(midx, midy, midz), XMFLOAT3(bottomRightBackPoint.x,bottomRightBackPoint.y,bottomRightBackPoint.z));
                         BRB->depth = depth  +1;
 
                     }
@@ -205,7 +205,7 @@ void Octree::insert(Voxel* vox, const float sizeOfVoxels)
         
 }
 
-Voxel* Octree::search(XMFLOAT3 point)
+Voxel* NaiveOctree::search(XMFLOAT3 point)
 {
     // If point is out of bound
         if (!inBoundary(point))
@@ -355,7 +355,7 @@ Voxel* Octree::search(XMFLOAT3 point)
 }
 
 //AABB collision detection
-bool Octree::inBoundary(XMFLOAT3 point)
+bool NaiveOctree::inBoundary(XMFLOAT3 point)
 {
     bool xCheck = point.x >= topLeftFrontPoint.x && point.x <= bottomRightBackPoint.x;
     bool yCheck = point.y >= bottomRightBackPoint.y && point.y <= topLeftFrontPoint.y;
@@ -366,11 +366,11 @@ bool Octree::inBoundary(XMFLOAT3 point)
 }
 
 
-int Octree::bigger(int a, int b)
+int NaiveOctree::bigger(int a, int b)
 {
     return (a > b) ? a : b;
 }
-int Octree::getOctantAmount(Octree* oc)
+int NaiveOctree::getOctantAmount(NaiveOctree* oc)
 {
     int octants = 1;
 
@@ -408,7 +408,7 @@ int Octree::getOctantAmount(Octree* oc)
     }
     return octants;
 }
-int Octree::getMaxDepth(Octree* oc, int depth)
+int NaiveOctree::getMaxDepth(NaiveOctree* oc, int depth)
 {
     depth++;
 
@@ -455,3 +455,12 @@ int Octree::getMaxDepth(Octree* oc, int depth)
     return depth;
 }
 
+void NaiveCPUOctree::clear()
+{
+    delete octree;
+    for (auto vox : voxels)
+    {
+        delete vox;
+    }
+    voxels.clear();
+}

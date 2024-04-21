@@ -6,33 +6,33 @@
 /// <summary>
 /// Naive pointer based octree implementation
 /// </summary>
-class Octree
+class NaiveOctree
 {
 public:
-    Octree();
-    Octree(XMFLOAT3 topLeft, XMFLOAT3 bottomRight);
-    ~Octree();
+    NaiveOctree();
+    NaiveOctree(XMFLOAT3 topLeft, XMFLOAT3 bottomRight);
+    ~NaiveOctree();
 
     XMFLOAT3 topLeftFrontPoint;
     XMFLOAT3 bottomRightBackPoint;
     Voxel* storedVoxel;
 
-    Octree* TLF;
-    Octree* TRF;
-    Octree* BLF;
-    Octree* BRF;
+    NaiveOctree* TLF;
+    NaiveOctree* TRF;
+    NaiveOctree* BLF;
+    NaiveOctree* BRF;
     
-    Octree* TLB;
-    Octree* TRB;
-    Octree* BLB;
-    Octree* BRB;
+    NaiveOctree* TLB;
+    NaiveOctree* TRB;
+    NaiveOctree* BLB;
+    NaiveOctree* BRB;
 
     void insert(Voxel* point, const float sizeOfVoxels);
 
     int depth = 0;
 
-    int getOctantAmount(Octree* oc);
-    int getMaxDepth(Octree* oc, int depth);
+    int getOctantAmount(NaiveOctree* oc);
+    int getMaxDepth(NaiveOctree* oc, int depth);
 private:
     /// <summary>
     /// Searches for a voxel at point, and returns it if there is one there
@@ -49,11 +49,11 @@ private:
     int bigger(int a, int b);
 };
 
-class CPPOctree {
+class NaiveCPUOctree {
 public:
-    CPPOctree() {
+    NaiveCPUOctree() {
     }
-    ~CPPOctree() {
+    ~NaiveCPUOctree() {
         delete octree;
         for (auto vox : voxels)
         {
@@ -61,8 +61,10 @@ public:
         }
         voxels.clear();
     };
+
+    void clear();
     int octantAmount;
     float minSize;
-    Octree* octree;
+    NaiveOctree* octree;
     std::vector<Voxel*> voxels;
 };

@@ -2,7 +2,7 @@
 
 #include "BaseShader.h"
 #include "../Resources/VoxelOctree.h"
-class CPPOctree;
+class NaiveCPUOctree;
 using namespace std;
 using namespace DirectX;
 
@@ -34,7 +34,8 @@ public:
 
 	void unbind(ID3D11DeviceContext* dc);
 	void setShaderParameters(ID3D11DeviceContext* deviceContext);
-	void updateCPPOctree(ID3D11DeviceContext* deviceContext, CPPOctree* ot);
+	void updateCPPOctree(ID3D11DeviceContext* deviceContext, NaiveCPUOctree* ot);
+	void setVoxels(ID3D11DeviceContext* deviceContext, std::vector<Voxel>& voxels, int dimX, int dimY, int DimZ);
 	void compute(ID3D11DeviceContext* dc, int x, int y, int z);
 
 	ID3D11Device* device;

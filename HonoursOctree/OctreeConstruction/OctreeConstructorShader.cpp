@@ -1,5 +1,5 @@
 #include "OctreeConstructorShader.h"
-#include "Octree.h"
+#include "NaiveOctree.h"
 void OctreeConstructorShader::compute(ID3D11DeviceContext* dc, int x, int y, int z)
 {
 	dc->CSSetShader(computeShader, NULL, 0);
@@ -112,7 +112,7 @@ void OctreeConstructorShader::setShaderParameters(ID3D11DeviceContext* deviceCon
 	deviceContext->CSSetConstantBuffers(0, 1, &in_dimsBuffer);
 }
 
-void OctreeConstructorShader::updateCPPOctree(ID3D11DeviceContext* deviceContext, CPPOctree* oc)
+void OctreeConstructorShader::updateCPPOctree(ID3D11DeviceContext* deviceContext, NaiveCPUOctree* oc)
 {
 	HRESULT result;
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
@@ -133,6 +133,31 @@ void OctreeConstructorShader::updateCPPOctree(ID3D11DeviceContext* deviceContext
 	dimsPtr->DimX = oc->octree->bottomRightBackPoint.x;
 	dimsPtr->DimY = oc->octree->topLeftFrontPoint.y;
 	dimsPtr->DimZ = oc->octree->bottomRightBackPoint.z;
+	deviceContext->Unmap(in_dimsBuffer, 0);
+}
+
+void OctreeConstructorShader::setVoxels(ID3D11DeviceContext* deviceContext, std::vector<Voxel>& voxels, int dimX, int dimY, int dimZ)
+{
+	HRESULT result;
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+
+	result = deviceContext->Map(in_voxelBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	Voxel* invPtr = (Voxel*)mappedResource.pData;
+	int i = 0;
+
+	for (auto vox : voxels)
+	{
+		invPtr[i].color = vox.color;
+		invPtr[i].point = XMFLOAT3(vox.point.x, vox.point.y, vox.point.z);
+		i++;
+	}
+	deviceContext->Unmap(in_voxelBuffer, 0);
+
+	result = deviceContext->Map(in_dimsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	VoxelModelDims* dimsPtr = (VoxelModelDims*)mappedResource.pData;
+	dimsPtr->DimX = dimX;
+	dimsPtr->DimY = dimY;
+	dimsPtr->DimZ = dimZ;
 	deviceContext->Unmap(in_dimsBuffer, 0);
 }
 

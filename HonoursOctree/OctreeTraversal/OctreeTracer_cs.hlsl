@@ -555,7 +555,10 @@ void main(int3 groupThreadID : SV_GroupThreadID,
         
         //For Render Box and Wireframe only
         uint stride = 0;
-        stride = VoxelDoesRayIntersect(ray, vo, offset);
+        if (ViewMode == 3 || ViewMode == 4)
+        {
+            stride = VoxelDoesRayIntersect(ray, vo, offset);
+        }
         
         
        switch (ViewMode)
