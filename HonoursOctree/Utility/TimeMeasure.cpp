@@ -47,6 +47,18 @@ void TimeMeasure::SingleOutput(std::string name)
 	file.close();
 }
 
+void TimeMeasure::SingleAverageOutput(std::string name)
+{
+    //File output
+    std::string filename = name + ".csv";
+    std::ofstream file;
+    file.open(filename.c_str());
+
+    file << "Time in milliseconds: " << (averageDiff/amount) << "\n";
+
+    file.close();
+}
+
 void TimeMeasure::SingleOutputWithRam(std::string name)
 {
     std::string filename = name + ".csv";
@@ -65,6 +77,20 @@ void TimeMeasure::SingleOutputWithRam(std::string name)
     file << "RAM change: " << ramEnd - ramStart << "\n";
 
     file.close();
+}
+
+void TimeMeasure::ContinuousCaptureStart()
+{
+    CaptureStart();
+}
+
+void TimeMeasure::ContinuousCaptureEnd()
+{
+    CaptureEnd();
+    amount++;
+    auto s = std::chrono::duration_cast<std::chrono::milliseconds>(endPoint - startPoint).count();
+    averageDiff += s;
+    
 }
 
 SIZE_T TimeMeasure::CaptureVRam()

@@ -315,8 +315,10 @@ void OctreeTracerApp::gui()
 		}
 		if (ImGui::Button("Memory Capture End")) {
 			memMeasure.CaptureEnd();
-			std::string s = userinput;
 			memMeasure.SingleOutputWithRam(userinput);
+		}
+		if (ImGui::Button("Memory Capture Avg")) {
+			tMeasure.SingleAverageOutput(userinput);
 		}
 		ImGui::TreePop();
 	}
@@ -349,9 +351,7 @@ void OctreeTracerApp::gpuReconstruction(HWND hwnd)
 void OctreeTracerApp::cpuReconstruction()
 {
 
-#if TMMEASURE
-	tMeasure.CaptureStart();
-#endif
+	tMeasure.ContinuousCaptureStart();
 	int i = 0;
 	for (auto comp : voxelModels)
 	{
@@ -369,10 +369,7 @@ void OctreeTracerApp::cpuReconstruction()
 #endif
 	}
 	octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
-#if TMMEASURE
-	tMeasure.CaptureEnd();
-	tMeasure.SingleOutput("Passing CPU Octree to GPU");
-#endif
+	tMeasure.ContinuousCaptureEnd();
 
 }
 

@@ -17,7 +17,11 @@ public:
 	double GetTimeInNanoseconds();
 
 	void SingleOutput(std::string name);
+	void SingleAverageOutput(std::string name);
 	void SingleOutputWithRam(std::string name);
+
+	void ContinuousCaptureStart();
+	void ContinuousCaptureEnd();
 
 private:
 
@@ -27,6 +31,9 @@ private:
 	std::chrono::steady_clock::time_point endPoint;
 	SIZE_T vramStart, vramEnd;
 	SIZE_T ramStart, ramEnd;
+
+	long long averageDiff;
+	int amount;
 };
 
 #endif // !TIMEMEASURE_H
