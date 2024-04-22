@@ -41,6 +41,7 @@ private:
 	magicavoxel::Palette colPalette;
 	void LoadVoxModel();
 	void RenderVoxModel();
+	long long g;
 };
 
 #endif

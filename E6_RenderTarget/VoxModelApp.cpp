@@ -104,10 +104,9 @@ void VoxModelApp::RecursiveOctreeLoop(Octree* octree, float depth)
 		RecursiveOctreeLoop(octree->TRB, depth);
 	}
 }
-
+#include <chrono>
 void VoxModelApp::RenderCubeTree(const float depth, Octree* childQuad)
 {
-
 	XMMATRIX worldMatrix = renderer->getWorldMatrix();
 	XMMATRIX viewMatrix = camera->getViewMatrix();
 	XMMATRIX projectionMatrix = renderer->getProjectionMatrix();
@@ -128,6 +127,7 @@ void VoxModelApp::RenderCubeTree(const float depth, Octree* childQuad)
 	cube->sendData(renderer->getDeviceContext());
 	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * localMoveMatrix * scale * translation, viewMatrix, projectionMatrix, depth, maxDepth);
 	quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
+
 }
 
 
@@ -141,6 +141,8 @@ void VoxModelApp::gui()
 	// Build UI
 	ImGui::Text("FPS: %.2f", timer->getFPS());
 	ImGui::Checkbox("Wireframe mode", &wireframeToggle);
+	std::string s = std::to_string(g);
+	ImGui::Text(s.c_str());
 
 	// Render UI
 	ImGui::Render();
@@ -189,6 +191,7 @@ void VoxModelApp::LoadVoxModel()
 
 void VoxModelApp::RenderVoxModel()
 {
+
 	// Clear the scene. (default blue colour)
 	renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
 
@@ -217,9 +220,13 @@ void VoxModelApp::RenderVoxModel()
 	//	quadTreeShader->setShaderParameters(renderer->getDeviceContext(), worldMatrix * scale * XMMatrixTranslation(vox->point.GetX(), vox->point.GetY(), vox->point.GetZ()), viewMatrix, projectionMatrix, rgba.x, rgba.y, rgba.z, rgba.w);
 	//	quadTreeShader->render(renderer->getDeviceContext(), cube->getIndexCount());
 	//}
+	auto s = std::chrono::steady_clock::now();
 
 	RecursiveOctreeLoop(octree, depth);
+	RecursiveOctreeLoop(octree, depth);
+	auto e = std::chrono::steady_clock::now();
 
+	g = std::chrono::duration_cast<std::chrono::milliseconds>(e - s).count();
 	// Render GUI
 	gui();
 
