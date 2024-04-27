@@ -84,6 +84,9 @@ private:
 	char userinput[20];
 
 	int modelToConstruct = 0;
+	int iterationSelection = 0;
+	int iterationsForHeat = 25;
+	int distanceSelection = 0;
 };
 
 #endif

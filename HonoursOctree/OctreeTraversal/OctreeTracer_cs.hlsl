@@ -6,7 +6,7 @@ struct Ray
     float3 RayDirection;
 };
 #define MAX_STACK_SIZE 40
-#define MAX_ITERATIONS 150
+#define MAX_ITERATIONS 450
 
 cbuffer InvMatrixBuffer : register(b0)
 {
@@ -268,7 +268,7 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
     int stackTop = 0;
     stackIndexes[stackTop] = 0;
     stackTop++;
-    for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
+    for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
@@ -284,7 +284,9 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
         }
         if (currentNode.Depth == ViewDepth && heat)
         {
-                return iterations;
+            stackIndexes[stackTop] = 0;
+            stackTop++;
+                //return iterations;
         }
         
         float closest[8];

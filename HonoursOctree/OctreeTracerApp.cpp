@@ -208,7 +208,7 @@ void OctreeTracerApp::computeTracer()
 #endif
 
 		rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);
-		octreeTracer->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), rt->getShaderResourceView(), voxelViewMode, voxelViewDepth, heatMap, ind);
+		octreeTracer->setShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), rt->getShaderResourceView(), voxelViewMode, voxelViewDepth, heatMap, iterationsForHeat);
 		octreeTracer->setVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
 		octreeTracer->compute(renderer->getDeviceContext(), 74, 40, 1);
 		octreeTracer->unbind(renderer->getDeviceContext());
@@ -317,9 +317,76 @@ void OctreeTracerApp::gui()
 			memMeasure.CaptureEnd();
 			memMeasure.SingleOutputWithRam(userinput);
 		}
+		if (ImGui::Button("Output")) {
+			tMeasure.SingleOutput(userinput);
+		}
+
 		if (ImGui::Button("Memory Capture Avg")) {
 			tMeasure.SingleAverageOutput(userinput);
 		}
+		ImGui::SliderInt("Iteration Selection", &iterationSelection, 0,12);
+		switch (iterationSelection) {
+		case 0:
+			iterationsForHeat = 25;
+			break;
+		case 1:
+			iterationsForHeat = 50;
+			break;
+		case 2:
+			iterationsForHeat = 100;
+			break;
+		case 3:
+			iterationsForHeat = 150;
+			break;
+		case 4:
+			iterationsForHeat = 200;
+			break;
+		case 5:
+			iterationsForHeat = 250;
+			break;
+		case 6:
+			iterationsForHeat = 300;
+			break;
+		case 7:
+			iterationsForHeat = 350;
+			break;
+		case 8:
+			iterationsForHeat = 400;
+			break;
+		case 9:
+			iterationsForHeat = 450;
+			break;
+		case 10:
+			iterationsForHeat = 500;
+			break;
+		case 11:
+			iterationsForHeat = 1000;
+			break;
+		case 12:
+			iterationsForHeat = 0;
+			break;
+		default:
+			iterationsForHeat = 25;
+			break;
+		}
+		ImGui::SliderInt("Distance", &distanceSelection, 0, 2);
+		if(ImGui::Button("Select Distance")){
+			switch (distanceSelection)
+			{
+			case 0:
+				camera->setPosition(350, 150, -500);
+				break;
+			case 1:
+				camera->setPosition(350, 150, -1000);
+				break;
+			case 2:
+				camera->setPosition(350, 150, -2000);
+				break;
+			default:
+				break;
+			}
+		}
+
 		ImGui::TreePop();
 	}
 	// Render UI
@@ -466,18 +533,13 @@ void OctreeTracerApp::specificCPUConstruction(std::string identifierName, GPUOct
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
 	g_nvperf.OnFrameStart(renderer->getDeviceContext());
 #endif
-#if TMMEASURE
 	tMeasure.CaptureStart();
-#endif
 		voxelModels[identifierName].gpuOctree = constructInCPU(identifierName, voxelModels[identifierName].gpuOctree);
 		gpuOctreeRepresentation[0] = voxelModels[identifierName].gpuOctree;
 		voxelModels[identifierName].pallette = &modelLoader.getPalette(identifierName);
 		voxelModelPalettes[0] = &modelLoader.getPalette(identifierName);
 		octreeTracer->setOctreeVoxels(renderer->getDeviceContext(), gpuOctreeRepresentation);
-#if TMMEASURE
 	tMeasure.CaptureEnd();
-	tMeasure.SingleOutput("Passing CPU Octree to GPU");
-#endif
 
 #ifdef NV_PERF_ENABLE_INSTRUMENTATION
 	g_nvperf.OnFrameEnd();
