@@ -1,4 +1,4 @@
-# Honours
+# Honours - To Update
 Non-polygonal rendering of voxels. Using raycasting and raymarching and comparing these two techniques with two acceleration structures. Using DirectX11, C++, and ImGui.
 
 ![image](https://github.com/TaniCorn/Honours/assets/63819551/c52cab8b-8cf1-44cf-93c2-1a5d265e6063)
