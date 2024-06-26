@@ -1,45 +1,58 @@
 # Honours - To Update
-Non-polygonal rendering of voxels. Using raycasting and raymarching and comparing these two techniques with two acceleration structures. Using DirectX11, C++, and ImGui.
+Non-polygonal rendering of voxels. Using raycasting and Sparse Voxel Octree's. 
+Using DirectX11, C++, and ImGui.
+![HonoursViews](https://github.com/TaniCorn/Honours/assets/63819551/8aa5b016-54a7-4f17-8bcf-463428141d04)
+[TanapatSomridDissWithComments.pdf](https://github.com/user-attachments/files/15984956/TanapatSomridDissWithComments.pdf)
 
-![image](https://github.com/TaniCorn/Honours/assets/63819551/c52cab8b-8cf1-44cf-93c2-1a5d265e6063)
-[Source: John Lins Voxel Water Physics](https://youtu.be/1R5WFZk86kE?si=qBwCZG7cqMKTXDgh)
+## Abstract
+Voxel rendering has been used in games for a voxel art style look, commonly
+accomplished by polygonal rendering and the utilisation of techniques like Marching
+Cubes and Greedy Meshing. However, there eventually exists a limit to the efficiency
+of these techniques when trying to scale the voxel sizes down, and alternate
+rendering methods have been used more recently to explore different solutions for
+the same problem. Now, techniques for non-polygonal rendering have been used in
+many recent raytraced voxel games and this research explores one of the
+techniques in this field.
 
-# Summary
-Below is a quick high level overview of my research goal, method, and technologies. Below the summary you'll find more detailed descriptions.
 
-## Goal
-My research goal is to determine which non-polygonal rendering technique works best with which of the two acceleration techniques?
+This project aimed to evaluate how well an octree can handle construction and
+rendering for a real-time rendering application and identify the key weaknesses of
+the structure and discuss possible improvements.
 
-## Method
-My method for doing this will be comparing each technique in 3 different scenarios:
-- A static Scene - Only the camera can move
-- Dynamic Scene - Voxels can move(animation)
-- Data dynamic scene - Voxels will be added and deleted to the original data set on runtime.
 
-This will result in 2x2x3 scenarios; 12 different scenarios in total.
-In each scene I will be comparing the following:
-- Average Frames Per Second
-- Lowest Frames
-- Highest Frames
-- 99% FPS
-- Frame Completion time(in ms)
-- Physical Ram Usage/Virtual Ram Usage
-- Graphics Card Memory Usage
-- GPU Load(Usage percentage)
-- CPU Load(Usage percentage)
-- Acceleration structure size
+The project artefact is a computer application that constructs a sparse voxel octree
+on the GPU and CPU and runs a traversal algorithm on a compute shader.
+Quantitative data is collected for memory consumption, rendering latency, and visual
+fidelity to gauge the viability of octrees and evaluate key areas that need
+improvement from a basic implementation.
 
-This will be tested on differnt machines with different specs:
-- RTX 3070, Ryzen 7 2700x, 16GB 1600MHz Ram
-- GTX 1060, Ryzen 7 2700x, 16GB 1600MHz Ram
-- TBC
-## Technologies
-The rendering techniques I'll be using are Raytracing and Raymarching. Using both Octree and BVH accelleration structures to compare the two of them.
 
-I'll be using DirectX11 with my universities framework as a base. Everything will be coded in C++, and HLSL.
+The data shows that construction times and traversal fidelity are the biggest issues
+with a basic implementation. Where 100% complexity scenes increase rendering
+times by O(N) amounts and construction time on the GPU increases to well above
+real-time rates.
+
+
+Although large improvements can be made from following later implementations like
+ESVO, it can be considerably harder to understand. The improvements suggested
+focus specifically on the issues that arose and are not too far ahead in terms of
+complexity. Those being parallelisation of the construction on the GPU, and
+removing ray/box collision tests from the traversal and replacing it with a
+implementation that follows a bit masking approach to determine ray position in
+octrees, to achieve better construction times and facilitate cheaper traversal to
+improve fidelity.
+
+# Reflection
+As I've finished this project a while ago, I've had a good amount of time to reflect on my work completed. Overall I'm really happy that I managed to make a working prototype of the technologies.
+
+
 
 
 # Origin
+Below is a description of the project I wrote early on to ascertain why I wanted to work on the project and my knowledge of it in the first 3 months. I would highly recommend having a read of my disseration for a more formal reading experience.
+
+
+## Reason for work
 Coming around to my 4th year I had 4 main passions: Networking architecture, Procedural Generation, VR, and Voxels. I was teatering on Procedural Generation, wanting to do something like no-mans sky and knew a little bit about marching cubes. However I got reminded of an old game I used to play on the Xbox 360, from the Indie store. 
 Total Miner: Forge
 ![image](https://github.com/TaniCorn/Honours/assets/63819551/c8646a1d-04c7-4e27-91e4-550f1b482f16) <- [Total Miner: Forge Demo Gameplay from Kalzec.](https://youtu.be/yllvLnK3VNk?si=UEMnqUFnmpzY-_eb)
@@ -81,53 +94,25 @@ That's not even mentioning the confusing subject of the efficiency of other thin
 When it comes down to it, I don't have 2-3 years to do this. I have less than 9 months to research, implement, test, and evaluate. I want to keep researching about what's the best thing to implement, learn a whole new graphics API, and slowly build it from the ground up. However with my current skill level in programming, and with all the other stuff I'm doing(Shameless plug ahead) <sup> I'm starting a video games company called Afterfire Studios, and running it part-time, check us out!</sup>. 
 That's just not possible, so I've chosen the two most promising structures that have the potential to be improved upon.
 
-Check out the technical deets below.
-
-# The technical details
-Below are the technical details of the technologies I've chosen in a way that makes sense to me. Graphics is like a web that never untangles, so I've listed it out in a way that will hopefully clearly draw a line between what things are and what they are not.
-I wish I could encompass every detail of what I've researched but I can only give a quick summary overview of what each thing can do.
-
-## Rendering Technique and Voxel Intersection technique
-I'm researching two techniques, Raymarching and Raytracing.
-
-With the Raymarcher, I plan on using Signed Distance Functions to traverse space and create shapes in respect to the voxel points. I'll probably have to look at encoding the coordinates using Mortan Codes.
-With the Raytracer I'll be using intersection functions for now.
-
-If I find any better ways to render the shapes I will update this.
-Something to clear up is that Raytracing, Raymarching, Raycasting are all different. 
-- Raycasting is the process of shooting a ray out into space.
-- Raytracing is where you use raycasting, but continue the ray via bouncing, or refraction.
-- Raymarching is where you continue in increments in space finding out the distance between your point and other points. This is better done with Sphere tracing,, which eliminates the constant step.
-
-## Voxel Storage / Acceleration Techniques
-
-This is where I get a bit confused, I'll be coming back to tidy this up in the future when I understand it a bit more.
-The most basic way to store voxels is in an array, a 3D array to specify whether a voxel is filled or not. This is ok for storing the world, but innefficient when it comes to sending to the GPU to render.
-I was under the impression that Octrees and BVH's are not storing them but sorting them? However the more I try to understand it the more I think that they are storing them. So don't quote me around this area because I may be wrong.
-There are others I've considered but ruled out such as Signed Distance Fields, and 3D Textures.
-
-**3D Array**
-
-Initially I will use a simple 3D array to store voxels and say if they are on or off.
-
-**Octrees -> Sparse Voxel Octrees -> Efficient Sparse Voxel Octrees -> Sparse Voxel DAGS**
-
-Octrees seem to have a never ending way to keep going deeper and deeper... yes that was a bad joke.
-But this progression seems to constantly improve upon eachother.
-
-**Bounding Volume Heirarchies**
-
-After I ruled out k-d trees and Gigavoxels, I decided on the plain old BVH. It's known to work well and is known to work better for dynamic objects. If it can handle rendering as well, it will give Octrees a run for it's money considering they apparently do not do well with dynamic scenes.
-
-**I've chosen DirectX11 for my familiarity with it.**
-
-I would have liked to use Vulkan or DirectX12. 
-Vulkan would be great to test out John Lins claim that BVH's run much better than SVO's on RTX and Vulkan cards due to their hardware support.
-![image](https://github.com/TaniCorn/Honours/assets/63819551/c4cbb303-9e7e-4a68-b007-842a360b4b14)
-DirectX12 would be great because of it's flexibility and Raytracing pipeline.
-
 # Research and Inspirations
 Below I've listed some key inspirations and research that I've done to collect my information.
 
-TBD
+There are so many voxel developers that I have been following, and watching them all has helped me understand the landscape of voxel development. One note is that they do not go into implementation detail much and you'd be better off trying to find appropriate literature to implement the more complex structures. Furthermore, some will not talk about the exact structures they are using at all. This is unfortunate, but we can only read between the lines for some.
+- [Gabe Rundlett](https://www.youtube.com/@GabeRundlett)
+- [Xima](https://www.youtube.com/@xima1)
+- [LetMeDevPlease](https://www.youtube.com/@letmedevplease)
+- [Ein Baum](https://www.youtube.com/@Ein_Baum)
+- [frozein](https://www.youtube.com/@frozein)
+- [Polaron](https://www.youtube.com/@PolaronWorldEngine/videos)
+- [DouglasDwyer](https://www.youtube.com/@DouglasDwyer)
+- [Oberdiah](https://www.youtube.com/@oberdiah9064)
+- [Bohdi Donselaar](https://www.youtube.com/@BodhiDon)
+- [voxelbee](https://www.youtube.com/@voxelbee)
+- [John Lin](https://www.youtube.com/@johnlin9665)
+- [Isotopia](https://www.youtube.com/@IsotopiaGame)
+- [Tooley1998](https://www.youtube.com/@Tooley1998)
+- [Dennis Gustafsson](https://youtu.be/0VzE8ROwC58?si=N3Az_BsSo5rUTxXd)
+
+Here's a full playlist of videos that I have saved. This doesn't contain all the videos I've watched from start to finish, but hopefully it'll be helpful: [Playlist](https://youtube.com/playlist?list=PLUVhEuL9O3wteCtiT1nh27n9XDElTOBns&si=1PKJ-cayGCdLgq_H)
+
 
