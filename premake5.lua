@@ -5,7 +5,7 @@ workspace "SparseVoxelOctreeRenderer"
 
 project "SparseVoxelOctreeRenderer"
     location "SparseVoxelOctreeRenderer"
-    kind "ConsoleApp"
+    kind "WindowedApp"
     language "C++"
     targetdir ("bin/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/") 
     objdir ("Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/")
@@ -40,7 +40,7 @@ project "DXFramework"
     language "C++"
     targetdir ("lib/%{cfg.buildcfg}/") 
     objdir ("Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/")
-    files{"%{prj.name}/**.h","%{prj.name}/**.cpp"}
+    files{"%{prj.name}/**.h","%{prj.name}/**.cpp", "include/imGUI/**.cpp","include/imGUI/**.cpp"}
     includedirs{"include"}
     libdirs {"lib/%{cfg.buildcfg}/"}
     links {"DirectXTK.lib","assimp-vc141-mtd.lib"}
