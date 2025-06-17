@@ -11,21 +11,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{EFA77DFB-5B5D-F6F0-E451-F0C75006EDF4}</ProjectGuid>
+    <ProjectGuid>{9A850553-0648-39DD-4FF8-C769BBF911BB}</ProjectGuid>
     <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>DXFramework</RootNamespace>
+    <RootNamespace>SparseVoxelOctreeRenderer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
@@ -41,113 +41,68 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\lib\Debug\</OutDir>
-    <IntDir>..\Intermediate\Debug\windows\x86_64\DXFramework\</IntDir>
-    <TargetName>DXFramework</TargetName>
-    <TargetExt>.lib</TargetExt>
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\bin\Debug\windows\x86_64\SparseVoxelOctreeRenderer\</OutDir>
+    <IntDir>..\Intermediate\Debug\windows\x86_64\SparseVoxelOctreeRenderer\</IntDir>
+    <TargetName>SparseVoxelOctreeRenderer</TargetName>
+    <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\lib\Release\</OutDir>
-    <IntDir>..\Intermediate\Release\windows\x86_64\DXFramework\</IntDir>
-    <TargetName>DXFramework</TargetName>
-    <TargetExt>.lib</TargetExt>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\bin\Release\windows\x86_64\SparseVoxelOctreeRenderer\</OutDir>
+    <IntDir>..\Intermediate\Release\windows\x86_64\SparseVoxelOctreeRenderer\</IntDir>
+    <TargetName>SparseVoxelOctreeRenderer</TargetName>
+    <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\DXFramework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-    </Link>
-    <Lib>
-      <AdditionalDependencies>DirectXTK.lib;assimp-vc141-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;DXFramework.lib;dxgi.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\DXFramework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <MinimalRebuild>false</MinimalRebuild>
       <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-    </Link>
-    <Lib>
-      <AdditionalDependencies>DirectXTK.lib;assimp-vc141-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;DXFramework.lib;dxgi.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AModel.h" />
-    <ClInclude Include="BaseApplication.h" />
-    <ClInclude Include="BaseMesh.h" />
-    <ClInclude Include="BaseShader.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="CubeMesh.h" />
-    <ClInclude Include="D3D.h" />
-    <ClInclude Include="DXF.h" />
-    <ClInclude Include="FPCamera.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="Light.h" />
-    <ClInclude Include="Model.h" />
-    <ClInclude Include="OrthoMesh.h" />
-    <ClInclude Include="PlaneMesh.h" />
-    <ClInclude Include="PointMesh.h" />
-    <ClInclude Include="QuadMesh.h" />
-    <ClInclude Include="RenderTexture.h" />
-    <ClInclude Include="ShadowMap.h" />
-    <ClInclude Include="SphereMesh.h" />
-    <ClInclude Include="System.h" />
-    <ClInclude Include="TessellationMesh.h" />
-    <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="Timer.h" />
-    <ClInclude Include="TokenStream.h" />
-    <ClInclude Include="TriangleMesh.h" />
+    <ClCompile Include="FileName.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AModel.cpp" />
-    <ClCompile Include="BaseApplication.cpp" />
-    <ClCompile Include="BaseMesh.cpp" />
-    <ClCompile Include="BaseShader.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="CubeMesh.cpp" />
-    <ClCompile Include="D3D.cpp" />
-    <ClCompile Include="FPCamera.cpp" />
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Model.cpp" />
-    <ClCompile Include="OrthoMesh.cpp" />
-    <ClCompile Include="PlaneMesh.cpp" />
-    <ClCompile Include="PointMesh.cpp" />
-    <ClCompile Include="QuadMesh.cpp" />
-    <ClCompile Include="RenderTexture.cpp" />
-    <ClCompile Include="ShadowMap.cpp" />
-    <ClCompile Include="SphereMesh.cpp" />
-    <ClCompile Include="System.cpp" />
-    <ClCompile Include="TessellationMesh.cpp" />
-    <ClCompile Include="TextureManager.cpp" />
-    <ClCompile Include="Timer.cpp" />
-    <ClCompile Include="TokenStream.cpp" />
-    <ClCompile Include="TriangleMesh.cpp" />
+    <ProjectReference Include="..\DXFramework\DXFramework.vcxproj">
+      <Project>{EFA77DFB-5B5D-F6F0-E451-F0C75006EDF4}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
