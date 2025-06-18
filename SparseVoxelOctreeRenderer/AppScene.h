@@ -1,6 +1,8 @@
 #pragma once
 
 #include "BaseApplication.h"
+
+#include "VoxelModelLoader/VoxelModelManager.h"
 class AppScene : public BaseApplication
 {
 public:
@@ -12,5 +14,11 @@ public:
 protected:
 	void handleInput(float dt) override;
 	bool render() override;
+private:
+	void renderGUI();
+
+	float CameraSpeed = 1.0f;
+
+	VoxelModelManager VoxManager;
 };
 
