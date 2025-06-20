@@ -9,7 +9,7 @@ project "SparseVoxelOctreeRenderer"
     language "C++"
     targetdir ("bin/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/") 
     objdir ("Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/")
-    files{"%{prj.name}/**.h","%{prj.name}/**.cpp"}
+    files{"%{prj.name}/**.h","%{prj.name}/**.cpp", "%{prj.name}/**.hlsl"}
     includedirs{"include","DXFramework/" ,
     "%{prj.name}/Include/Scene",
     "%{prj.name}/Include/Util",
@@ -22,8 +22,20 @@ project "SparseVoxelOctreeRenderer"
 
     -- Sets the working directory to the output where the .cso files get outputted. 
     -- Otherwise set each hlsl file to output to the defualt working directory.
-    debugdir "Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/"
+    debugdir "bin/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/"
 
+    -- Shader setup
+    filter "files:**.hlsl"
+        shadermodel "5.0"
+        shaderentry "main"
+    filter "files:**ps.hlsl"
+        shadertype "Pixel"
+    filter "files:**vs.hlsl"
+        shadertype "Vertex"
+    filter "files:**cs.hlsl"
+        shadertype "Compute"
+
+    
     filter "system:windows"
         cppdialect "C++17"
         systemversion "10.0.22621.0"

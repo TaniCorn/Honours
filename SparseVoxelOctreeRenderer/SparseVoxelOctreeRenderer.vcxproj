@@ -59,7 +59,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\include;..\DXFramework;$(ProjectDir)Include\Scene;$(ProjectDir)Include\Shaders;$(ProjectDir)Include\Voxels;$(ProjectDir)Include\Util;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\DXFramework;Include\Scene;Include\Util;Include\Shaders;Include\Voxels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -78,7 +78,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\include;..\DXFramework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\DXFramework;Include\Scene;Include\Util;Include\Shaders;Include\Voxels;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -98,36 +98,38 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\AppScene.h" />
-    <ClInclude Include="Include\Util\TimeMeasure.h" />
     <ClInclude Include="Include\Shaders\Texture\TextureShader.h" />
-    <ClInclude Include="Include\Voxels\Voxel.h" />
-    <ClInclude Include="Include\Voxels\vox_file.h" />
-    <ClInclude Include="Include\Voxels\VoxelModelManager.h" />
     <ClInclude Include="Include\Shaders\TextureViewer.h" />
+    <ClInclude Include="Include\Util\TimeMeasure.h" />
+    <ClInclude Include="Include\Voxels\Voxel.h" />
+    <ClInclude Include="Include\Voxels\VoxelModelManager.h" />
+    <ClInclude Include="Include\Voxels\vox_file.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Scene\AppScene.cpp" />
-    <ClCompile Include="Source\Util\TimeMeasure.cpp" />
     <ClCompile Include="Source\Scene\MainApp.cpp" />
     <ClCompile Include="Source\Shaders\Texture\TextureShader.cpp" />
-    <ClCompile Include="Source\Voxels\vox_file.cpp" />
-    <ClCompile Include="Source\Voxels\VoxelModelManager.cpp" />
     <ClCompile Include="Source\Shaders\TextureViewer.cpp" />
+    <ClCompile Include="Source\Util\TimeMeasure.cpp" />
+    <ClCompile Include="Source\Voxels\VoxelModelManager.cpp" />
+    <ClCompile Include="Source\Voxels\vox_file.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+    </FxCompile>
+    <FxCompile Include="Include\Shaders\Texture\Texture_vs.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>main</EntryPointName>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DXFramework\DXFramework.vcxproj">
       <Project>{EFA77DFB-5B5D-F6F0-E451-F0C75006EDF4}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-    </FxCompile>
-    <FxCompile Include="Include\Shaders\Texture\Texture_vs.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
-    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

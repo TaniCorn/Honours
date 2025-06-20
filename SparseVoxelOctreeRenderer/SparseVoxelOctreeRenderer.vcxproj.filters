@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Include">
+      <UniqueIdentifier>{6917EFFE-D5F6-6D9A-DE0E-F9704A6DD4FB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Scene">
+      <UniqueIdentifier>{46AFFFB7-B26F-7BEE-7BAA-C46BE729C0CA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Shaders">
+      <UniqueIdentifier>{429504C2-AE20-7286-B731-F57A233CCE86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Shaders\Texture">
+      <UniqueIdentifier>{A2DC6692-0E14-AF29-171E-134D83D4D522}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Util">
+      <UniqueIdentifier>{5638664B-429B-F5EF-EB20-2EA6D762C172}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Voxels">
+      <UniqueIdentifier>{397ED8BF-254C-CCC5-0EE0-3CECFA4CA82A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{56EB95D1-428D-C0A7-2B48-D4FB178947F8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Scene">
+      <UniqueIdentifier>{F300E3F2-DF63-7297-88E9-AA4D742B3E1A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shaders">
+      <UniqueIdentifier>{2F060343-1BD4-F648-0468-676FF0D4D2AD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Shaders\Texture">
+      <UniqueIdentifier>{8FEA097A-7BE4-32CC-6451-C9DC50EA9838}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Util">
+      <UniqueIdentifier>{63881F0F-CF3D-9804-5832-92DBC4E68E08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Voxels">
+      <UniqueIdentifier>{86052657-F2C5-A18D-BB00-EB0A2780E669}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Scene\AppScene.h">
+      <Filter>Include\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Shaders\Texture\TextureShader.h">
+      <Filter>Include\Shaders\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Shaders\TextureViewer.h">
+      <Filter>Include\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Util\TimeMeasure.h">
+      <Filter>Include\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Voxels\Voxel.h">
+      <Filter>Include\Voxels</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Voxels\VoxelModelManager.h">
+      <Filter>Include\Voxels</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Voxels\vox_file.h">
+      <Filter>Include\Voxels</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Scene\AppScene.cpp">
+      <Filter>Source\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\MainApp.cpp">
+      <Filter>Source\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Shaders\Texture\TextureShader.cpp">
+      <Filter>Source\Shaders\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Shaders\TextureViewer.cpp">
+      <Filter>Source\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Util\TimeMeasure.cpp">
+      <Filter>Source\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Voxels\VoxelModelManager.cpp">
+      <Filter>Source\Voxels</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Voxels\vox_file.cpp">
+      <Filter>Source\Voxels</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
+      <Filter>Include\Shaders\Texture</Filter>
+    </FxCompile>
+    <FxCompile Include="Include\Shaders\Texture\Texture_vs.hlsl">
+      <Filter>Include\Shaders\Texture</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>
