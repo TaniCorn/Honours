@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{89AF369E-F58E-B539-FEA6-40106A051C9B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\imGUI">
+      <UniqueIdentifier>{53F373A5-BFB3-EFDB-88EE-3859F46D34B8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AModel.h" />
+    <ClInclude Include="BaseApplication.h" />
+    <ClInclude Include="BaseMesh.h" />
+    <ClInclude Include="BaseShader.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CubeMesh.h" />
+    <ClInclude Include="D3D.h" />
+    <ClInclude Include="DXF.h" />
+    <ClInclude Include="FPCamera.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="OrthoMesh.h" />
+    <ClInclude Include="PlaneMesh.h" />
+    <ClInclude Include="PointMesh.h" />
+    <ClInclude Include="QuadMesh.h" />
+    <ClInclude Include="RenderTexture.h" />
+    <ClInclude Include="ShadowMap.h" />
+    <ClInclude Include="SphereMesh.h" />
+    <ClInclude Include="System.h" />
+    <ClInclude Include="TessellationMesh.h" />
+    <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="TokenStream.h" />
+    <ClInclude Include="TriangleMesh.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\include\imGUI\imgui.cpp">
+      <Filter>include\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imGUI\imgui_demo.cpp">
+      <Filter>include\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imGUI\imgui_draw.cpp">
+      <Filter>include\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imGUI\imgui_impl_dx11.cpp">
+      <Filter>include\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\include\imGUI\imgui_impl_win32.cpp">
+      <Filter>include\imGUI</Filter>
+    </ClCompile>
+    <ClCompile Include="AModel.cpp" />
+    <ClCompile Include="BaseApplication.cpp" />
+    <ClCompile Include="BaseMesh.cpp" />
+    <ClCompile Include="BaseShader.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CubeMesh.cpp" />
+    <ClCompile Include="D3D.cpp" />
+    <ClCompile Include="FPCamera.cpp" />
+    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Model.cpp" />
+    <ClCompile Include="OrthoMesh.cpp" />
+    <ClCompile Include="PlaneMesh.cpp" />
+    <ClCompile Include="PointMesh.cpp" />
+    <ClCompile Include="QuadMesh.cpp" />
+    <ClCompile Include="RenderTexture.cpp" />
+    <ClCompile Include="ShadowMap.cpp" />
+    <ClCompile Include="SphereMesh.cpp" />
+    <ClCompile Include="System.cpp" />
+    <ClCompile Include="TessellationMesh.cpp" />
+    <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="TokenStream.cpp" />
+    <ClCompile Include="TriangleMesh.cpp" />
+  </ItemGroup>
+</Project>

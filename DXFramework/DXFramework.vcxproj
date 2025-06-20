@@ -124,6 +124,11 @@
     <ClInclude Include="TriangleMesh.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\include\imGUI\imgui.cpp" />
+    <ClCompile Include="..\include\imGUI\imgui_demo.cpp" />
+    <ClCompile Include="..\include\imGUI\imgui_draw.cpp" />
+    <ClCompile Include="..\include\imGUI\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\include\imGUI\imgui_impl_win32.cpp" />
     <ClCompile Include="AModel.cpp" />
     <ClCompile Include="BaseApplication.cpp" />
     <ClCompile Include="BaseMesh.cpp" />

@@ -67,7 +67,7 @@
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;DXFramework.lib;dxgi.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -89,7 +89,7 @@
       <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>d3d11.lib;DXFramework.lib;dxgi.lib;D3DCompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -97,7 +97,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="FileName.cpp" />
+    <ClInclude Include="AppScene.h" />
+    <ClInclude Include="Benchmarking\TimeMeasure.h" />
+    <ClInclude Include="Voxel.h" />
+    <ClInclude Include="VoxelModelLoader\vox_file.h" />
+    <ClInclude Include="VoxelModelLoader\VoxelModelManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AppScene.cpp" />
+    <ClCompile Include="Benchmarking\TimeMeasure.cpp" />
+    <ClCompile Include="MainApp.cpp" />
+    <ClCompile Include="VoxelModelLoader\vox_file.cpp" />
+    <ClCompile Include="VoxelModelLoader\VoxelModelManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DXFramework\DXFramework.vcxproj">
