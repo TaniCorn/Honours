@@ -14,7 +14,7 @@ namespace TextureView
 
 		void Render(ID3D11DeviceContext* Context, XMMATRIX WorldMatrix, XMMATRIX OrthoMatrix, XMMATRIX OrthoViewMatrix, ID3D11ShaderResourceView* SRV) const;
 
-		const RenderTexture* GetRenderTexture() const;
+		RenderTexture* GetRenderTexture() const;
 	private:
 		std::unique_ptr<TextureShader> Shader;
 		std::unique_ptr<OrthoMesh> Mesh;

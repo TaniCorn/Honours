@@ -40,12 +40,14 @@ void AppScene::handleInput(float dt)
 
 bool AppScene::render()
 {
-	renderer->beginScene(0.39f, 0.58f, 0.92f, 1.0f);
+	renderer->beginScene(1.0f, 0.58f, 0.92f, 1.0f);
 
 	XMMATRIX worldMatrix = renderer->getWorldMatrix();
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();
 
+	RenderTexture* rt = TextureViewer->GetRenderTexture();
+	rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);
 	//TODO: Replace nullptr with the compute tracers SRV texture
 	TextureViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, nullptr);
 

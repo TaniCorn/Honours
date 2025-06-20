@@ -48,7 +48,7 @@ public:
 	}
 
 	BaseShader(ID3D11Device* device, HWND hwnd);
-	~BaseShader();
+	virtual ~BaseShader();
 
 	/** \Brief render function
 	* Sets shader stages and draws the indexed data

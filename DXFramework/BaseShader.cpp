@@ -8,6 +8,15 @@ BaseShader::BaseShader(ID3D11Device* device, HWND lhwnd)
 {
 	renderer = device;
 	hwnd = hwnd;
+	hullShader = 0;
+	domainShader = 0;
+	geometryShader = 0;
+	computeShader = 0;
+	pixelShader = 0;
+	vertexShader = 0;
+	layout = 0;
+	matrixBuffer = 0;
+	sampleState = 0;
 }
 
 // Release resources (if used).
@@ -47,6 +56,24 @@ BaseShader::~BaseShader()
 	{
 		computeShader->Release();
 		computeShader = 0;
+	}
+
+	if (sampleState)
+	{
+		sampleState->Release();
+		sampleState = 0;
+	}
+
+	if (matrixBuffer)
+	{
+		matrixBuffer->Release();
+		matrixBuffer = 0;
+	}
+
+	if (layout)
+	{
+		layout->Release();
+		layout = 0;
 	}
 }
 

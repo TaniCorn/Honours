@@ -19,7 +19,7 @@ void TextureView::TextureViewer::Render(ID3D11DeviceContext* Context, XMMATRIX W
 	Shader->render(Context, Mesh->getIndexCount());
 }
 
-const RenderTexture* TextureViewer::GetRenderTexture() const
+RenderTexture* TextureViewer::GetRenderTexture() const
 {
 	// Releasing a raw pointer as texture should be ok to give
 	return Texture.get();

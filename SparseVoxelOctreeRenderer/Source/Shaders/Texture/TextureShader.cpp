@@ -4,34 +4,13 @@ using namespace TextureView;
 TextureShader::TextureShader(ID3D11Device* device, HWND hwnd) : BaseShader(device, hwnd)
 {
 	initShader(L"Texture_vs.cso", L"Texture_ps.cso");
+
 }
 
 
 TextureShader::~TextureShader()
 {
-	// Release the sampler state.
-	if (sampleState)
-	{
-		sampleState->Release();
-		sampleState = 0;
-	}
-
-	// Release the matrix constant buffer.
-	if (matrixBuffer)
-	{
-		matrixBuffer->Release();
-		matrixBuffer = 0;
-	}
-
-	// Release the layout.
-	if (layout)
-	{
-		layout->Release();
-		layout = 0;
-	}
-
-	//Release base shader components
-	BaseShader::~BaseShader();
+	matrixBuffer = 0;
 }
 
 void TextureShader::initShader(const wchar_t* vsFilename, const wchar_t* psFilename)
@@ -94,7 +73,7 @@ void TextureShader::setShaderParameters(ID3D11DeviceContext* deviceContext, cons
 	deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
 
 	// Set shader texture and sampler resource in the pixel shader.
-	deviceContext->PSSetShaderResources(0, 1, &texture);
+	//deviceContext->PSSetShaderResources(0, 1, &texture);
 	deviceContext->PSSetSamplers(0, 1, &sampleState);
 }
 
