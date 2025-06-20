@@ -2,7 +2,10 @@
 
 #include "BaseApplication.h"
 
-#include "VoxelModelLoader/VoxelModelManager.h"
+// Self Made Classes
+#include "VoxelModelManager.h"
+#include "TextureViewer.h"
+
 class AppScene : public BaseApplication
 {
 public:
@@ -18,7 +21,6 @@ private:
 	void renderGUI();
 
 	float CameraSpeed = 1.0f;
-
-	VoxelModelManager VoxManager;
+	std::unique_ptr<TextureView::TextureViewer> TextureViewer;
 };
 

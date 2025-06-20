@@ -8,6 +8,7 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	camera->setPosition(0, 0, 0);
 	camera->setRotation(0, 0, 0); // 	camera->setPosition(350, 150, -2000);
 
+	TextureViewer = std::make_unique<TextureView::TextureViewer>(renderer->getDevice(), renderer->getDeviceContext(), hwnd, screenWidth, screenHeight);
 }
 
 bool AppScene::frame()
@@ -44,6 +45,9 @@ bool AppScene::render()
 	XMMATRIX worldMatrix = renderer->getWorldMatrix();
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();
+
+	//TODO: Replace nullptr with the compute tracers SRV texture
+	TextureViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, nullptr);
 
 	renderGUI();
 

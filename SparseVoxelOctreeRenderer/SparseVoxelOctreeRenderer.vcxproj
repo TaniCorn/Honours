@@ -59,7 +59,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\include;..\DXFramework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;..\DXFramework;$(ProjectDir)Include\Scene;$(ProjectDir)Include\Shaders;$(ProjectDir)Include\Voxels;$(ProjectDir)Include\Util;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -97,23 +97,37 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AppScene.h" />
-    <ClInclude Include="Benchmarking\TimeMeasure.h" />
-    <ClInclude Include="Voxel.h" />
-    <ClInclude Include="VoxelModelLoader\vox_file.h" />
-    <ClInclude Include="VoxelModelLoader\VoxelModelManager.h" />
+    <ClInclude Include="Include\Scene\AppScene.h" />
+    <ClInclude Include="Include\Util\TimeMeasure.h" />
+    <ClInclude Include="Include\Shaders\Texture\TextureShader.h" />
+    <ClInclude Include="Include\Voxels\Voxel.h" />
+    <ClInclude Include="Include\Voxels\vox_file.h" />
+    <ClInclude Include="Include\Voxels\VoxelModelManager.h" />
+    <ClInclude Include="Include\Shaders\TextureViewer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppScene.cpp" />
-    <ClCompile Include="Benchmarking\TimeMeasure.cpp" />
-    <ClCompile Include="MainApp.cpp" />
-    <ClCompile Include="VoxelModelLoader\vox_file.cpp" />
-    <ClCompile Include="VoxelModelLoader\VoxelModelManager.cpp" />
+    <ClCompile Include="Source\Scene\AppScene.cpp" />
+    <ClCompile Include="Source\Util\TimeMeasure.cpp" />
+    <ClCompile Include="Source\Scene\MainApp.cpp" />
+    <ClCompile Include="Source\Shaders\Texture\TextureShader.cpp" />
+    <ClCompile Include="Source\Voxels\vox_file.cpp" />
+    <ClCompile Include="Source\Voxels\VoxelModelManager.cpp" />
+    <ClCompile Include="Source\Shaders\TextureViewer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DXFramework\DXFramework.vcxproj">
       <Project>{EFA77DFB-5B5D-F6F0-E451-F0C75006EDF4}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Include\Shaders\Texture\Texture_vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

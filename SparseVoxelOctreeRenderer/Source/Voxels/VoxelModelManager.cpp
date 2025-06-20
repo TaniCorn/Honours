@@ -127,9 +127,9 @@ const DirectX::XMFLOAT3 VoxelModelManager::GetModelDimensionsExact(const std::st
 		return DirectX::XMFLOAT3(-1,-1,-1);
 	}
 
-	float XRes = SparseModel->size().x;
-	float YRes = SparseModel->size().y;
-	float ZRes = SparseModel->size().z;
+	float XRes = float(SparseModel->size().x);
+	float YRes = float(SparseModel->size().y);
+	float ZRes = float(SparseModel->size().z);
 	return XMFLOAT3(XRes, YRes, ZRes);
 }
 

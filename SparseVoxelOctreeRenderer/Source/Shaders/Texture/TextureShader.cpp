@@ -1,4 +1,5 @@
 #include "Texture/TextureShader.h"
+using namespace TextureView;
 
 TextureShader::TextureShader(ID3D11Device* device, HWND hwnd) : BaseShader(device, hwnd)
 {
