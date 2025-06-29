@@ -4,6 +4,9 @@
     <Filter Include="Include">
       <UniqueIdentifier>{6917EFFE-D5F6-6D9A-DE0E-F9704A6DD4FB}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\Octree">
+      <UniqueIdentifier>{9A40A9AE-860E-9DB4-6FA2-0DDB5B0F7919}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Include\Scene">
       <UniqueIdentifier>{46AFFFB7-B26F-7BEE-7BAA-C46BE729C0CA}</UniqueIdentifier>
     </Filter>
@@ -22,6 +25,9 @@
     <Filter Include="Source">
       <UniqueIdentifier>{56EB95D1-428D-C0A7-2B48-D4FB178947F8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Octree">
+      <UniqueIdentifier>{E7C7F645-5388-727C-1CC3-BBF98842B758}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Scene">
       <UniqueIdentifier>{F300E3F2-DF63-7297-88E9-AA4D742B3E1A}</UniqueIdentifier>
     </Filter>
@@ -39,6 +45,9 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Octree\SVOConstructorCPU.h">
+      <Filter>Include\Octree</Filter>
+    </ClInclude>
     <ClInclude Include="Include\Scene\AppScene.h">
       <Filter>Include\Scene</Filter>
     </ClInclude>
@@ -60,8 +69,14 @@
     <ClInclude Include="Include\Voxels\vox_file.h">
       <Filter>Include\Voxels</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Octree\SVOTraverserShader.h">
+      <Filter>Include\Octree</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Octree\SVOConstructorCPU.cpp">
+      <Filter>Source\Octree</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Scene\AppScene.cpp">
       <Filter>Source\Scene</Filter>
     </ClCompile>
@@ -83,6 +98,9 @@
     <ClCompile Include="Source\Voxels\vox_file.cpp">
       <Filter>Source\Voxels</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Octree\SVOTraverserShader.cpp">
+      <Filter>Source\Octree</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
@@ -91,5 +109,10 @@
     <FxCompile Include="Include\Shaders\Texture\Texture_vs.hlsl">
       <Filter>Include\Shaders\Texture</Filter>
     </FxCompile>
+    <FxCompile Include="Include\Shaders\Traversal\OctreeTracer_cs.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Include\Shaders\HLSLI\Raycasting.hlsli" />
+    <None Include="Include\Shaders\HLSLI\Voxel.hlsli" />
   </ItemGroup>
 </Project>

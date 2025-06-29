@@ -9,12 +9,13 @@ project "SparseVoxelOctreeRenderer"
     language "C++"
     targetdir ("bin/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/") 
     objdir ("Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/")
-    files{"%{prj.name}/**.h","%{prj.name}/**.cpp", "%{prj.name}/**.hlsl"}
+    files{"%{prj.name}/**.h","%{prj.name}/**.cpp", "%{prj.name}/**.hlsl", "%{prj.name}/**.hlsli"}
     includedirs{"include","DXFramework/" ,
     "%{prj.name}/Include/Scene",
     "%{prj.name}/Include/Util",
     "%{prj.name}/Include/Shaders",
     "%{prj.name}/Include/Voxels",
+    "%{prj.name}/Include/Octree",
     -- Update with any extra files in the include
     }
     libdirs {"lib/%{cfg.buildcfg}/"}

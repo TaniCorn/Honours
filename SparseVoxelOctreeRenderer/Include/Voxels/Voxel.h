@@ -10,5 +10,18 @@ struct Voxel
 	XMFLOAT3 Point;
 	UINT32 Color;
 };
+namespace OctreeGPU
+{
+	struct SVOSRVRepresentation
+	{
+		DirectX::XMFLOAT3 TopLeftFrontPosition;
+		DirectX::XMFLOAT3 BottomRightBackPosition;
+		DirectX::XMFLOAT3 VoxelPosition;
+		UINT32 RGB;
+		UINT32 Depth;
+		UINT32 Octants[8];
+	};
+}
+
 
 #endif
