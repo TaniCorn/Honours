@@ -6,7 +6,7 @@
 #include "BaseShader.h"
 #include "Voxel.h"
 #include "vox_file.h"
-#include "SVOConstructorCPU.h"
+#include "SVOGPURepresentation.h"
 
 using namespace OctreeGPU;
 using namespace std;
@@ -15,6 +15,8 @@ using namespace DirectX;
 class SVOTraverserShader : public BaseShader
 {
 public:
+	//* ---------- GPU BUFFERS ---------- *//
+
 	struct CameraBuffer {
 		XMFLOAT3 Position;
 		float Padding;
@@ -40,22 +42,30 @@ public:
 	struct VoxelPaletteBuffer {
 		VoxelColor Palettes[8];
 	};
-	SVOTraverserShader(ID3D11Device* Device, HWND Hwnd, int OctantNumber, int InWidth, int InHeight);
 
+	SVOTraverserShader(ID3D11Device* Device, HWND Hwnd, int OctantNumber, int InWidth, int InHeight);
 	~SVOTraverserShader();
-	ID3D11ShaderResourceView* GetSRV();
+	void initShader(const wchar_t* CFile, const wchar_t* Blank) override;
+
 	void Unbind(ID3D11DeviceContext* Dc);
 
+
+	//TODO: remove this if can be replaced by the focused functions below
 	void SetShaderParameters(ID3D11DeviceContext* DeviceContext, const XMMATRIX& World, const XMMATRIX& OrthoView, const XMMATRIX& Ortho, const XMMATRIX& View, const XMMATRIX& Projection, XMFLOAT3 CameraPos, ID3D11ShaderResourceView* Texture, int VoxelView = 0, int ViewDepth = 0, bool Heat = false, int AmountOfOctrees = 2);
 
 	void SetMatrixBuffer(ID3D11DeviceContext* DeviceContext, const XMMATRIX& World, const XMMATRIX& OrthoView, const XMMATRIX& Ortho, const XMMATRIX& View, const XMMATRIX& Projection);
 	void SetCameraBuffer(ID3D11DeviceContext* DeviceContext, const XMFLOAT3& CameraPos, int VoxelView = 0);
 	void SetViewModeBuffer(ID3D11DeviceContext* DeviceContext, int VoxelView, int ViewDepth, bool Heatmap, int AmountOfOctrees = 2);
 	void SetTexture(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Texture);
-	void SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[8]);
-	void SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, SVOConstructorCPU* Octree[8]);
 	void SetVoxelPalette(ID3D11DeviceContext* DeviceContext, magicavoxel::Palette* Palettes[8]);
-	void SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOConstructorCPU* Octree, unsigned short Index);
+
+	void SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[8]);
+	void SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, SVOGPURepresentation* Octree[8]);
+	void SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOGPURepresentation* Octree, unsigned short StorageIndex);
+
+
+	ID3D11ShaderResourceView* GetSRV();
+
 
 	ID3D11Device* Device;
 	HWND Hwnd;
@@ -63,7 +73,6 @@ public:
 	int NumberOfOctants;
 
 private:
-	void InitShader(const wchar_t* CFile, const wchar_t* Blank);
 	HRESULT CreateInput();
 	HRESULT CreateOutput();
 	HRESULT CreateConstantBuffer(ID3D11Buffer** OutBuffer, UINT ByteWidth);

@@ -2,13 +2,10 @@
 #include <map>
 #include <vector>
 #include "vox_file.h"
+#include "Voxel.h"
+
 //Replace with include
 #include "DXF.h"
-struct Voxel
-{
-	DirectX::XMFLOAT3 point;
-	UINT32 color;
-};
 
 
 class VoxelModelManager
@@ -22,7 +19,7 @@ public:
 	/// <summary>
 	/// Constructs a series of Voxels from a MagicaVoxel model and returns them
 	/// </summary>
-	std::unique_ptr<std::vector<Voxel>> ConstructVoxelsFromModel(const std::string& IdentifierName) const;
+	std::vector<Voxel> ConstructVoxelsFromModel(const std::string& IdentifierName) const;
 	magicavoxel::VoxSparseModel* GetModel(const std::string& IdentifierName) const;
 
 	/// <summary>
@@ -31,8 +28,8 @@ public:
 	const int GetModelDimensions(const std::string& IdentifierName) const;
 	const DirectX::XMFLOAT3 GetModelDimensionsExact(const std::string& IdentifierName) const;
 
-	const magicavoxel::Color GetColorFromPalette(const std::string& IdentifierName, const uint8_t ColorIndex) const;
-	const magicavoxel::Palette* GetPalette(const std::string& IdentifierName) const;
+	magicavoxel::Color GetColorFromPalette(const std::string& IdentifierName, const uint8_t ColorIndex) const;
+	magicavoxel::Palette* GetPalette(const std::string& IdentifierName);
 
 	static DirectX::XMFLOAT4 GetRGBAFromColor(const magicavoxel::Color color);
 

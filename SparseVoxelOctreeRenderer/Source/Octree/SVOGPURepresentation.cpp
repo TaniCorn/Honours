@@ -1,4 +1,4 @@
-#include "SVOConstructorCPU.h"
+#include "SVOGPURepresentation.h"
 using namespace OctreeGPU;
 
 #define MAX_DEPTH 20 // MAX DEPTH has to be defined as the GPU hlsl shader requires an immutable amount
@@ -11,14 +11,15 @@ using namespace OctreeGPU;
 #define BLB 6
 #define BRB 7
 
-OctreeGPU::SVOConstructorCPU::SVOConstructorCPU(int amountOfVoxels, UINT minVoxelSize) : 
-    MinSize(minVoxelSize), MaxStride(0)
+OctreeGPU::SVOGPURepresentation::SVOGPURepresentation(int AmountOfVoxels, int Resolution, UINT MinVoxelSize) :
+    MinSize(MinVoxelSize), MaxStride(0), Voxels(AmountOfVoxels)
 {
-    Octree = std::make_unique<OctreeGPURepresentation[]>(amountOfVoxels * MAX_DEPTH);
-    Voxels = std::make_unique<std::vector<Voxel>>(amountOfVoxels);
+    Octree = std::make_unique<OctreeGPURepresentation[]>(AmountOfVoxels * MAX_DEPTH);
+	Octree[0].BottomRightBackPosition = XMFLOAT3(Resolution, 0, Resolution);
+	Octree[0].TopLeftFrontPosition = XMFLOAT3(0, Resolution, 0);
 }
 
-void SVOConstructorCPU::InsertVoxel(Voxel Vox)
+void SVOGPURepresentation::InsertVoxel(Voxel Vox)
 {
     //Depth first insertion
     OctreeGPURepresentation* currentNode = &Octree[0];
@@ -33,7 +34,7 @@ void SVOConstructorCPU::InsertVoxel(Voxel Vox)
         {
             currentNode->ColorIndex = Vox.Color;
             currentNode->VoxelPosition = Vox.Point;
-			Voxels->push_back(Vox);
+			Voxels.push_back(Vox);
             return;
         }
 
@@ -69,12 +70,12 @@ void SVOConstructorCPU::InsertVoxel(Voxel Vox)
     }
 }
 
-const OctreeGPURepresentation& OctreeGPU::SVOConstructorCPU::GetOctant(const UINT32& Stride) const
+const OctreeGPURepresentation& OctreeGPU::SVOGPURepresentation::GetOctant(const UINT32& Stride) const
 {
 	return Octree[Stride];
 }
 
-void SVOConstructorCPU::Clear()
+void SVOGPURepresentation::Clear()
 {
     for (int i = 0; i < MaxStride; i++)
     {
@@ -87,7 +88,7 @@ void SVOConstructorCPU::Clear()
     }
     MaxStride = 0;
 
-    Voxels->clear();
+    Voxels.clear();
 }
 
 OctreeGPURepresentation::OctreeGPURepresentation() : 

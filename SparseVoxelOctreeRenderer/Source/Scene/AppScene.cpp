@@ -1,14 +1,49 @@
 #include "AppScene.h"
 
+AppScene::AppScene()
+{
+}
+
+AppScene::~AppScene()
+{
+	// Remember do we need to delete pallette?
+}
+
 void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight, Input* in, bool VSYNC, bool FULL_SCREEN)
 {
 
 	BaseApplication::init(hinstance, hwnd, screenWidth, screenHeight, in, VSYNC, FULL_SCREEN);
 
 	camera->setPosition(0, 0, 0);
-	camera->setRotation(0, 0, 0); // 	camera->setPosition(350, 150, -2000);
+	camera->setPosition(350, 150, -1000);
+	camera->setRotation(0, 0, 0);
 
-	TextureViewer = std::make_unique<TextureView::TextureViewer>(renderer->getDevice(), renderer->getDeviceContext(), hwnd, screenWidth, screenHeight);
+	RTViewer = std::make_unique<TextureView::TextureViewer>(renderer->getDevice(), renderer->getDeviceContext(), hwnd, screenWidth, screenHeight);
+
+	RawVoxelModels = std::make_unique<VoxelModelManager>();
+	SVOModels = std::make_unique<SVOManager>();
+	const int PregeneratedOctreeSize = 200000;
+	SVOTraverser = std::make_unique<SVOTraverserShader>(renderer->getDevice(), hwnd, PregeneratedOctreeSize, screenWidth, screenHeight);
+
+	const std::string ModelName = "monu1";
+	if (RawVoxelModels->LoadModel(ModelName, "res/monu1.vox"))
+	{
+		std::vector<Voxel> Voxels = RawVoxelModels->ConstructVoxelsFromModel(ModelName);
+		int VoxelModelResolution = RawVoxelModels->GetModelDimensions(ModelName);
+		const UINT VoxelSize = 1;
+		SVOModels->InitialiseSVOModel(ModelName, Voxels.size(), VoxelModelResolution, VoxelSize);
+		SVOModels->CreateSVOModel(ModelName, Voxels);
+
+		for (size_t i = 0; i < MODELAMOUNT; i++)
+		{
+			voxelModelPalettes[i] = RawVoxelModels->GetPalette(ModelName);
+		}
+	}
+	else
+	{
+		MessageBox(hwnd, L"Exception Init: ", L"Error loading model", MB_OK);
+		throw std::runtime_error("Error loading model");
+	}
 }
 
 bool AppScene::frame()
@@ -21,7 +56,22 @@ bool AppScene::frame()
 		return false;
 	}
 
+	camera->update();
 
+	XMMATRIX worldMatrix = renderer->getWorldMatrix();
+	XMMATRIX viewMatrix = camera->getViewMatrix();
+	XMMATRIX projectionMatrix = renderer->getProjectionMatrix();
+
+	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();  // ortho matrix for 2D rendering
+	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
+	//
+
+	RTViewer->GetRenderTexture()->clearRenderTarget(renderer->getDeviceContext(), 1, 0, 0, 1);
+	SVOTraverser->SetShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), RTViewer->GetRenderTexture()->getShaderResourceView(), 0, 1, 0, 2);
+	SVOTraverser->SetVoxelModel(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), 0);
+	SVOTraverser->SetVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
+	SVOTraverser->compute(renderer->getDeviceContext(), 74, 40, 1);
+	SVOTraverser->Unbind(renderer->getDeviceContext());
 
 
 	result = render();
@@ -29,13 +79,9 @@ bool AppScene::frame()
 	{
 		return false;
 	}
+	camera->move(0.9);
 
 	return true;
-}
-
-void AppScene::handleInput(float dt)
-{
-	camera->move(dt);
 }
 
 bool AppScene::render()
@@ -46,10 +92,11 @@ bool AppScene::render()
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();
 
-	RenderTexture* rt = TextureViewer->GetRenderTexture();
-	rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);
+	/*RenderTexture* rt = TextureViewer->GetRenderTexture();
+	rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);*/
 	//TODO: Replace nullptr with the compute tracers SRV texture
-	TextureViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, nullptr);
+	
+	RTViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, SVOTraverser->GetSRV());
 
 	renderGUI();
 

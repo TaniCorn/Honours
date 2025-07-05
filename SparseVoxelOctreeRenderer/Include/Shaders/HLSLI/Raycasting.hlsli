@@ -61,9 +61,12 @@ bool rayBox(float3 rayPosition, float3 rayDirection, float3 tlfmin, float3 brbma
     return tEnter > tExit;
 }
 
+/*
+* Converts the UV coordinates of a pixel to a position in view space
+*/
 float4 UVPositionCalculation(float2 resolution, float2 uv, matrix proj, float fov)
 {
-    ////https://rastertek.com/dx11tut47.html and 3D Game Programming with DirectX11 ByteAddressBuffer Frank Luna
+    ////https://www.rastertek.com/dx11win10tut47.html and 3D Game Programming with DirectX11 ByteAddressBuffer Frank Luna
     
     float2 uvxy = float2(resolution.x * uv.x, resolution.y * uv.y);
     

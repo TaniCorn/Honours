@@ -97,7 +97,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Octree\SVOConstructorCPU.h" />
+    <ClInclude Include="Include\Octree\SVOGPURepresentation.h" />
     <ClInclude Include="Include\Scene\AppScene.h" />
     <ClInclude Include="Include\Shaders\Texture\TextureShader.h" />
     <ClInclude Include="Include\Shaders\TextureViewer.h" />
@@ -106,9 +106,10 @@
     <ClInclude Include="Include\Voxels\VoxelModelManager.h" />
     <ClInclude Include="Include\Voxels\vox_file.h" />
     <ClInclude Include="Include\Octree\SVOTraverserShader.h" />
+    <ClInclude Include="Include\Octree\SVOManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Octree\SVOConstructorCPU.cpp" />
+    <ClCompile Include="Source\Octree\SVOGPURepresentation.cpp" />
     <ClCompile Include="Source\Scene\AppScene.cpp" />
     <ClCompile Include="Source\Scene\MainApp.cpp" />
     <ClCompile Include="Source\Shaders\Texture\TextureShader.cpp" />
@@ -117,6 +118,7 @@
     <ClCompile Include="Source\Voxels\VoxelModelManager.cpp" />
     <ClCompile Include="Source\Voxels\vox_file.cpp" />
     <ClCompile Include="Source\Octree\SVOTraverserShader.cpp" />
+    <ClCompile Include="Source\Octree\SVOManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">

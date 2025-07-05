@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef SVOCONSTRUCTORCPU_H
-#define SVOCONSTRUCTORCPU_H
+#ifndef SVOGPUREPRESENTATION_H
+#define SVOGPUREPRESENTATION_H
 
 #include "DXF.h"
 #include <set>
@@ -47,7 +47,7 @@ namespace OctreeGPU
     {
     public:
         OctreeGPURepresentation();
-		friend class SVOConstructorCPU;
+		friend class SVOGPURepresentation;
 
         // Getters
 		XMFLOAT3 GetTopLeftFrontPosition() const { return TopLeftFrontPosition; }
@@ -56,6 +56,8 @@ namespace OctreeGPU
 		UINT32 GetColorIndex() const { return ColorIndex; }
 		UINT32 GetDepth() const { return Depth; }
 		UINT32 GetOctantStride(int octantIndex) const { return ChildOctantStride[octantIndex]; }
+
+
 
     private:
         XMFLOAT3 GetChildTLFBound(const UINT32 octant) const;
@@ -75,10 +77,10 @@ namespace OctreeGPU
     /// <summary>
     /// Constructs an SVO from scratch ready to translate the SRV format for usage in a compute shader.
     /// </summary>
-    class SVOConstructorCPU
+    class SVOGPURepresentation
     {
     public:
-        SVOConstructorCPU(int amountOfVoxels, UINT minVoxelSize = 1);
+        SVOGPURepresentation(int AmountOfVoxels, int Resolution, UINT MinVoxelSize = 1);
         /// <summary>
         /// Inserts a voxel into the Octree via a depth first insertion.
         /// </summary>
@@ -90,18 +92,17 @@ namespace OctreeGPU
 
         const OctreeGPURepresentation& GetOctant(const UINT32& Stride) const;
         int GetMaxStride() const { return MaxStride; }
-
     private:
         UINT MinSize;
 		UINT32 MaxStride; // The current maximum length of the Octree, used to determine the next available index for a new octant
         std::unique_ptr<OctreeGPURepresentation[]> Octree;
-		std::unique_ptr<std::vector<Voxel>> Voxels;
+		std::vector<Voxel> Voxels;
     };
 }
 
 
 #undef MAX_DEPTH
-#endif // !SVOCONSTRUCTORCPU_H
+#endif // !SVOGPUREPRESENTATION_H
 
 
 

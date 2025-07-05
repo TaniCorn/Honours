@@ -6,7 +6,7 @@ SVOTraverserShader::SVOTraverserShader(ID3D11Device* Device, HWND Hwnd, int Octa
 	NumberOfOctants(OctantNumber), 
 	ScreenWidth(InWidth), ScreenHeight(InHeight)
 {
-	InitShader(L"OctreeTracer_cs.cso", NULL);
+	initShader(L"OctreeTracer_cs.cso", NULL);
 }
 SVOTraverserShader::~SVOTraverserShader()
 {
@@ -93,7 +93,7 @@ HRESULT SVOTraverserShader::CreateConstantBuffer(ID3D11Buffer** OutBuffer, UINT 
 	return Hr;
 }
 
-void SVOTraverserShader::InitShader(const wchar_t* CFile, const wchar_t* Blank)
+void SVOTraverserShader::initShader(const wchar_t* CFile, const wchar_t* Blank)
 {
 	loadComputeShader(CFile);
 	CreateInput();
@@ -289,14 +289,14 @@ void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3
 	DeviceContext->CSSetShaderResources(1, 8, Octree);
 }
 
-void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, SVOConstructorCPU* Octree[8])
+void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, SVOGPURepresentation* Octree[8])
 {
 	HRESULT Result;
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
 
 	for (int i = 0; i < 8; i++)
 	{
-		SVOConstructorCPU* Oc = Octree[i];
+		SVOGPURepresentation* Oc = Octree[i];
 		if (Oc == NULL)
 		{
 			return;
@@ -325,7 +325,7 @@ void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, SVO
 	}
 }
 
-void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOConstructorCPU* Octree, unsigned short Index)
+void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOGPURepresentation* Octree, unsigned short StorageIndex)
 {
 	HRESULT Result;
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
@@ -346,8 +346,8 @@ void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOCo
 			Oct[Index].Octants[k] = Octree->GetOctant(j).GetOctantStride(k);
 		}
 	}
-	DeviceContext->Unmap(InOctreeBuffer[Index], 0);
-	DeviceContext->CSSetShaderResources(1 + Index, 1, &InOctreeSRV[Index]);
+	DeviceContext->Unmap(InOctreeBuffer[StorageIndex], 0);
+	DeviceContext->CSSetShaderResources(1 + StorageIndex, 1, &InOctreeSRV[StorageIndex]);
 }
 
 void SVOTraverserShader::SetVoxelPalette(ID3D11DeviceContext* DeviceContext, magicavoxel::Palette* Palettes[8])

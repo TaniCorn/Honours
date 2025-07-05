@@ -42,6 +42,7 @@ StructuredBuffer<VoxelOctree> voxelOctree[8] : register(t1);
 StructuredBuffer<VoxelColor> palette[8] : register(t9);
 RWTexture2D<float4> gOutput : register(u0);
 
+//TODO: Move these functions into a common file
 
 float UnpackVoxelColor(uint color, int rgba)
 {
@@ -519,6 +520,8 @@ float4 GetColorFromOctant(int index)
     }
 
 }
+
+
 [numthreads(16, 16, 1)]
 void main(int3 groupThreadID : SV_GroupThreadID,
 	int3 dispatchThreadID : SV_DispatchThreadID)
@@ -526,6 +529,7 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     int x = dispatchThreadID.x;
     int y = dispatchThreadID.y;
     
+    // Quick Abort when reaching out of bounds for y pixel as the resolution in y is not nicely divisible by the 16 threads
     if (dispatchThreadID.y > 636)
     {
         return;
@@ -534,44 +538,59 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     float3 camPos = cameraPosition.xyz;
     float2 res = float2(1184, 636);
     float fov = 1.0;
+    
+    // Calculating the texel coordinates based on resolution and dispatch thread ID
     float texx = float(x) / float(res.x);
     float texy = float(y) / float(res.y);
+    
+    // Creating a ray from the texel moving outwards from the camera position and fov amount in perspective view
     float4 v = UVPositionCalculation(res, float2(texx, texy), projectionMatrix, fov);
     float3 rayVector = CalculateViewVector(v, viewMatrix, worldMatrix);
+    
     
     Ray ray;
     ray.RayPos = camPos;
     ray.RayDirection = rayVector;
     
+    // Setting the output color to the ray vector, so that any missed rays will display the view vector direction
     gOutput[int2(x, y)] = float4(rayVector, 1);
-    
+    // Heatmap variables
     int heatIterations = 0;
     int heatHits = 0;
+    
+    // We loop 8 times to test hits with all 8 octrees in the array
     for (int i = 0; i < 8; i++)
     {
+        // Get the voxel octree for the current index
         StructuredBuffer<VoxelOctree> vo = voxelOctree[i];
         
-        float3 offset = float3((i % 4) * 200, saturate(i - 3) * 200, 0);//Model offsets
-        uint color = 0;
+        // This is a hardcoded offset for each model
+        float3 modelOffsets = float3((i % 4) * 200, saturate(i - 3) * 200, 0);//Model offsets
+        uint colorIndex = 0;
         
-        //For Render Box and Wireframe only
+        // I cannot remember what stride represents // TODO: Figure out because it seems redundant
         uint stride = 0;
+        
+        //For Render Box and Wireframe only, this is quite expensive
         if (ViewMode == 3 || ViewMode == 4)
         {
-            stride = VoxelDoesRayIntersect(ray, vo, offset);
+            stride = VoxelDoesRayIntersect(ray, vo, modelOffsets);
         }
         
         
        switch (ViewMode)
         {
             case 0:
-                color = DoesRayIntersect(ray, vo, offset);
+                // Basic ray intersection test, with color index later on
+                colorIndex = DoesRayIntersect(ray, vo, modelOffsets);
                 break;
             case 1:
-                heatIterations += DoesRayIntersect(ray, vo, offset);
+                // Heatmap mode, additive
+                heatIterations += DoesRayIntersect(ray, vo, modelOffsets);
                 break;
             case 2:
-                int heat = HeatDoesRayIntersect(ray, vo, offset);
+                // Heatmap mode, average
+                int heat = HeatDoesRayIntersect(ray, vo, modelOffsets);
                 if (heat > 0)
                 {
                     heatHits++;
@@ -579,21 +598,24 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 heatIterations += heat;
                 break;
             case 3:
-                color = RenderBoxAtDepth(ray, vo, offset, stride);
+                // Render colored cubes at depth
+                colorIndex = RenderBoxAtDepth(ray, vo, modelOffsets, stride);
                 break;
             case 4:
-                color = RenderWireframeAtDepth(ray, vo, offset, stride);
+                // Render wireframe at depth
+                colorIndex = RenderWireframeAtDepth(ray, vo, modelOffsets, stride);
                 break;
             case 5:
-                color = VoxelDoesRayIntersectAboveDepth(ray, vo, offset);
+                // Render wireframes above depth
+                colorIndex = VoxelDoesRayIntersectAboveDepth(ray, vo, modelOffsets);
                 break;
         }
 
-        //For case 0
-        if (ViewMode == 0 && color < 299)
+        //We will render the color if we have a valid color index
+        if (ViewMode == 0 && colorIndex < 299)
         {
             StructuredBuffer<VoxelColor> cl = palette[0];
-            uint colPal = cl[i].rgba[color];//Get RGBA from pallette of model and color index
+            uint colPal = cl[i].rgba[colorIndex]; //Get RGBA from pallette of model and color index
             
             float r, g, b, a;
             r = UnpackVoxelColor(colPal, 0);
@@ -604,11 +626,11 @@ void main(int3 groupThreadID : SV_GroupThreadID,
         }
         else if(ViewMode > 0)
         {
-            if (color >= 500)//Box render for colors
+            if (colorIndex >= 500)//Box render for colors
             {
-                gOutput[int2(x, y)] = GetColorFromOctant(color - 500);
+                gOutput[int2(x, y)] = GetColorFromOctant(colorIndex - 500);
             }
-            else if(color)//Other renders
+            else if (colorIndex)//Other renders
             {
                 gOutput[int2(x, y)] = float4(1, 1, 1, 1);
                 

@@ -45,7 +45,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\Octree\SVOConstructorCPU.h">
+    <ClInclude Include="Include\Octree\SVOGPURepresentation.h">
       <Filter>Include\Octree</Filter>
     </ClInclude>
     <ClInclude Include="Include\Scene\AppScene.h">
@@ -72,9 +72,10 @@
     <ClInclude Include="Include\Octree\SVOTraverserShader.h">
       <Filter>Include\Octree</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Octree\SVOManager.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Octree\SVOConstructorCPU.cpp">
+    <ClCompile Include="Source\Octree\SVOGPURepresentation.cpp">
       <Filter>Source\Octree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Scene\AppScene.cpp">
@@ -101,6 +102,7 @@
     <ClCompile Include="Source\Octree\SVOTraverserShader.cpp">
       <Filter>Source\Octree</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Octree\SVOManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">

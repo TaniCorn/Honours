@@ -33,7 +33,7 @@ bool VoxelModelManager::LoadModel(const std::string& IdentifierName, const std::
 		return false;
 }
 
-std::unique_ptr<std::vector<Voxel>> VoxelModelManager::ConstructVoxelsFromModel(const std::string& IdentifierName) const
+std::vector<Voxel> VoxelModelManager::ConstructVoxelsFromModel(const std::string& IdentifierName) const
 {
 	// Try and load in a sparse model by name
 	const magicavoxel::VoxSparseModel* SparseModel;
@@ -43,12 +43,12 @@ std::unique_ptr<std::vector<Voxel>> VoxelModelManager::ConstructVoxelsFromModel(
 	}
 	catch (const std::exception&)
 	{
-		return nullptr;
+		return std::vector<Voxel>();
 	}
 
 	// Reserve the voxels on initialisation
 	const size_t AmountOfVoxels = SparseModel->voxels().size();
-	std::unique_ptr<std::vector<Voxel>> Voxels = std::make_unique<std::vector<Voxel>>(AmountOfVoxels);
+	std::vector<Voxel>Voxels(AmountOfVoxels);
 
 	// Create a Voxel for each voxel in the Sparse Model, loading in color index and position. 
 	// Translates data from loader to application
@@ -60,11 +60,11 @@ std::unique_ptr<std::vector<Voxel>> VoxelModelManager::ConstructVoxelsFromModel(
 		uint8_t Color = SparseModel->voxels()[i].color;
 
 		Voxel Vox;
-		Vox.color = Color;
-		Vox.point.x = PosX;
-		Vox.point.y = PosY;
-		Vox.point.z = PosZ;
-		Voxels.get()->push_back(Vox);
+		Vox.Color = Color;
+		Vox.Point.x = PosX;
+		Vox.Point.y = PosY;
+		Vox.Point.z = PosZ;
+		Voxels.push_back(Vox);
 	}
 	return Voxels;
 }
@@ -133,7 +133,7 @@ const DirectX::XMFLOAT3 VoxelModelManager::GetModelDimensionsExact(const std::st
 	return XMFLOAT3(XRes, YRes, ZRes);
 }
 
-const magicavoxel::Color VoxelModelManager::GetColorFromPalette(const std::string& IdentifierName, const uint8_t ColorIndex) const
+magicavoxel::Color VoxelModelManager::GetColorFromPalette(const std::string& IdentifierName, const uint8_t ColorIndex) const
 {
 	try
 	{
@@ -145,7 +145,7 @@ const magicavoxel::Color VoxelModelManager::GetColorFromPalette(const std::strin
 	}
 }
 
-const magicavoxel::Palette* VoxelModelManager::GetPalette(const std::string& IdentifierName) const
+magicavoxel::Palette* VoxelModelManager::GetPalette(const std::string& IdentifierName)
 {
 	try
 	{
