@@ -38,6 +38,7 @@ public:
 	void setMouseActive(bool active);	///< Set monuse in/active
 	bool isMouseActive();			///< Check if mouse is in/active
 
+	void resetAllInputs();
 private:
 	bool keys[256];		///< Array for storing key states
 	Mouse mouse;		///< Mouse state variable

@@ -19,15 +19,16 @@ using namespace DirectX;
 class Camera
 {
 public:
-	void* operator new(size_t i)
-	{
-		return _mm_malloc(i, 16);
-	}
+	// Why the ever living fuck were these operators overloaded?
+	//void* operator new(size_t i)
+	//{
+	//	return _mm_malloc(i, 16);
+	//}
 
-	void operator delete(void* p)
-	{
-		_mm_free(p);
-	}
+	//void operator delete(void* p)
+	//{
+	//	_mm_free(p);
+	//}
 
 	Camera();	///< Initialised default camera object
 	~Camera();
@@ -55,6 +56,7 @@ public:
 	void strafeRight();			///< default function for moving right
 	void strafeLeft();			///< default function for moving left
 	void turn(int x, int y);	///< default function for turning in both x/y axis
+	float lookSpeed;		///< rotation speed
 	float camSpeed = 0.4f;
 
 private:
@@ -63,7 +65,7 @@ private:
 	XMMATRIX viewMatrix;	///< matrix for current view
 	XMMATRIX orthoMatrix;	///< current orthographic matrix
 	float speed, frameTime;	///< movement speed and time variables
-	float lookSpeed;		///< rotation speed
+
 };
 
 #endif

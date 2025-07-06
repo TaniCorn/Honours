@@ -65,3 +65,17 @@ bool Input::isMouseActive()
 {
 	return mouse.isActive;
 }
+
+void Input::resetAllInputs()
+{
+	// Set all keys up
+	for (size_t i = 0; i < 256; i++)
+	{
+		keys[i] = false;
+	}
+
+	mouse.left = false;
+	mouse.right = false;
+	mouse.x = 0;
+	mouse.y = 0;
+}
