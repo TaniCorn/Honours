@@ -29,7 +29,7 @@ public:
 	const DirectX::XMFLOAT3 GetModelDimensionsExact(const std::string& IdentifierName) const;
 
 	magicavoxel::Color GetColorFromPalette(const std::string& IdentifierName, const uint8_t ColorIndex) const;
-	magicavoxel::Palette* GetPalette(const std::string& IdentifierName);
+	magicavoxel::Palette GetPalette(const std::string& IdentifierName);
 
 	static DirectX::XMFLOAT4 GetRGBAFromColor(const magicavoxel::Color color);
 

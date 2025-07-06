@@ -6,6 +6,9 @@
 
 namespace TextureView
 {
+	/// <summary>
+	/// Contains a texture shader, an orthographic mesh and a render texture to map to that mesh. Will render a texture to the screen.
+	/// </summary>
 	class TextureViewer
 	{
 	public:

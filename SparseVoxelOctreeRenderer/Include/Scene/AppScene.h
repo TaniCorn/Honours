@@ -24,11 +24,10 @@ private:
 	void renderGUI();
 
 	float CameraSpeed = 1.0f;
-	std::unique_ptr<TextureView::TextureViewer> RTViewer;
+	std::unique_ptr<TextureView::TextureViewer> RTViewer; // Renders a texture to the screen
 
-	std::unique_ptr<VoxelModelManager> RawVoxelModels;
-	std::unique_ptr<SVOManager> SVOModels;
-	std::unique_ptr<SVOTraverserShader> SVOTraverser;
-	magicavoxel::Palette* voxelModelPalettes[MODELAMOUNT];
+	std::unique_ptr<VoxelModelManager> RawVoxelModels; // Stores the voxel models loaded from disk, unformatted
+	std::unique_ptr<SVOManager> SVOModels; // Stores the SVO models created from the voxel models, formatted for GPU usage
+	std::unique_ptr<SVOTraverserShader> SVOTraverser; // Traversal shader for the SVOs, renders to a RenderTexture
 };
 

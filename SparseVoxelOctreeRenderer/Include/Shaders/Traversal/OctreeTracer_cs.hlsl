@@ -31,11 +31,15 @@ cbuffer ViewModeBuffer : register(b2)
     int heat;
     int amountOfOctrees;
 };
+
 struct VoxelColor
 {
     uint rgba[256];
 };
-
+cbuffer ColorBuffer : register(b3)
+{
+    VoxelColor cpal[8];
+};
 // Input and output structures
 Texture2D gInput : register(t0);
 StructuredBuffer<VoxelOctree> voxelOctree[8] : register(t1);
@@ -614,8 +618,8 @@ void main(int3 groupThreadID : SV_GroupThreadID,
         //We will render the color if we have a valid color index
         if (ViewMode == 0 && colorIndex < 299)
         {
-            StructuredBuffer<VoxelColor> cl = palette[0];
-            uint colPal = cl[i].rgba[colorIndex]; //Get RGBA from pallette of model and color index
+            StructuredBuffer<VoxelColor> cl = palette[i];
+            uint colPal = cl[0].rgba[colorIndex]; //Get RGBA from pallette of model and color index
             
             float r, g, b, a;
             r = UnpackVoxelColor(colPal, 0);

@@ -73,6 +73,7 @@
       <Filter>Include\Octree</Filter>
     </ClInclude>
     <ClInclude Include="Include\Octree\SVOManager.h" />
+    <ClInclude Include="Include\Octree\SVOHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Octree\SVOGPURepresentation.cpp">
@@ -103,6 +104,7 @@
       <Filter>Source\Octree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Octree\SVOManager.cpp" />
+    <ClCompile Include="Source\Octree\SVOHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">

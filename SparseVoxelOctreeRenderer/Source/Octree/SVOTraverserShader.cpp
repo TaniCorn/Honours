@@ -44,16 +44,26 @@ SVOTraverserShader::~SVOTraverserShader()
 		}
 	}
 
+	for (size_t i = 0; i < 8; i++)
+	{
+		if (InVoxelPaletteBuffer[i])
+		{
+			InVoxelPaletteBuffer[i]->Release();
+			InVoxelPaletteBuffer[i] = 0;
+		}
+		if (InPaletteSRV[i])
+		{
+			InPaletteSRV[i]->Release();
+			InPaletteSRV[i] = 0;
+		}
+	}
+
 	if (InOctreeStagingBuffer)
 	{
 		InOctreeStagingBuffer->Release();
 		InOctreeStagingBuffer = 0;
 	}
-	if (InVoxelPaletteBuffer)
-	{
-		InVoxelPaletteBuffer->Release();
-		InVoxelPaletteBuffer = 0;
-	}
+
 	if (Tex)
 	{
 		Tex->Release();
@@ -65,11 +75,7 @@ SVOTraverserShader::~SVOTraverserShader()
 		TexSRV->Release();
 		TexSRV = 0;
 	}
-	if (InPaletteSRV)
-	{
-		InPaletteSRV->Release();
-		InPaletteSRV = 0;
-	}
+
 	if (TexUAV)
 	{
 		TexUAV->Release();
@@ -147,11 +153,14 @@ HRESULT SVOTraverserShader::CreateInput()
 		Hr = Device->CreateShaderResourceView(InOctreeBuffer[i], &OctreeDesc, &InOctreeSRV[i]);
 	}
 
-	ConstantDataDesc.ByteWidth = sizeof(VoxelColor) * 8;
+	ConstantDataDesc.ByteWidth = sizeof(VoxelColor);
 	ConstantDataDesc.StructureByteStride = sizeof(VoxelColor);
-	Hr = Device->CreateBuffer(&ConstantDataDesc, 0, &InVoxelPaletteBuffer);
-	OctreeDesc.BufferEx.NumElements = 8;
-	Hr = Device->CreateShaderResourceView(InVoxelPaletteBuffer, &OctreeDesc, &InPaletteSRV);
+	OctreeDesc.BufferEx.NumElements = 1;
+	for (size_t i = 0; i < 8; i++)
+	{
+		Hr = Device->CreateBuffer(&ConstantDataDesc, 0, &InVoxelPaletteBuffer[i]);
+		Hr = Device->CreateShaderResourceView(InVoxelPaletteBuffer[i], &OctreeDesc, &InPaletteSRV[i]);
+	}
 
 	D3D11_BUFFER_DESC OutputDesc;
 	OutputDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -223,7 +232,6 @@ void SVOTraverserShader::SetShaderParameters(ID3D11DeviceContext* DeviceContext,
 	DeviceContext->CSSetConstantBuffers(0, 1, &InMatrixBuffer);
 	DeviceContext->CSSetConstantBuffers(1, 1, &InCameraBuffer);
 	DeviceContext->CSSetConstantBuffers(2, 1, &InViewBuffer);
-	DeviceContext->CSSetConstantBuffers(3, 1, &InVoxelPaletteBuffer);
 
 	DeviceContext->CSSetShaderResources(0, 1, &Texture);
 	DeviceContext->CSSetUnorderedAccessViews(0, 1, &TexUAV, 0);
@@ -289,47 +297,49 @@ void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3
 	DeviceContext->CSSetShaderResources(1, 8, Octree);
 }
 
-void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, SVOGPURepresentation* Octree[8])
+void SVOTraverserShader::SetVoxelModelAndPalette(ID3D11DeviceContext* DeviceContext, const SVOGPURepresentation* const Octree, const magicavoxel::Palette& ColorPalette, unsigned short StorageIndex)
 {
-	HRESULT Result;
-	D3D11_MAPPED_SUBRESOURCE MappedResource;
-
-	for (int i = 0; i < 8; i++)
-	{
-		SVOGPURepresentation* Oc = Octree[i];
-		if (Oc == NULL)
-		{
-			return;
-		}
-		Result = DeviceContext->Map(InOctreeBuffer[i], 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
-
-		SVOSRVRepresentation* Oct = (SVOSRVRepresentation*)MappedResource.pData;
-		const int OctreeLength = Octree[i]->GetMaxStride();
-		for (int j = 0; j < OctreeLength; j++)
-		{
-			int Index = j;
-
-			Octree[i]->GetOctant(j);
-			Oct[Index].BottomRightBackPosition = Octree[i]->GetOctant(j).GetBottomRightBackPosition();
-			Oct[Index].TopLeftFrontPosition = Octree[i]->GetOctant(j).GetTopLeftFrontPosition();
-			Oct[Index].Depth = Octree[i]->GetOctant(j).GetDepth();
-			Oct[Index].RGB = Octree[i]->GetOctant(j).GetColorIndex();
-			Oct[Index].VoxelPosition = Octree[i]->GetOctant(j).GetVoxelPosition();
-			for (int k = 0; k < 8; k++)
-			{
-				Oct[Index].Octants[k] = Octree[i]->GetOctant(j).GetOctantStride(k);
-			}
-		}
-		DeviceContext->Unmap(InOctreeBuffer[i], 0);
-		DeviceContext->CSSetShaderResources(1 + i, 1, &InOctreeSRV[i]);
-	}
+	SetVoxelModel(DeviceContext, Octree, StorageIndex);
+	SetVoxelPalette(DeviceContext, ColorPalette, StorageIndex);
 }
 
-void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOGPURepresentation* Octree, unsigned short StorageIndex)
+void SVOTraverserShader::SetVoxelPalette(ID3D11DeviceContext* DeviceContext, const magicavoxel::Palette& ColorPalette, int StorageIndex)
 {
 	HRESULT Result;
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
-	Result = DeviceContext->Map(InOctreeBuffer[0], 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+	Result = DeviceContext->Map(InVoxelPaletteBuffer[StorageIndex], 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+	VoxelColor* Col = (VoxelColor*)MappedResource.pData;
+	for (int j = 0; j < 256; j++)
+	{
+		magicavoxel::Color C = ColorPalette.at(j);
+		XMFLOAT4 Rgba = XMFLOAT4(C.r / 255.f, C.g / 255.f, C.b / 255.f, C.a / 255.f);
+		UINT32 Ucol =
+			((static_cast<UINT32>(C.r)) & 0x000000ff) |
+			((static_cast<UINT32>(C.g) << 8) & 0x0000ff00) |
+			((static_cast<UINT32>(C.b) << 16) & 0x00ff0000) |
+			((static_cast<UINT32>(C.a) << 24) & 0xff000000);
+
+		const float Coefficient = 1.f;
+		float R = (Ucol & 0x000000ff) * Coefficient;
+		float G = ((Ucol >> 8) & 0x000000ff) * Coefficient;
+		float B = ((Ucol >> 16) & 0x000000ff) * Coefficient;
+		float A = ((Ucol >> 24) & 0x000000ff) * Coefficient;
+
+		Col->Rgba[j] = Ucol;
+	}
+	DeviceContext->Unmap(InVoxelPaletteBuffer[StorageIndex], 0);
+
+	DeviceContext->CSSetConstantBuffers(3 + StorageIndex, 1, &InVoxelPaletteBuffer[StorageIndex]);//TODO: Figure out how we can get the constant buffer working correctly
+	DeviceContext->CSSetShaderResources(9 + StorageIndex, 1, &InPaletteSRV[StorageIndex]);
+}
+
+
+
+void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, const SVOGPURepresentation* const Octree, unsigned short StorageIndex)
+{
+	HRESULT Result;
+	D3D11_MAPPED_SUBRESOURCE MappedResource;
+	Result = DeviceContext->Map(InOctreeBuffer[StorageIndex], 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
 	SVOSRVRepresentation* Oct = (SVOSRVRepresentation*)MappedResource.pData;
 	const int OctreeLength = Octree->GetMaxStride();
 	for (int j = 0; j < OctreeLength; j++)
@@ -349,40 +359,6 @@ void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, SVOGP
 	DeviceContext->Unmap(InOctreeBuffer[StorageIndex], 0);
 	DeviceContext->CSSetShaderResources(1 + StorageIndex, 1, &InOctreeSRV[StorageIndex]);
 }
-
-void SVOTraverserShader::SetVoxelPalette(ID3D11DeviceContext* DeviceContext, magicavoxel::Palette* Palettes[8])
-{
-	HRESULT Result;
-	D3D11_MAPPED_SUBRESOURCE MappedResource;
-	Result = DeviceContext->Map(InVoxelPaletteBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
-	VoxelPaletteBuffer* Col = (VoxelPaletteBuffer*)MappedResource.pData;
-	for (int i = 0; i < 8; i++)
-	{
-		for (int j = 0; j < 256; j++)
-		{
-			magicavoxel::Color C = Palettes[i]->at(j);
-			XMFLOAT4 Rgba = XMFLOAT4(C.r / 255.f, C.g / 255.f, C.b / 255.f, C.a / 255.f);
-			UINT32 Ucol =
-				((static_cast<UINT32>(C.r)) & 0x000000ff) |
-				((static_cast<UINT32>(C.g) << 8) & 0x0000ff00) |
-				((static_cast<UINT32>(C.b) << 16) & 0x00ff0000) |
-				((static_cast<UINT32>(C.a) << 24) & 0xff000000);
-
-			const float Coefficient = 1.f;
-			float R = (Ucol & 0x000000ff) * Coefficient;
-			float G = ((Ucol >> 8) & 0x000000ff) * Coefficient;
-			float B = ((Ucol >> 16) & 0x000000ff) * Coefficient;
-			float A = ((Ucol >> 24) & 0x000000ff) * Coefficient;
-
-			Col->Palettes[i].Rgba[j] = Ucol;
-		}
-	}
-	DeviceContext->Unmap(InVoxelPaletteBuffer, 0);
-
-	DeviceContext->CSSetConstantBuffers(3, 1, &InVoxelPaletteBuffer);
-	DeviceContext->CSSetShaderResources(9, 1, &InPaletteSRV);
-}
-
 
 
 void SVOTraverserShader::Unbind(ID3D11DeviceContext* Dc)

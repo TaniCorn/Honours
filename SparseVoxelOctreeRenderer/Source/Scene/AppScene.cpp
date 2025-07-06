@@ -1,4 +1,6 @@
 #include "AppScene.h"
+#include "SVOHelper.h"
+
 
 AppScene::AppScene()
 {
@@ -14,9 +16,14 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 
 	BaseApplication::init(hinstance, hwnd, screenWidth, screenHeight, in, VSYNC, FULL_SCREEN);
 
-	camera->setPosition(0, 0, 0);
-	camera->setPosition(350, 150, -1000);
-	camera->setRotation(0, 0, 0);
+	// Must set mouse as inactive otherwise it will have some weird rotation issues at the start.
+	// Mouse should be re-enabled automatically when the user clicks on the window.
+	input->setMouseActive(false);
+	// For some reason the inputs are all up by default at the beginning, without this call, the user has to press a key twice to reset the input state
+	input->resetAllInputs();
+	camera->setPosition(350.0f, 150.0f, -1000.0f);
+	camera->setRotation(0.0f, 0.0f, 0.0f);
+	camera->camSpeed = 50.0f;
 
 	RTViewer = std::make_unique<TextureView::TextureViewer>(renderer->getDevice(), renderer->getDeviceContext(), hwnd, screenWidth, screenHeight);
 
@@ -25,25 +32,24 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	const int PregeneratedOctreeSize = 200000;
 	SVOTraverser = std::make_unique<SVOTraverserShader>(renderer->getDevice(), hwnd, PregeneratedOctreeSize, screenWidth, screenHeight);
 
-	const std::string ModelName = "monu1";
-	if (RawVoxelModels->LoadModel(ModelName, "res/monu1.vox"))
-	{
-		std::vector<Voxel> Voxels = RawVoxelModels->ConstructVoxelsFromModel(ModelName);
-		int VoxelModelResolution = RawVoxelModels->GetModelDimensions(ModelName);
-		const UINT VoxelSize = 1;
-		SVOModels->InitialiseSVOModel(ModelName, Voxels.size(), VoxelModelResolution, VoxelSize);
-		SVOModels->CreateSVOModel(ModelName, Voxels);
 
-		for (size_t i = 0; i < MODELAMOUNT; i++)
-		{
-			voxelModelPalettes[i] = RawVoxelModels->GetPalette(ModelName);
-		}
-	}
-	else
-	{
-		MessageBox(hwnd, L"Exception Init: ", L"Error loading model", MB_OK);
-		throw std::runtime_error("Error loading model");
-	}
+	SVOHelper::LoadModelInFromFile("dragon", "res/dragon.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("monu1", "res/monu1.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("cars", "res/cars.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("chair", "res/chair.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("doom", "res/doom.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("menger", "res/menger.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("teapot", "res/teapot.vox", *SVOModels, *RawVoxelModels);
+	SVOHelper::LoadModelInFromFile("room", "res/room.vox", *SVOModels, *RawVoxelModels);
+
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("dragon"), SVOModels->GetPalette("dragon"), 0);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), SVOModels->GetPalette("monu1"), 1);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("cars"), SVOModels->GetPalette("cars"), 2);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("chair"), SVOModels->GetPalette("chair"), 3);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("doom"), SVOModels->GetPalette("doom"), 4);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("menger"), SVOModels->GetPalette("menger"), 5);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("teapot"), SVOModels->GetPalette("teapot"), 6);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("room"), SVOModels->GetPalette("room"), 7);
 }
 
 bool AppScene::frame()
@@ -64,12 +70,14 @@ bool AppScene::frame()
 
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();  // ortho matrix for 2D rendering
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
-	//
 
 	RTViewer->GetRenderTexture()->clearRenderTarget(renderer->getDeviceContext(), 1, 0, 0, 1);
-	SVOTraverser->SetShaderParameters(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix, camera->getPosition(), RTViewer->GetRenderTexture()->getShaderResourceView(), 0, 1, 0, 2);
-	SVOTraverser->SetVoxelModel(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), 0);
-	SVOTraverser->SetVoxelPalette(renderer->getDeviceContext(), voxelModelPalettes);
+
+	SVOTraverser->SetMatrixBuffer(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix);
+	SVOTraverser->SetCameraBuffer(renderer->getDeviceContext(), camera->getPosition(), 0);
+	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), 0, 1, 0, 2);
+	SVOTraverser->SetTexture(renderer->getDeviceContext(), RTViewer->GetRenderTexture()->getShaderResourceView());
+
 	SVOTraverser->compute(renderer->getDeviceContext(), 74, 40, 1);
 	SVOTraverser->Unbind(renderer->getDeviceContext());
 
@@ -79,8 +87,6 @@ bool AppScene::frame()
 	{
 		return false;
 	}
-	camera->move(0.9);
-
 	return true;
 }
 
@@ -91,10 +97,6 @@ bool AppScene::render()
 	XMMATRIX worldMatrix = renderer->getWorldMatrix();
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();
-
-	/*RenderTexture* rt = TextureViewer->GetRenderTexture();
-	rt->clearRenderTarget(renderer->getDeviceContext(), 1, 1, 1, 1);*/
-	//TODO: Replace nullptr with the compute tracers SRV texture
 	
 	RTViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, SVOTraverser->GetSRV());
 

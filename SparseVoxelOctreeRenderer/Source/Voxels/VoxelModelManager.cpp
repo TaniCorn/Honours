@@ -145,15 +145,15 @@ magicavoxel::Color VoxelModelManager::GetColorFromPalette(const std::string& Ide
 	}
 }
 
-magicavoxel::Palette* VoxelModelManager::GetPalette(const std::string& IdentifierName)
+magicavoxel::Palette VoxelModelManager::GetPalette(const std::string& IdentifierName)
 {
 	try
 	{
-		return &ColorPalette.at(IdentifierName);
+		return ColorPalette.at(IdentifierName);
 	}
 	catch (const std::exception&)
 	{
-		return nullptr;
+		return magicavoxel::Palette();
 	}
 }
 
