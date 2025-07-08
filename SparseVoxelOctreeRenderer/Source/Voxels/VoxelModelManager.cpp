@@ -64,7 +64,7 @@ std::vector<Voxel> VoxelModelManager::ConstructVoxelsFromModel(const std::string
 		Vox.Point.x = PosX;
 		Vox.Point.y = PosY;
 		Vox.Point.z = PosZ;
-		Voxels.push_back(Vox);
+		Voxels[i] = Vox;
 	}
 	return Voxels;
 }
