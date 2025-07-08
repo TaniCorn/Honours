@@ -13,8 +13,14 @@
     <Filter Include="Include\Shaders">
       <UniqueIdentifier>{429504C2-AE20-7286-B731-F57A233CCE86}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\Shaders\HLSLI">
+      <UniqueIdentifier>{8D70C825-F9DC-8320-C2D0-1B7E2EFCA588}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Include\Shaders\Texture">
       <UniqueIdentifier>{A2DC6692-0E14-AF29-171E-134D83D4D522}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Shaders\Traversal">
+      <UniqueIdentifier>{E5F8F5DF-51BB-296A-9A6B-B8F6066D0248}</UniqueIdentifier>
     </Filter>
     <Filter Include="Include\Util">
       <UniqueIdentifier>{5638664B-429B-F5EF-EB20-2EA6D762C172}</UniqueIdentifier>
@@ -48,6 +54,15 @@
     <ClInclude Include="Include\Octree\SVOGPURepresentation.h">
       <Filter>Include\Octree</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Octree\SVOHelper.h">
+      <Filter>Include\Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Octree\SVOManager.h">
+      <Filter>Include\Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Octree\SVOTraverserShader.h">
+      <Filter>Include\Octree</Filter>
+    </ClInclude>
     <ClInclude Include="Include\Scene\AppScene.h">
       <Filter>Include\Scene</Filter>
     </ClInclude>
@@ -69,14 +84,18 @@
     <ClInclude Include="Include\Voxels\vox_file.h">
       <Filter>Include\Voxels</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Octree\SVOTraverserShader.h">
-      <Filter>Include\Octree</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Octree\SVOManager.h" />
-    <ClInclude Include="Include\Octree\SVOHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Octree\SVOGPURepresentation.cpp">
+      <Filter>Source\Octree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Octree\SVOHelper.cpp">
+      <Filter>Source\Octree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Octree\SVOManager.cpp">
+      <Filter>Source\Octree</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Octree\SVOTraverserShader.cpp">
       <Filter>Source\Octree</Filter>
     </ClCompile>
     <ClCompile Include="Source\Scene\AppScene.cpp">
@@ -100,11 +119,6 @@
     <ClCompile Include="Source\Voxels\vox_file.cpp">
       <Filter>Source\Voxels</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Octree\SVOTraverserShader.cpp">
-      <Filter>Source\Octree</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Octree\SVOManager.cpp" />
-    <ClCompile Include="Source\Octree\SVOHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
@@ -113,10 +127,16 @@
     <FxCompile Include="Include\Shaders\Texture\Texture_vs.hlsl">
       <Filter>Include\Shaders\Texture</Filter>
     </FxCompile>
-    <FxCompile Include="Include\Shaders\Traversal\OctreeTracer_cs.hlsl" />
+    <FxCompile Include="Include\Shaders\Traversal\OctreeTracer_cs.hlsl">
+      <Filter>Include\Shaders\Traversal</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Include\Shaders\HLSLI\Raycasting.hlsli" />
-    <None Include="Include\Shaders\HLSLI\Voxel.hlsli" />
+    <None Include="Include\Shaders\HLSLI\Raycasting.hlsli">
+      <Filter>Include\Shaders\HLSLI</Filter>
+    </None>
+    <None Include="Include\Shaders\HLSLI\Voxel.hlsli">
+      <Filter>Include\Shaders\HLSLI</Filter>
+    </None>
   </ItemGroup>
 </Project>

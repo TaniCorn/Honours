@@ -98,6 +98,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Include\Octree\SVOGPURepresentation.h" />
+    <ClInclude Include="Include\Octree\SVOHelper.h" />
+    <ClInclude Include="Include\Octree\SVOManager.h" />
+    <ClInclude Include="Include\Octree\SVOTraverserShader.h" />
     <ClInclude Include="Include\Scene\AppScene.h" />
     <ClInclude Include="Include\Shaders\Texture\TextureShader.h" />
     <ClInclude Include="Include\Shaders\TextureViewer.h" />
@@ -105,12 +108,12 @@
     <ClInclude Include="Include\Voxels\Voxel.h" />
     <ClInclude Include="Include\Voxels\VoxelModelManager.h" />
     <ClInclude Include="Include\Voxels\vox_file.h" />
-    <ClInclude Include="Include\Octree\SVOTraverserShader.h" />
-    <ClInclude Include="Include\Octree\SVOManager.h" />
-    <ClInclude Include="Include\Octree\SVOHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Octree\SVOGPURepresentation.cpp" />
+    <ClCompile Include="Source\Octree\SVOHelper.cpp" />
+    <ClCompile Include="Source\Octree\SVOManager.cpp" />
+    <ClCompile Include="Source\Octree\SVOTraverserShader.cpp" />
     <ClCompile Include="Source\Scene\AppScene.cpp" />
     <ClCompile Include="Source\Scene\MainApp.cpp" />
     <ClCompile Include="Source\Shaders\Texture\TextureShader.cpp" />
@@ -118,9 +121,6 @@
     <ClCompile Include="Source\Util\TimeMeasure.cpp" />
     <ClCompile Include="Source\Voxels\VoxelModelManager.cpp" />
     <ClCompile Include="Source\Voxels\vox_file.cpp" />
-    <ClCompile Include="Source\Octree\SVOTraverserShader.cpp" />
-    <ClCompile Include="Source\Octree\SVOManager.cpp" />
-    <ClCompile Include="Source\Octree\SVOHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Include\Shaders\Texture\Texture_ps.hlsl">
@@ -134,18 +134,19 @@
       <EntryPointName>main</EntryPointName>
     </FxCompile>
     <FxCompile Include="Include\Shaders\Traversal\OctreeTracer_cs.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.0</ShaderModel>
+      <ShaderType>Compute</ShaderType>
+      <ShaderModel>5.0</ShaderModel>
+      <EntryPointName>main</EntryPointName>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Include\Shaders\HLSLI\Raycasting.hlsli" />
+    <None Include="Include\Shaders\HLSLI\Voxel.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DXFramework\DXFramework.vcxproj">
       <Project>{EFA77DFB-5B5D-F6F0-E451-F0C75006EDF4}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Include\Shaders\HLSLI\Raycasting.hlsli" />
-    <None Include="Include\Shaders\HLSLI\Voxel.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

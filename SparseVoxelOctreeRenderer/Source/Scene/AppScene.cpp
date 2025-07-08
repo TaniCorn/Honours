@@ -21,9 +21,9 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	input->setMouseActive(false);
 	// For some reason the inputs are all up by default at the beginning, without this call, the user has to press a key twice to reset the input state
 	input->resetAllInputs();
-	camera->setPosition(350.0f, 150.0f, -1000.0f);
+	camera->setPosition(350.0f, 150.0f, -100.0f);
 	camera->setRotation(0.0f, 0.0f, 0.0f);
-	camera->camSpeed = 50.0f;
+	camera->camSpeed = 10.0f;
 
 	RTViewer = std::make_unique<TextureView::TextureViewer>(renderer->getDevice(), renderer->getDeviceContext(), hwnd, screenWidth, screenHeight);
 
@@ -42,14 +42,14 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	SVOHelper::LoadModelInFromFile("teapot", "res/teapot.vox", *SVOModels, *RawVoxelModels);
 	SVOHelper::LoadModelInFromFile("room", "res/room.vox", *SVOModels, *RawVoxelModels);
 
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("dragon"), SVOModels->GetPalette("dragon"), 0);
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), SVOModels->GetPalette("monu1"), 1);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("dragon"), SVOModels->GetPalette("dragon"), 0);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), SVOModels->GetPalette("monu1"), 1);
 	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("cars"), SVOModels->GetPalette("cars"), 2);
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("chair"), SVOModels->GetPalette("chair"), 3);
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("doom"), SVOModels->GetPalette("doom"), 4);
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("menger"), SVOModels->GetPalette("menger"), 5);
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("teapot"), SVOModels->GetPalette("teapot"), 6);
-	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("room"), SVOModels->GetPalette("room"), 7);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("chair"), SVOModels->GetPalette("chair"), 3);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("doom"), SVOModels->GetPalette("doom"), 4);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("menger"), SVOModels->GetPalette("menger"), 5);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("teapot"), SVOModels->GetPalette("teapot"), 6);
+	//SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("room"), SVOModels->GetPalette("room"), 7);
 }
 
 bool AppScene::frame()

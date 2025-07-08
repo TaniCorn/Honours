@@ -39,9 +39,14 @@ public:
 	struct VoxelColor {
 		UINT32 Rgba[256];
 	};
-	struct VoxelPaletteBuffer {
-		VoxelColor Palettes[8];
+	enum ModelAmountsSize
+	{
+		MODELAMOUNTS = 8 // const enum hack
 	};
+	struct VoxelPaletteBuffer {
+		VoxelColor Palettes[MODELAMOUNTS];
+	};
+
 
 public:
 	SVOTraverserShader(ID3D11Device* Device, HWND Hwnd, int OctantNumber, int InWidth, int InHeight);
@@ -63,7 +68,7 @@ public:
 	/// <summary>
 	/// Set the octrees from shader resource views. These should've been generated from the GPUConstruction
 	/// </summary>
-	void SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[8]);
+	void SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[MODELAMOUNTS]);
 
 	/// <summary>
 	/// Set the Voxel model and palette for the traverser shader. Index between 0 and 7.
@@ -86,15 +91,16 @@ private:
 	HRESULT CreateOutput();
 	HRESULT CreateConstantBuffer(ID3D11Buffer** OutBuffer, UINT ByteWidth);
 
+
 	ID3D11ComputeShader* ComputeShaderBitonic = nullptr;
 
 	ID3D11Buffer* InMatrixBuffer = nullptr;
 	ID3D11Buffer* InCameraBuffer = nullptr;
 	ID3D11Buffer* InViewBuffer = nullptr;
-	ID3D11Buffer* InVoxelPaletteBuffer[8];
-	ID3D11Buffer* InOctreeBuffer[8];
-	ID3D11ShaderResourceView* InOctreeSRV[8];
-	ID3D11ShaderResourceView* InPaletteSRV[8]; // TODO: Seems redundant if we can figure out how to use the constant buffer correctly
+	ID3D11Buffer* InVoxelPaletteBuffer[MODELAMOUNTS];
+	ID3D11Buffer* InOctreeBuffer[MODELAMOUNTS];
+	ID3D11ShaderResourceView* InOctreeSRV[MODELAMOUNTS];
+	ID3D11ShaderResourceView* InPaletteSRV[MODELAMOUNTS]; // TODO: Seems redundant if we can figure out how to use the constant buffer correctly
 	ID3D11Buffer* InOctreeStagingBuffer = nullptr; // For debugging purposes, to read back octree data
 
 	// Texture UAV/SRV bind
@@ -103,4 +109,5 @@ private:
 	ID3D11UnorderedAccessView* TexUAV = nullptr;
 };
 
+#undef MODELAMOUNTS
 #endif // !SVOTRAVERSERSHADER_H

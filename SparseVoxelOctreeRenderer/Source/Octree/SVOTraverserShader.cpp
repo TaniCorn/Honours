@@ -30,7 +30,7 @@ SVOTraverserShader::~SVOTraverserShader()
 		InViewBuffer->Release();
 		InViewBuffer = 0;
 	}
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < MODELAMOUNTS; i++)
 	{
 		if (InOctreeBuffer[i])
 		{
@@ -44,7 +44,7 @@ SVOTraverserShader::~SVOTraverserShader()
 		}
 	}
 
-	for (size_t i = 0; i < 8; i++)
+	for (size_t i = 0; i < MODELAMOUNTS; i++)
 	{
 		if (InVoxelPaletteBuffer[i])
 		{
@@ -147,7 +147,7 @@ HRESULT SVOTraverserShader::CreateInput()
 	ConstantDataDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	ConstantDataDesc.StructureByteStride = sizeof(SVOSRVRepresentation);
 	ConstantDataDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < MODELAMOUNTS; i++)
 	{
 		Hr = Device->CreateBuffer(&ConstantDataDesc, 0, &InOctreeBuffer[i]);
 		Hr = Device->CreateShaderResourceView(InOctreeBuffer[i], &OctreeDesc, &InOctreeSRV[i]);
@@ -156,7 +156,7 @@ HRESULT SVOTraverserShader::CreateInput()
 	ConstantDataDesc.ByteWidth = sizeof(VoxelColor);
 	ConstantDataDesc.StructureByteStride = sizeof(VoxelColor);
 	OctreeDesc.BufferEx.NumElements = 1;
-	for (size_t i = 0; i < 8; i++)
+	for (size_t i = 0; i < MODELAMOUNTS; i++)
 	{
 		Hr = Device->CreateBuffer(&ConstantDataDesc, 0, &InVoxelPaletteBuffer[i]);
 		Hr = Device->CreateShaderResourceView(InVoxelPaletteBuffer[i], &OctreeDesc, &InPaletteSRV[i]);
@@ -292,9 +292,9 @@ void SVOTraverserShader::SetTexture(ID3D11DeviceContext* DeviceContext, ID3D11Sh
 	DeviceContext->CSSetUnorderedAccessViews(0, 1, &TexUAV, 0);
 }
 
-void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[8])
+void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[MODELAMOUNTS])
 {
-	DeviceContext->CSSetShaderResources(1, 8, Octree);
+	DeviceContext->CSSetShaderResources(1, MODELAMOUNTS, Octree);
 }
 
 void SVOTraverserShader::SetVoxelModelAndPalette(ID3D11DeviceContext* DeviceContext, const SVOGPURepresentation* const Octree, const magicavoxel::Palette& ColorPalette, unsigned short StorageIndex)
@@ -305,6 +305,10 @@ void SVOTraverserShader::SetVoxelModelAndPalette(ID3D11DeviceContext* DeviceCont
 
 void SVOTraverserShader::SetVoxelPalette(ID3D11DeviceContext* DeviceContext, const magicavoxel::Palette& ColorPalette, int StorageIndex)
 {
+	if(StorageIndex < 0 || StorageIndex >= MODELAMOUNTS)
+	{
+		return; // Invalid storage index
+	}
 	HRESULT Result;
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
 	Result = DeviceContext->Map(InVoxelPaletteBuffer[StorageIndex], 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
@@ -337,6 +341,10 @@ void SVOTraverserShader::SetVoxelPalette(ID3D11DeviceContext* DeviceContext, con
 
 void SVOTraverserShader::SetVoxelModel(ID3D11DeviceContext* DeviceContext, const SVOGPURepresentation* const Octree, unsigned short StorageIndex)
 {
+	if (StorageIndex < 0 || StorageIndex >= MODELAMOUNTS)
+	{
+		return; // Invalid storage index
+	}
 	HRESULT Result;
 	D3D11_MAPPED_SUBRESOURCE MappedResource;
 	Result = DeviceContext->Map(InOctreeBuffer[StorageIndex], 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
