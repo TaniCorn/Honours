@@ -75,7 +75,7 @@ bool AppScene::frame()
 
 	SVOTraverser->SetMatrixBuffer(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix);
 	SVOTraverser->SetCameraBuffer(renderer->getDeviceContext(), camera->getPosition(), 0);
-	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), 0, 1, 0, 2);
+	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), VoxelViewMode, VoxelViewDepth, IsHeatmapEnabled, -1);
 	SVOTraverser->SetTexture(renderer->getDeviceContext(), RTViewer->GetRenderTexture()->getShaderResourceView());
 
 	SVOTraverser->compute(renderer->getDeviceContext(), 74, 40, 1);
@@ -116,6 +116,42 @@ void AppScene::renderGUI()
 	// Have a ImGUI class for the specific window to render
 
 	ImGui::Text("FPS: %.2f", timer->getFPS());
+
+	ImGui::SliderInt("Voxel ViewMode", &VoxelViewMode, 0, 5);
+	ImGui::Text(ViewModeDisplay.c_str());
+	if (VoxelViewMode != 0)
+	{
+		ImGui::SliderInt("Voxel ViewDepth", &VoxelViewDepth, 0, 7);
+	}
+	IsHeatmapEnabled = false;
+	switch (VoxelViewMode)
+	{
+	case 0:
+		ViewModeDisplay = "Octree Tracer";
+		break;
+	case 1:
+		ViewModeDisplay = "Heatmap";
+		IsHeatmapEnabled = true;
+		break;
+	case 2:
+		ViewModeDisplay = "Old Tracer Heatmap";
+		IsHeatmapEnabled = true;
+		break;
+	case 3:
+		ViewModeDisplay = "Box render at depth";
+		break;
+	case 4:
+		ViewModeDisplay = "Wireframe render at depth";
+		break;
+	case 5:
+		ViewModeDisplay = "Wireframe render above depth";
+		break;
+	default:
+		ViewModeDisplay = "Octree Tracer";
+		break;
+	}
+
+
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
