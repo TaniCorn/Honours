@@ -8,6 +8,8 @@ struct Ray
 };
 #define MAX_STACK_SIZE 40
 #define MAX_ITERATIONS 150
+#define MODELAMOUNTS 8
+#define CHILDOCTANTAMOUNTS 8
 
 cbuffer InvMatrixBuffer : register(b0)
 {
@@ -38,39 +40,17 @@ struct VoxelColor
 };
 cbuffer ColorBuffer : register(b3)
 {
-    VoxelColor cpal[8];
+    VoxelColor cpal[MODELAMOUNTS];
 };
 // Input and output structures
 Texture2D gInput : register(t0);
-StructuredBuffer<VoxelOctree> voxelOctree[8] : register(t1);
-StructuredBuffer<VoxelColor> palette[8] : register(t9);
+StructuredBuffer<VoxelOctree> voxelOctree[MODELAMOUNTS] : register(t1);
+StructuredBuffer<VoxelColor> palette[MODELAMOUNTS] : register(t9);
 RWTexture2D<float4> gOutput : register(u0);
 
 //TODO: Move these functions into a common file
 
-float UnpackVoxelColor(uint color, int rgba)
-{
-    //Unpacks a uint color to individual channels rgba
-    const float coefficient = 255.f;
-    switch (rgba)
-    {
-        case 0:
-            //return float((color & 0x000000ff)) * coefficient;
-            return float((color & 0x000000ff)) / coefficient;
-        case 1:
-            //return float((color & 0x0000ff00)) * coefficient;
-            return float(((color >> 8) & 0x000000ff)) / coefficient;
-        case 2:
-            //return float((color & 0x00ff0000)) * coefficient;
-            return float(((color >> 16) & 0x000000ff)) / coefficient;
-        case 3:
-            //return float((color & 0xff000000)) * coefficient;
-            return 1.0f;
-            return float(((color >> 24) & 0x000000ff)) / coefficient;
-        default:
-            return 1;
-    }
-}
+
 bool HitWireframe(Ray r, float3 tlf, float3 brb, float width)
 {
     bool hitflag = false;
@@ -134,7 +114,7 @@ bool VoxelDoesRayIntersectAboveDepth(Ray r, StructuredBuffer<VoxelOctree> Octree
         }
         
         // If the node is not a leaf node, push its child nodes onto the stack
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
         {
             //Check all octant indexes
             int Stride = currentNode.Octants[i];
@@ -187,8 +167,8 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
             return OctreeStride;
         }
         
-        float closest[8];
-        for (int i = 0; i < 8; i++)
+        float closest[CHILDOCTANTAMOUNTS];
+        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
         {
             closest[i] = 99999;
             //Check all octant indexes
@@ -213,12 +193,12 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
             }
         }
         
-        float closestindex[8];
+        float closestindex[CHILDOCTANTAMOUNTS];
         float close;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
         {
             close = 99999;
-            for (int j = 0; j < 8; j++)
+            for (int j = 0; j < CHILDOCTANTAMOUNTS; j++)
             {
                 if (closest[j] < close)
                 {
@@ -231,7 +211,7 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
         }
         
         
-        for (int i = 7; i >= 0; i--)
+        for (int i = CHILDOCTANTAMOUNTS-1; i >= 0; i--)
         {
             
             int Stride = currentNode.Octants[closestindex[i]];
@@ -293,8 +273,8 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
                 return iterations;
         }
         
-        float closest[8];
-        for (int i = 0; i < 8; i++)
+        float closest[CHILDOCTANTAMOUNTS];
+        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
         {
             closest[i] = 99999;
             //Check all octant indexes
@@ -319,12 +299,12 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
             }
         }
         
-        float closestindex[8];
+        float closestindex[CHILDOCTANTAMOUNTS];
         float close;
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
         {
             close = 99999;
-            for (int j = 0; j < 8; j++)
+            for (int j = 0; j < CHILDOCTANTAMOUNTS; j++)
             {
                 if (closest[j] < close)
                 {
@@ -337,7 +317,7 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
         }
         
         
-        for (int i = 7; i >= 0; i--)
+        for (int i = CHILDOCTANTAMOUNTS - 1; i >= 0; i--)
         {
             
             int Stride = currentNode.Octants[closestindex[i]];
@@ -395,7 +375,7 @@ uint HeatDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
         }
         
         // If the node is not a leaf node, push its child nodes onto the stack
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
         {
             //Check all octant indexes
             int Stride = currentNode.Octants[i];
@@ -563,7 +543,7 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     int heatHits = 0;
     
     // We loop 8 times to test hits with all 8 octrees in the array
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < MODELAMOUNTS; i++)
     {
         // Get the voxel octree for the current index
         StructuredBuffer<VoxelOctree> vo = voxelOctree[i];
