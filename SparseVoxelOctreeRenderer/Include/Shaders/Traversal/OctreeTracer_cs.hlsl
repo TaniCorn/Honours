@@ -1,15 +1,13 @@
 #include "../HLSLI/Raycasting.hlsli"
+#include "../HLSLI/VoxelColorHelper.hlsli"
 #include "../HLSLI/Voxel.hlsli"
 
-struct Ray
-{
-    float3 RayPos;
-    float3 RayDirection;
-};
+
 #define MAX_STACK_SIZE 40
 #define MAX_ITERATIONS 150
 #define MODELAMOUNTS 8
 #define CHILDOCTANTAMOUNTS 8
+#define WIREFRAME_WIDTH 0.3f
 
 cbuffer InvMatrixBuffer : register(b0)
 {
@@ -31,7 +29,7 @@ cbuffer ViewModeBuffer : register(b2)
     int ViewMode;
     int ViewDepth;
     int heat;
-    int amountOfOctrees;
+    int amountOfOctrees; // Currently used for padding
 };
 
 struct VoxelColor
@@ -48,46 +46,15 @@ StructuredBuffer<VoxelOctree> voxelOctree[MODELAMOUNTS] : register(t1);
 StructuredBuffer<VoxelColor> palette[MODELAMOUNTS] : register(t9);
 RWTexture2D<float4> gOutput : register(u0);
 
-//TODO: Move these functions into a common file
+
+////////////// The 3 functions below are used for different rendering nodes to render the octree in different ways, but fundamentally they function the same //////////////
 
 
-bool HitWireframe(Ray r, float3 tlf, float3 brb, float width)
-{
-    bool hitflag = false;
-    //Top
-    float3 tlb = float3(tlf.x + width, tlf.y - width, brb.z + width);
-    float3 blf = float3(tlf.x + width, brb.y + width, tlf.z + width);
-    float3 trf = float3(brb.x - width, tlf.y - width, tlf.z + width);
-    
-    float3 blb = float3(tlf.x - width, brb.y - width, brb.z - width);
-    float3 brf = float3(brb.x - width, brb.y + width, tlf.z - width);
-    float3 trb = float3(brb.x - width, tlf.y + width, brb.z - width);
-    //TLF Corners    
-    hitflag = rayBox(r.RayPos, r.RayDirection, tlf, tlb) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, tlf, blf) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, tlf, trf) || hitflag;
-    //BRB
-
-    hitflag = rayBox(r.RayPos, r.RayDirection, brb, blb) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, brb, brf) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, brb, trb) || hitflag;
-    
-    //BLF Corner
-    float3 blf2 = float3(tlf.x + width, brb.y - width, tlf.z + width);
-    hitflag = rayBox(r.RayPos, r.RayDirection, blf, blb) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, blf2, brf) || hitflag;
-    
-    //TRF Corner
-    float3 trf2 = float3(brb.x + width, tlf.y - width, tlf.z + width);
-    hitflag = rayBox(r.RayPos, r.RayDirection, trf2, brf) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, trf2, trb) || hitflag;
-    
-    //TLB Corner
-    hitflag = rayBox(r.RayPos, r.RayDirection, tlb, trb) || hitflag;
-    hitflag = rayBox(r.RayPos, r.RayDirection, tlb, blb) || hitflag;
-    return hitflag;
-}
-bool VoxelDoesRayIntersectAboveDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
+/// <summary>
+/// Checks if the ray intersects with the wireframe of the octree at a specific depth or above
+/// Useful for rendering wireframes
+/// </summary>
+bool RayIntersectWireframe(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset, bool equalDepth)
 {
     // Traverse the octree to find the leaf node
     VoxelOctree currentNode = Octree[0];
@@ -104,13 +71,27 @@ bool VoxelDoesRayIntersectAboveDepth(Ray r, StructuredBuffer<VoxelOctree> Octree
         //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
-    
+        
         if (currentNode.Depth <= ViewDepth)
         {
-            if (HitWireframe(r, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset, 0.05))
+            if (equalDepth)
             {
-                return true;
+                if (currentNode.Depth == ViewDepth)
+                {
+                    if (HitWireframe(r, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset, WIREFRAME_WIDTH))
+                    {
+                        return true;
+                    }
+                }
             }
+            else
+            {
+                if (HitWireframe(r, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset, WIREFRAME_WIDTH))
+                {
+                    return true;
+                }
+            }
+
         }
         
         // If the node is not a leaf node, push its child nodes onto the stack
@@ -139,32 +120,42 @@ bool VoxelDoesRayIntersectAboveDepth(Ray r, StructuredBuffer<VoxelOctree> Octree
     }
     return false; // No intersection found, return invalid color index
 }
-int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
+
+/// <summary>
+/// Checks if the ray intersects with the octree at a specific depth
+/// Useful for rendering octants and heatmaps
+/// </summary>
+void RayIntersectAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset, out bool doesIntersect, out int octantStride, out int colorIndex, out int rayTravelAmount)
 {
-    // Traverse the octree to find the leaf node
+    doesIntersect = false;
+    octantStride = -1; // Invalid stride
+    colorIndex = 300; // Invalid color index
+    rayTravelAmount = 0;
+    // This function is just for testing purposes
     VoxelOctree currentNode = Octree[0];
     if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
     {
-        return -1;
+        return;
     }
+    
+    //Initialising stack
     int stackIndexes[MAX_STACK_SIZE];
     int stackTop = 0;
     stackIndexes[stackTop] = 0;
     stackTop++;
+    
     for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
     {
-        //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
-        //if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
-        //{
-        //    continue;
-        //}
-            
-        //if (currentNode.RGB >= 0 && currentNode.RGB <= 256)
+        
         if (currentNode.Depth == ViewDepth)
         {
-            return OctreeStride;
+            doesIntersect = true;
+            octantStride = OctreeStride;
+            rayTravelAmount = iterations;
+            colorIndex = currentNode.RGB; // Return the color index
+            return;
         }
         
         float closest[CHILDOCTANTAMOUNTS];
@@ -209,9 +200,7 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
             closest[closestindex[i]] = 999999;
             
         }
-        
-        
-        for (int i = CHILDOCTANTAMOUNTS-1; i >= 0; i--)
+        for (int i = CHILDOCTANTAMOUNTS - 1; i >= 0; i--)
         {
             
             int Stride = currentNode.Octants[closestindex[i]];
@@ -223,54 +212,49 @@ int VoxelDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 of
                 
                 if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
                 {
-                        stackIndexes[stackTop] = Stride;
-                        stackTop++;
-
+                    stackIndexes[stackTop] = Stride;
+                    stackTop++;
                 }
 
             }
-
         }
-    }
-    return -1;
+
+    } // End of loop
+    
+    doesIntersect = false;
+    octantStride = -1;
+    rayTravelAmount = iterations;
+    colorIndex = 300; // No intersection found, return invalid color index
 }
-uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
+
+/// <summary>
+/// Checks if the ray intersects with a valid voxel in the octree
+/// Useful for rendering the actual desired voxel models
+/// </summary>
+uint RayIntersectValidVoxel(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
 {
-    // Traverse the octree to find the leaf node
+    // This function is just for testing purposes
     VoxelOctree currentNode = Octree[0];
     if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
     {
-        if (heat)
-        {
-            return 0;
-        }
-        else
-        {
-            return 300; //No intersections with bounding box, Return invalid color index
-            
-        }
+        return 300; //No intersections with bounding box, Return invalid color index
     }
+    
+    //Initialising stack
     int stackIndexes[MAX_STACK_SIZE];
     int stackTop = 0;
     stackIndexes[stackTop] = 0;
     stackTop++;
+    
     for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
     {
-        //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
-        //if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
-        //{
-        //    continue;
-        //}
-            
-        if (currentNode.RGB >= 0 && currentNode.RGB <= 256 && !heat)
+        
+        // Does ray intersect a valid voxel
+        if (currentNode.RGB >= 0 && currentNode.RGB <= 256)
         {
-                return currentNode.RGB;
-        }
-        if (currentNode.Depth == ViewDepth && heat)
-        {
-                return iterations;
+            return currentNode.RGB;
         }
         
         float closest[CHILDOCTANTAMOUNTS];
@@ -285,9 +269,9 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
                 VoxelOctree childNode = Octree[Stride];
                 //If we can hit the childoctant, add it to the stack
 
-                    float3 tlf = childNode.TopLeftFrontPosition + offset;
-                    float3 brb = childNode.BottomRightBackPosition + offset;
-                    float3 loc = float3(brb.x - tlf.x, tlf.y - brb.y, brb.z - tlf.z) / 2.0f;
+                float3 tlf = childNode.TopLeftFrontPosition + offset;
+                float3 brb = childNode.BottomRightBackPosition + offset;
+                float3 loc = float3(brb.x - tlf.x, tlf.y - brb.y, brb.z - tlf.z) / 2.0f;
                 loc = loc - r.RayPos;
                 float3 t0 = (float3(tlf.x, brb.y, tlf.z) - r.RayPos) / r.RayDirection;
                 float3 t1 = (float3(brb.x, tlf.y, brb.z) - r.RayPos) / r.RayDirection;
@@ -315,8 +299,6 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
             closest[closestindex[i]] = 999999;
             
         }
-        
-        
         for (int i = CHILDOCTANTAMOUNTS - 1; i >= 0; i--)
         {
             
@@ -334,178 +316,14 @@ uint DoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset
                 }
 
             }
-
         }
-    }
-    if (heat)
-    {
-        return iterations;
-    }
-    else
-    {
-        return 300; //No intersections with bounding box, Return invalid color index
-            
-    }
-}
-uint HeatDoesRayIntersect(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
-{
-    // Traverse the octree to find the leaf node
-    VoxelOctree currentNode = Octree[0];
-    if (!rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
-    {
-       return 0; // No intersection found
-    }
-    
-    //Initialising stack
-    int stackIndexes[MAX_STACK_SIZE];
-    int stackTop = 0;
-    stackIndexes[stackTop] = 0;
-    stackTop++;
-    
-    
-    for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
-    {
-        //Get top of stack
-        int OctreeStride = stackIndexes[--stackTop];
-        currentNode = Octree[OctreeStride];
-    
-        if (currentNode.Depth == ViewDepth)
-        {
-           return iterations;//Intersection found
-        }
-        
-        // If the node is not a leaf node, push its child nodes onto the stack
-        for (int i = 0; i < CHILDOCTANTAMOUNTS; i++)
-        {
-            //Check all octant indexes
-            int Stride = currentNode.Octants[i];
-            if (Stride != 0)
-            {
-                //Grab child octant
-                VoxelOctree childNode = Octree[Stride];
-                if (childNode.Depth > ViewDepth)
-                {
-                    break;
-                }
-                //If we can hit the childoctant, add it to the stack
-                if (rayBox(r.RayPos, r.RayDirection, childNode.TopLeftFrontPosition + offset, childNode.BottomRightBackPosition + offset))
-                {
-                    stackIndexes[stackTop] = Stride;
-                    stackTop++;
-                }
-    
 
-            }
-        }
     }
-    return iterations; // No intersection found
+
+    return 300; // No intersection found, return invalid color index
 }
 
-int RenderBoxAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset, uint stride)
-{
-    //Renders a box at depth
-    VoxelOctree currentNode = Octree[stride];
-    if (rayBox(r.RayPos, r.RayDirection, currentNode.TopLeftFrontPosition + offset, currentNode.BottomRightBackPosition + offset))
-    {
-        return currentNode.RGB;
-    }
-    return 0;
-}
-
-
-bool RenderWireframeAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset, uint stride)
-{
-    //Renders octree wireframe at depths
-    if (rayBox(r.RayPos, r.RayDirection, Octree[stride].TopLeftFrontPosition + offset, Octree[stride].BottomRightBackPosition + offset))
-    {
-        if (HitWireframe(r, Octree[stride].TopLeftFrontPosition + offset, Octree[stride].BottomRightBackPosition + offset, 0.2f))
-        {
-            return true;
-        }
-    }
-    return false;
-}
     
-bool RenderWireframeAboveDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 offset)
-{
-    //Renders octree wireframe above depths
-    return VoxelDoesRayIntersectAboveDepth(r, Octree, offset);
-
-}
-
-float3 HeatmapColor(int val, float minValue, float maxValue)
-{
-    if (val < 0)
-    {
-        return float3(0, 0, 1);
-
-    }
-    // Normalize the value within the range [0, 1]
-    float t = saturate(float(val - minValue) / float(maxValue - minValue));
-    
-    // Clamp the value between 0 and 1
-    float value = saturate(t);
-
-    // Define the colors for blue, green, yellow, and red
-    float3 blueColor = float3(0, 0, 1);
-    float3 greenColor = float3(0, 1, 0);
-    float3 yellowColor = float3(1, 1, 0);
-    float3 redColor = float3(1, 0, 0);
-
-    float3 outputColor;
-
-    if (value < 0.3333f)
-    {
-        // Interpolate between blue and green for values < 0.3333
-        outputColor = lerp(blueColor, greenColor, value * 3.0f);
-    }
-    else if (value < 0.6666f)
-    {
-        // Interpolate between green and yellow for values >= 0.3333 and < 0.6666
-        outputColor = lerp(greenColor, yellowColor, (value - 0.3333f) * 3.0f);
-    }
-    else if(value < 0.98000f)
-    {
-        // Interpolate between yellow and red for values >= 0.6666
-        outputColor = lerp(yellowColor, redColor, (value - 0.6666f) * 3.0f);
-    }
-    else
-    {
-        outputColor = float3(0, 0, 0);
-
-    }
-
-    return outputColor;
-}
-
-float4 GetColorFromOctant(int index)
-{
-    //Each color corresponds with RGB and XYZ
-    switch (index)
-    {
-        case TLF:
-            return float4(0, 1, 0, 1);
-        case TRF:
-            return float4(1, 1, 0, 1);
-        case BLF:
-            return float4(0, 0, 0, 1);
-        case BRF:
-            return float4(1, 0, 0, 1);
-        case TLB:
-            return float4(0, 1, 1, 1);
-        case TRB:
-            return float4(1, 1, 1, 1);
-        case BLB:
-            return float4(0, 0, 1, 1);
-        case BRB:
-            return float4(1, 0, 1, 1);
-        default:
-            return float4(0, 0, 0, 0);
-    }
-
-}
-
-
 [numthreads(16, 16, 1)]
 void main(int3 groupThreadID : SV_GroupThreadID,
 	int3 dispatchThreadID : SV_DispatchThreadID)
@@ -537,7 +355,8 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     ray.RayDirection = rayVector;
     
     // Setting the output color to the ray vector, so that any missed rays will display the view vector direction
-    gOutput[int2(x, y)] = float4(rayVector, 1);
+    float4 outputColor = float4(rayVector, 1);
+    
     // Heatmap variables
     int heatIterations = 0;
     int heatHits = 0;
@@ -547,102 +366,67 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     {
         // Get the voxel octree for the current index
         StructuredBuffer<VoxelOctree> vo = voxelOctree[i];
+        StructuredBuffer<VoxelColor> cl = palette[i];
         
         // This is a hardcoded offset for each model
-        float3 modelOffsets = float3((i % 4) * 200, saturate(i - 3) * 200, 0);//Model offsets
+        float3 modelOffsets = float3((i % 4) * 200, saturate(i - 3) * 200, 0); //Model offsets
+        
+        // out variables for the test function
         uint colorIndex = 0;
-        
-        // I cannot remember what stride represents // TODO: Figure out because it seems redundant
-        uint stride = 0;
-        
-        //For Render Box and Wireframe only, this is quite expensive
-        if (ViewMode == 3 || ViewMode == 4)
-        {
-            stride = VoxelDoesRayIntersect(ray, vo, modelOffsets);
-        }
+        uint octantLocation = 0; // Redundant now
+        bool doesIntersect = false;
+        int modelHeatIterations = 0;
         
         
-       switch (ViewMode)
+        switch (ViewMode)
         {
             case 0:
                 // Basic ray intersection test, with color index later on
-                colorIndex = DoesRayIntersect(ray, vo, modelOffsets);
+                colorIndex = RayIntersectValidVoxel(ray, vo, modelOffsets);
+                if (colorIndex < 299)
+                {
+                    uint colPal = cl[0].rgba[colorIndex]; //Get RGBA from pallette of model and color index
+                    outputColor = UnpackVoxelColor(colPal);
+                }
                 break;
             case 1:
                 // Heatmap mode, additive
-                heatIterations += DoesRayIntersect(ray, vo, modelOffsets);
+                RayIntersectAtDepth(ray, vo, modelOffsets, doesIntersect, octantLocation, colorIndex, modelHeatIterations);
+                heatIterations += modelHeatIterations;
+                outputColor = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
                 break;
             case 2:
-                // Heatmap mode, average
-                int heat = HeatDoesRayIntersect(ray, vo, modelOffsets);
-                if (heat > 0)
-                {
-                    heatHits++;
-                }
-                heatIterations += heat;
+                // Heatmap mode, average // TODO: REMOVE
+                RayIntersectAtDepth(ray, vo, modelOffsets, doesIntersect, octantLocation, colorIndex, modelHeatIterations);
+                heatIterations += modelHeatIterations;
+                outputColor = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
                 break;
             case 3:
                 // Render colored cubes at depth
-                colorIndex = RenderBoxAtDepth(ray, vo, modelOffsets, stride);
+                // Finds the specific octant that this ray will intersect
+                // Use that octant to render the ray against the cube
+                RayIntersectAtDepth(ray, vo, modelOffsets, doesIntersect, octantLocation, colorIndex, modelHeatIterations);
+                if(colorIndex >= 500)
+                    outputColor = GetColorFromOctant(colorIndex - 500);
                 break;
             case 4:
                 // Render wireframe at depth
-                colorIndex = RenderWireframeAtDepth(ray, vo, modelOffsets, stride);
+                // Finds the specific octant that this ray will intersect
+                // Use that octant to test against the wireframe
+                colorIndex = RayIntersectWireframe(ray, vo, modelOffsets, true);
+                if (colorIndex)
+                    outputColor = float4(1, 1, 1, 1);
                 break;
             case 5:
                 // Render wireframes above depth
-                colorIndex = VoxelDoesRayIntersectAboveDepth(ray, vo, modelOffsets);
+                colorIndex = RayIntersectWireframe(ray, vo, modelOffsets, false);
+                if (colorIndex)
+                    outputColor = float4(1, 1, 1, 1);
                 break;
         }
-
-        //We will render the color if we have a valid color index
-        if (ViewMode == 0 && colorIndex < 299)
-        {
-            StructuredBuffer<VoxelColor> cl = palette[i];
-            uint colPal = cl[0].rgba[colorIndex]; //Get RGBA from pallette of model and color index
-            
-            float r, g, b, a;
-            r = UnpackVoxelColor(colPal, 0);
-            g = UnpackVoxelColor(colPal, 1);
-            b = UnpackVoxelColor(colPal, 2);
-            a = UnpackVoxelColor(colPal, 3);
-            gOutput[int2(x, y)] = float4(r, g, b, a);
-        }
-        else if(ViewMode > 0)
-        {
-            if (colorIndex >= 500)//Box render for colors
-            {
-                gOutput[int2(x, y)] = GetColorFromOctant(colorIndex - 500);
-            }
-            else if (colorIndex)//Other renders
-            {
-                gOutput[int2(x, y)] = float4(1, 1, 1, 1);
-                
-            }
-        }
-  
+        
+        gOutput[int2(x, y)] = outputColor;
     }
-    if (heat)
-    {
-        if (ViewMode == 1)//Additive hits
-        {
-            gOutput[int2(x, y)] = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
-        }
-        else
-        {
-            //Average hits
-            if (heatHits > 0)
-            {
-                heatIterations /= heatHits;
-                gOutput[int2(x, y)] = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
-            }
-            else
-            {
-                gOutput[int2(x, y)] = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
-            }
-        }
-    }
-
 }
 
 

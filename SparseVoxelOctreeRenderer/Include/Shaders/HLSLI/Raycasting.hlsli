@@ -1,3 +1,10 @@
+
+struct Ray
+{
+    float3 RayPos;
+    float3 RayDirection;
+};
+
 bool sphereHit(float3 raypos, float3 spherecent, float radius)
 {
     return ((distance(raypos, spherecent) - radius) < radius);
@@ -91,4 +98,46 @@ float3 CalculateViewVector(float4 uvPosition, matrix view, matrix world)
     float3 viewVector = normalize(mul(uvPosition, view));
     viewVector = normalize(mul(viewVector, world));
     return viewVector;
+}
+
+
+/* 
+* We are just checking the ray intersection for each edge of the octant
+* We do that by pretending the edge is just a really thin box
+ */
+bool HitWireframe(Ray r, float3 tlf, float3 brb, float width)
+{
+    bool hitflag = false;
+    //Top
+    float3 tlb = float3(tlf.x + width, tlf.y - width, brb.z + width);
+    float3 blf = float3(tlf.x + width, brb.y + width, tlf.z + width);
+    float3 trf = float3(brb.x - width, tlf.y - width, tlf.z + width);
+    
+    float3 blb = float3(tlf.x - width, brb.y - width, brb.z - width);
+    float3 brf = float3(brb.x - width, brb.y + width, tlf.z - width);
+    float3 trb = float3(brb.x - width, tlf.y + width, brb.z - width);
+    //TLF Corners    
+    hitflag = rayBox(r.RayPos, r.RayDirection, tlf, tlb) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, tlf, blf) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, tlf, trf) || hitflag;
+    //BRB
+
+    hitflag = rayBox(r.RayPos, r.RayDirection, brb, blb) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, brb, brf) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, brb, trb) || hitflag;
+    
+    //BLF Corner
+    float3 blf2 = float3(tlf.x + width, brb.y - width, tlf.z + width);
+    hitflag = rayBox(r.RayPos, r.RayDirection, blf, blb) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, blf2, brf) || hitflag;
+    
+    //TRF Corner
+    float3 trf2 = float3(brb.x + width, tlf.y - width, tlf.z + width);
+    hitflag = rayBox(r.RayPos, r.RayDirection, trf2, brf) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, trf2, trb) || hitflag;
+    
+    //TLB Corner
+    hitflag = rayBox(r.RayPos, r.RayDirection, tlb, trb) || hitflag;
+    hitflag = rayBox(r.RayPos, r.RayDirection, tlb, blb) || hitflag;
+    return hitflag;
 }

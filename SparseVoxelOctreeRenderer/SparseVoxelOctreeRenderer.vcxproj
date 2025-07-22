@@ -142,6 +142,7 @@
   <ItemGroup>
     <None Include="Include\Shaders\HLSLI\Raycasting.hlsli" />
     <None Include="Include\Shaders\HLSLI\Voxel.hlsli" />
+    <None Include="Include\Shaders\HLSLI\VoxelColorHelper.hlsli" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DXFramework\DXFramework.vcxproj">

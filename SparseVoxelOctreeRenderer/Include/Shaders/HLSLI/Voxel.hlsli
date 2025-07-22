@@ -1,3 +1,4 @@
+// Note: Careful, unsure how hlsl files handle redefinitions
 #define TLF 0
 #define TRF 1
 #define BLF 2
@@ -23,26 +24,3 @@ struct Voxel
     float3 voxPosition;
     uint color;
 };
-float UnpackVoxelColor(uint color, int rgba)
-{
-    //Unpacks a uint color to individual channels rgba
-    const float coefficient = 255.f;
-    switch (rgba)
-    {
-        case 0:
-            //return float((color & 0x000000ff)) * coefficient;
-            return float((color & 0x000000ff)) / coefficient;
-        case 1:
-            //return float((color & 0x0000ff00)) * coefficient;
-            return float(((color >> 8) & 0x000000ff)) / coefficient;
-        case 2:
-            //return float((color & 0x00ff0000)) * coefficient;
-            return float(((color >> 16) & 0x000000ff)) / coefficient;
-        case 3:
-            //return float((color & 0xff000000)) * coefficient;
-            return 1.0f;
-            return float(((color >> 24) & 0x000000ff)) / coefficient;
-        default:
-            return 1;
-    }
-}

@@ -138,5 +138,8 @@
     <None Include="Include\Shaders\HLSLI\Voxel.hlsli">
       <Filter>Include\Shaders\HLSLI</Filter>
     </None>
+    <None Include="Include\Shaders\HLSLI\VoxelColorHelper.hlsli">
+      <Filter>Include\Shaders\HLSLI</Filter>
+    </None>
   </ItemGroup>
 </Project>
