@@ -1,6 +1,6 @@
 workspace "SparseVoxelOctreeRenderer"
     architecture "x64"
-
+    startproject "SparseVoxelOctreeRenderer"
     configurations { "Debug", "Release" } 
 
 project "SparseVoxelOctreeRenderer"
@@ -18,7 +18,7 @@ project "SparseVoxelOctreeRenderer"
     "%{prj.name}/Include/Octree",
     -- Update with any extra files in the include
     }
-    libdirs {"lib/%{cfg.buildcfg}/"}
+    libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcg}/"}
     links {"DXFramework","d3d11.lib","DXFramework.lib","dxgi.lib", "D3DCompiler.lib"}
 
     -- Sets the working directory to the output where the .cso files get outputted. 
@@ -65,7 +65,7 @@ project "DXFramework"
     objdir ("Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/")
     files{"%{prj.name}/**.h","%{prj.name}/**.cpp", "include/imGUI/**.cpp","include/imGUI/**.cpp"}
     includedirs{"include"}
-    libdirs {"lib/%{cfg.buildcfg}/"}
+    libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcg}/"}
     links {"DirectXTK.lib","assimp-vc141-mtd.lib"}
 
     filter "system:windows"
