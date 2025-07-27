@@ -2,6 +2,20 @@ workspace "SparseVoxelOctreeRenderer"
     architecture "x64"
     startproject "SparseVoxelOctreeRenderer"
     configurations { "Debug", "Release" } 
+    local targetBuildLocation = "bin/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}"
+    -- Currently not working
+
+    filter "system:windows"
+    postbuildcommands {
+        'xcopy /E /Y /I "%{wks.location}\\res" "%{cfg.targetdir}\\res\\"'
+    }
+    
+    filter "system:linux or macosx"
+    postbuildcommands {
+        'cp -r "%{wks.location}/res" "%{cfg.targetdir}/res"'
+    }
+
+    filter {} -- clear filter
 
 project "SparseVoxelOctreeRenderer"
     location "SparseVoxelOctreeRenderer"
@@ -18,7 +32,7 @@ project "SparseVoxelOctreeRenderer"
     "%{prj.name}/Include/Octree",
     -- Update with any extra files in the include
     }
-    libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcg}/"}
+    libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcfg}/"}
     links {"DXFramework","d3d11.lib","DXFramework.lib","dxgi.lib", "D3DCompiler.lib"}
 
     -- Sets the working directory to the output where the .cso files get outputted. 
@@ -65,7 +79,7 @@ project "DXFramework"
     objdir ("Intermediate/%{cfg.buildcfg}/%{cfg.system}/%{cfg.architecture}/%{prj.name}/")
     files{"%{prj.name}/**.h","%{prj.name}/**.cpp", "include/imGUI/**.cpp","include/imGUI/**.cpp"}
     includedirs{"include"}
-    libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcg}/"}
+    libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcfg}/"}
     links {"DirectXTK.lib","assimp-vc141-mtd.lib"}
 
     filter "system:windows"
@@ -85,3 +99,5 @@ project "DXFramework"
         {
             "NDEBUG"
         }
+
+
