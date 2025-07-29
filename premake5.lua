@@ -30,6 +30,9 @@ project "SparseVoxelOctreeRenderer"
     "%{prj.name}/Include/Shaders",
     "%{prj.name}/Include/Voxels",
     "%{prj.name}/Include/Octree",
+    "include/Perfkit/NvPerfUtility/",
+    "include/Perfkit/windows-desktop-x64",
+    "include/Perfkit/",
     -- Update with any extra files in the include
     }
     libdirs {"lib/%{cfg.buildcfg}/", "ExternalLib/%{cfg.buildcfg}/"}

@@ -72,8 +72,17 @@
     <ClInclude Include="Include\Shaders\TextureViewer.h">
       <Filter>Include\Shaders</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Util\ConstructionPerformance.h">
+      <Filter>Include\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Util\PerformanceTracker.h">
+      <Filter>Include\Util</Filter>
+    </ClInclude>
     <ClInclude Include="Include\Util\TimeMeasure.h">
       <Filter>Include\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Voxels\ApplicationDefinitions.h">
+      <Filter>Include\Voxels</Filter>
     </ClInclude>
     <ClInclude Include="Include\Voxels\Voxel.h">
       <Filter>Include\Voxels</Filter>
@@ -109,6 +118,12 @@
     </ClCompile>
     <ClCompile Include="Source\Shaders\TextureViewer.cpp">
       <Filter>Source\Shaders</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Util\ConstructionPerformance.cpp">
+      <Filter>Source\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Util\PerformanceTracker.cpp">
+      <Filter>Source\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Util\TimeMeasure.cpp">
       <Filter>Source\Util</Filter>
