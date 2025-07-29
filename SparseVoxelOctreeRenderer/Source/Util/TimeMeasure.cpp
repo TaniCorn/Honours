@@ -13,6 +13,7 @@ void TimeMeasure::Reset()
     RamEnd = 0;
     StartPoint = std::chrono::steady_clock::now();
     EndPoint = std::chrono::steady_clock::now();
+    IsUniqueContinuousCapture = true;
 }
 
 void TimeMeasure::CaptureStart()
@@ -116,7 +117,14 @@ void TimeMeasure::SingleOutputWithRam(std::string name)
 
 void TimeMeasure::ContinuousCaptureStart()
 {
-    CaptureStart();
+    if(IsUniqueContinuousCapture)
+    {
+        VramStart = CaptureVRam();
+        RamStart = CaptureRam();
+        IsUniqueContinuousCapture = false;
+	}
+
+    StartPoint = std::chrono::steady_clock::now();
 }
 
 void TimeMeasure::ContinuousCaptureEnd()
