@@ -1,6 +1,17 @@
 #include "AppScene.h"
 #include "SVOHelper.h"
 
+#define BENCHMARK 1
+#if BENCHMARK
+	#include "Perfkit/NvPerfUtility/NVPerfReportGeneratorD3D11.h"
+	#include "Perfkit/windows-desktop-x64/nvperf_host_impl.h"
+	#include "Perfkit/nvperf_target.h"
+	nv::perf::profiler::ReportGeneratorD3D11 g_nvperf;
+	NVPW_Device_ClockStatus g_clockStatus = NVPW_DEVICE_CLOCK_STATUS_UNKNOWN; // Used to restore clock state when exiting
+	const ULONGLONG g_warmupTicks = 500u; /* milliseconds */
+	ULONGLONG g_startTicks = 0u;
+	ULONGLONG g_currentTicks = 0u;
+#endif
 
 AppScene::AppScene()
 {
@@ -9,6 +20,11 @@ AppScene::AppScene()
 AppScene::~AppScene()
 {
 	// Remember do we need to delete pallette?
+	BaseApplication::~BaseApplication();
+#ifdef NV_PERF_ENABLE_INSTRUMENTATION
+	g_nvperf.Reset();
+	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), g_clockStatus);
+#endif
 }
 
 void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight, Input* in, bool VSYNC, bool FULL_SCREEN)
@@ -24,6 +40,7 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	camera->setPosition(350.0f, 150.0f, -100.0f);
 	camera->setRotation(0.0f, 0.0f, 0.0f);
 	camera->camSpeed = 10.0f;
+	camera->lookSpeed = 0.25f;
 
 	RTViewer = std::make_unique<TextureView::TextureViewer>(renderer->getDevice(), renderer->getDeviceContext(), hwnd, screenWidth, screenHeight);
 
@@ -32,7 +49,10 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	const int PregeneratedOctreeSize = 200000;
 	SVOTraverser = std::make_unique<SVOTraverserShader>(renderer->getDevice(), hwnd, PregeneratedOctreeSize, screenWidth, screenHeight);
 
-
+	// Load and construct the SVO Models from the files
+#if BENCHMARK
+	TimeAndMemoryTracker.CaptureStart();
+#endif
 	SVOHelper::LoadModelInFromFile("dragon", "res/dragon.vox", *SVOModels, *RawVoxelModels);
 	SVOHelper::LoadModelInFromFile("monu1", "res/monu1.vox", *SVOModels, *RawVoxelModels);
 	SVOHelper::LoadModelInFromFile("cars", "res/cars.vox", *SVOModels, *RawVoxelModels);
@@ -41,6 +61,10 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	SVOHelper::LoadModelInFromFile("menger", "res/menger.vox", *SVOModels, *RawVoxelModels);
 	SVOHelper::LoadModelInFromFile("teapot", "res/teapot.vox", *SVOModels, *RawVoxelModels);
 	SVOHelper::LoadModelInFromFile("room", "res/room.vox", *SVOModels, *RawVoxelModels);
+#if BENCHMARK
+	TimeAndMemoryTracker.CaptureEnd();
+	PerfTrack.AddPerformanceData("InitLoadAndConstruct", TimeAndMemoryTracker);
+#endif
 
 	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("dragon"), SVOModels->GetPalette("dragon"), 0);
 	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), SVOModels->GetPalette("monu1"), 1);
@@ -50,6 +74,20 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("menger"), SVOModels->GetPalette("menger"), 5);
 	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("teapot"), SVOModels->GetPalette("teapot"), 6);
 	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("room"), SVOModels->GetPalette("room"), 7);
+
+#if BENCHMARK
+	ConstructionPerf.SetModelNames(SVOModels->GetModelNames());
+	g_startTicks = GetTickCount64();
+	g_nvperf.InitializeReportGenerator(renderer->getDevice());
+	g_nvperf.SetFrameLevelRangeName("Frame");
+	g_nvperf.SetNumNestingLevels(2);
+	g_nvperf.SetMaxNumRanges(2 + 8); // "Frame" + "Compute"2 + "Render"
+	g_nvperf.outputOptions.directoryName = "HtmlReports\\Tracer";
+
+	// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
+	g_clockStatus = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
+	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
+#endif
 }
 
 bool AppScene::frame()
@@ -71,6 +109,10 @@ bool AppScene::frame()
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();  // ortho matrix for 2D rendering
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();	// Default camera position for orthographic rendering
 
+#ifdef BENCHMARK
+	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+	g_nvperf.PushRange("RenderingVoxels");
+#endif
 	RTViewer->GetRenderTexture()->clearRenderTarget(renderer->getDeviceContext(), 1, 0, 0, 1);
 
 	SVOTraverser->SetMatrixBuffer(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix);
@@ -80,6 +122,17 @@ bool AppScene::frame()
 
 	SVOTraverser->compute(renderer->getDeviceContext(), 74, 40, 1);
 	SVOTraverser->Unbind(renderer->getDeviceContext());
+#ifdef BENCHMARK
+	g_nvperf.PopRange(); // Draw
+	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+#endif
+
+
+#if BENCHMARK
+	ConstructionPerf.ContinouslyConstruct(*SVOModels, *RawVoxelModels, *timer, PerfTrack);
+#endif // BENCHMARK
+
+
 
 
 	result = render();
@@ -100,6 +153,9 @@ bool AppScene::render()
 	
 	RTViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, SVOTraverser->GetSRV());
 
+	//ImGui::ShowDemoWindow();
+	//ImGui::Render();
+	//ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	renderGUI();
 
 	renderer->endScene();
@@ -117,41 +173,89 @@ void AppScene::renderGUI()
 
 	ImGui::Text("FPS: %.2f", timer->getFPS());
 
-	ImGui::SliderInt("Voxel ViewMode", &VoxelViewMode, 0, 5);
-	ImGui::Text(ViewModeDisplay.c_str());
-	if (VoxelViewMode != 0)
-	{
-		ImGui::SliderInt("Voxel ViewDepth", &VoxelViewDepth, 0, 7);
-	}
-	IsHeatmapEnabled = false;
-	switch (VoxelViewMode)
-	{
-	case 0:
-		ViewModeDisplay = "Octree Tracer";
-		break;
-	case 1:
-		ViewModeDisplay = "Heatmap";
-		IsHeatmapEnabled = true;
-		break;
-	case 2:
-		ViewModeDisplay = "Old Tracer Heatmap";
-		IsHeatmapEnabled = true;
-		break;
-	case 3:
-		ViewModeDisplay = "Box render at depth";
-		break;
-	case 4:
-		ViewModeDisplay = "Wireframe render at depth";
-		break;
-	case 5:
-		ViewModeDisplay = "Wireframe render above depth";
-		break;
-	default:
-		ViewModeDisplay = "Octree Tracer";
-		break;
-	}
-
-
+	CameraControlsGUI();
+	TracerControlsGUI();
+#if BENCHMARK
+	PerfTrackerGUI();
+#endif
 	ImGui::Render();
+
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+}
+
+void AppScene::CameraControlsGUI()
+{
+	if (ImGui::CollapsingHeader("Camera Controls"))
+	{
+		ImGui::SliderFloat("Camera Speed", &camera->camSpeed, 1.f, 100.0f);
+		ImGui::SliderFloat("Camera Sensitivity", &camera->lookSpeed, 0.0f, 2.0f);
+	}
+}
+
+void AppScene::TracerControlsGUI()
+{
+	if (ImGui::CollapsingHeader("Tracer Controls"))
+	{
+		ImGui::Text(ViewModeDisplay.c_str());
+		ImGui::SliderInt("Voxel ViewMode", &VoxelViewMode, 0, 4);
+		if (VoxelViewMode != 0)
+		{
+			ImGui::SliderInt("Voxel ViewDepth", &VoxelViewDepth, 0, 7);
+		}
+		IsHeatmapEnabled = false;
+		switch (VoxelViewMode)
+		{
+		case 0:
+			ViewModeDisplay = "Octree Tracer Main";
+			break;
+		case 1:
+			ViewModeDisplay = "Heatmap";
+			IsHeatmapEnabled = true;
+			break;
+		case 2:
+			ViewModeDisplay = "Box render at depth";
+			break;
+		case 3:
+			ViewModeDisplay = "Wireframe render at depth";
+			break;
+		case 4:
+			ViewModeDisplay = "Wireframe render above depth";
+			break;
+		default:
+			ViewModeDisplay = "Octree Tracer Main";
+			break;
+		}
+	}
+}
+
+void AppScene::PerfTrackerGUI()
+{
+	if (ImGui::CollapsingHeader("Performance"))
+	{
+		ConstructionPerf.GUIRender(PerfTrack);
+
+		if (ImGui::Button("NVIDIA Profiler Tracer")) {
+			//g_nvperf.InitializeReportGenerator(renderer->getDevice());
+			g_nvperf.StartCollectionOnNextFrame();
+		}
+		if(ImGui::Button("Stop NVIDIA Profiler Tracer")) {
+			g_nvperf.Reset();
+		}
+
+		if(ImGui::CollapsingHeader("History"))
+		{
+			auto p = PerfTrack.GetPerformanceDataMap();
+			for each(auto var in p)
+			{
+				if (ImGui::TreeNode(var.first.c_str()))
+				{
+					ImGui::Text("Time Elapsed/Average Time: %.2f ms", var.second.TimeInMS);
+					ImGui::Text("RAM Diff: %.2f MB", var.second.RAMDifference);
+					ImGui::Text("V-RAM Diff: %.2f MB", var.second.VRAMDifference);
+					ImGui::TreePop();
+				}
+			}
+		}
+
+	}
 }

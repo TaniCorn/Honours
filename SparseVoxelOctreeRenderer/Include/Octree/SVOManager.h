@@ -20,6 +20,7 @@ public:
 	void InitialiseSVOModel(const std::string& name, const int AmountOfVoxels, const int Resolution, const UINT VoxelSize = 1);
 	bool CreateSVOModel(const std::string& name, const std::vector<Voxel>& Voxels, magicavoxel::Palette Palette);
 
+	void CreateAndFlushSVOModel(const std::vector<Voxel>& Voxels, const int Resolution, const UINT VoxelSize);
 
 	OctreeGPU::SVOGPURepresentation* GetSVOModel(const std::string& Name)
 	{
@@ -44,10 +45,14 @@ public:
 			return magicavoxel::Palette();
 		}
 	}
-
+	const std::vector<std::string>& GetModelNames() const
+	{
+		return ModelNames;
+	}
 	// TODO: possibly think about caching the palettes and models in a way that they are in a single buffer so that we can map them to the GPU more efficiently
 
 private:
 	std::map<std::string, std::unique_ptr<SVOModel>> SVOModels;
+	std::vector<std::string> ModelNames; // For caching purposes
 };
 
