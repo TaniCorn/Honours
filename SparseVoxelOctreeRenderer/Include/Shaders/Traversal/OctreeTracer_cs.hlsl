@@ -396,12 +396,6 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 outputColor = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
                 break;
             case 2:
-                // Heatmap mode, average // TODO: REMOVE
-                RayIntersectAtDepth(ray, vo, modelOffsets, doesIntersect, octantLocation, colorIndex, modelHeatIterations);
-                heatIterations += modelHeatIterations;
-                outputColor = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
-                break;
-            case 3:
                 // Render colored cubes at depth
                 // Finds the specific octant that this ray will intersect
                 // Use that octant to render the ray against the cube
@@ -409,7 +403,7 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 if(colorIndex >= 500)
                     outputColor = GetColorFromOctant(colorIndex - 500);
                 break;
-            case 4:
+            case 3:
                 // Render wireframe at depth
                 // Finds the specific octant that this ray will intersect
                 // Use that octant to test against the wireframe
@@ -417,7 +411,7 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 if (colorIndex)
                     outputColor = float4(1, 1, 1, 1);
                 break;
-            case 5:
+            case 4:
                 // Render wireframes above depth
                 colorIndex = RayIntersectWireframe(ray, vo, modelOffsets, false);
                 if (colorIndex)
