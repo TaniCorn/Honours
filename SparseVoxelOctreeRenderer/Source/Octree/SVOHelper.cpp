@@ -4,7 +4,7 @@ bool SVOHelper::LoadModelInFromFile(const std::string& ModelName, const std::str
 {
 	if (RawVoxelModels.LoadModel(ModelName, FilePath))
 	{
-		std::vector<Voxel> Voxels = RawVoxelModels.ConstructVoxelsFromModel(ModelName);
+		std::vector<Voxel> Voxels = RawVoxelModels.GetVoxelsFromModel(ModelName);
 		int VoxelModelResolution = RawVoxelModels.GetModelDimensions(ModelName);
 		const UINT VoxelSize = 1;
 

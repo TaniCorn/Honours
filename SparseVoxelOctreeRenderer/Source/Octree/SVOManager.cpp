@@ -22,6 +22,10 @@ void SVOManager::InitialiseSVOModel(const std::string& Name, const int AmountOfV
 		SVOModels[Name]->SVO->Clear();
 		SVOModels.erase(Name);
 	}
+	else
+	{
+		ModelNames.push_back(Name);
+	}
 
 	std::unique_ptr<SVOModel> ModelStruct = std::make_unique<SVOModel>();
 	std::unique_ptr<OctreeGPU::SVOGPURepresentation> SVO = std::make_unique<OctreeGPU::SVOGPURepresentation>(AmountOfVoxels, Resolution, VoxelSize);
@@ -42,6 +46,18 @@ bool SVOManager::CreateSVOModel(const std::string& Name, const std::vector<Voxel
 	OctreeGPU::SVOGPURepresentation* SVO = SVOModels[Name]->SVO.get();
 
 	// Allow the SVO to construct itself from the given voxels
+	for (int i = 0; i < Voxels.size(); i++)
+	{
+		SVO->InsertVoxel(Voxels[i]);
+	}
+}
+
+void SVOManager::CreateAndFlushSVOModel(const std::vector<Voxel>& Voxels, const int Resolution, const UINT VoxelSize)
+{
+	const int AmountOfVoxels = Voxels.size();
+
+	std::unique_ptr<SVOModel> ModelStruct = std::make_unique<SVOModel>();
+	std::unique_ptr<OctreeGPU::SVOGPURepresentation> SVO = std::make_unique<OctreeGPU::SVOGPURepresentation>(AmountOfVoxels, Resolution, VoxelSize);
 	for (int i = 0; i < Voxels.size(); i++)
 	{
 		SVO->InsertVoxel(Voxels[i]);

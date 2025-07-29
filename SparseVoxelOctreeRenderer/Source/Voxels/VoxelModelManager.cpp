@@ -33,8 +33,13 @@ bool VoxelModelManager::LoadModel(const std::string& IdentifierName, const std::
 		return false;
 }
 
-std::vector<Voxel> VoxelModelManager::ConstructVoxelsFromModel(const std::string& IdentifierName) const
+std::vector<Voxel> VoxelModelManager::GetVoxelsFromModel(const std::string& IdentifierName)
 {
+	if(CachedVoxels.find(IdentifierName) != CachedVoxels.end())
+	{
+		return CachedVoxels.at(IdentifierName);
+	}
+
 	// Try and load in a sparse model by name
 	const magicavoxel::VoxSparseModel* SparseModel;
 	try
@@ -66,6 +71,7 @@ std::vector<Voxel> VoxelModelManager::ConstructVoxelsFromModel(const std::string
 		Vox.Point.z = PosZ;
 		Voxels[i] = Vox;
 	}
+	CachedVoxels[IdentifierName] = Voxels;
 	return Voxels;
 }
 

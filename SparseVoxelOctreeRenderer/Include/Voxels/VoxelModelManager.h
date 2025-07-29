@@ -19,7 +19,7 @@ public:
 	/// <summary>
 	/// Constructs a series of Voxels from a MagicaVoxel model and returns them
 	/// </summary>
-	std::vector<Voxel> ConstructVoxelsFromModel(const std::string& IdentifierName) const;
+	std::vector<Voxel> GetVoxelsFromModel(const std::string& IdentifierName);
 	magicavoxel::VoxSparseModel* GetModel(const std::string& IdentifierName) const;
 
 	/// <summary>
@@ -37,5 +37,7 @@ private:
 	std::unique_ptr<magicavoxel::VoxFile> Loader;
 	std::map<std::string, int> ModelIndex;
 	std::map<std::string, magicavoxel::Palette> ColorPalette;
+
+	std::map<std::string, std::vector<Voxel>> CachedVoxels;
 };
 
