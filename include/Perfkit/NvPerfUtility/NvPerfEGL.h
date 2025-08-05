@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -122,22 +122,22 @@ namespace nv { namespace perf {
         return deviceIdentifiers;
     }
 
-    inline NVPW_Device_ClockStatus EGLGetDeviceClockState()
+    inline ClockInfo EGLGetDeviceClockState()
     {
         size_t nvperfDeviceIndex = EGLGetNvperfDeviceIndex();
         return GetDeviceClockState(nvperfDeviceIndex);
     }
 
-    inline bool EGLSetDeviceClockState(NVPW_Device_ClockSetting clockStatus)
+    inline bool EGLSetDeviceClockState(NVPW_Device_ClockSetting clockSetting)
     {
         size_t nvperfDeviceIndex = EGLGetNvperfDeviceIndex();
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockSetting);
     }
 
-    inline bool EGLSetDeviceClockState(NVPW_Device_ClockStatus clockStatus)
+    inline bool EGLSetDeviceClockState(const ClockInfo& clockInfo)
     {
         size_t nvperfDeviceIndex = EGLGetNvperfDeviceIndex();
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockInfo);
     }
 
     inline size_t EGLCalculateMetricsEvaluatorScratchBufferSize(const char* pChipName)
@@ -172,20 +172,20 @@ namespace nv { namespace perf {
 
 namespace nv { namespace perf { namespace profiler {
 
-    inline NVPA_RawMetricsConfig* EGLCreateRawMetricsConfig(const char* pChipName)
+    inline NVPW_RawCounterConfig* EGLCreateRawCounterConfig(const char* pChipName)
     {
-        NVPW_EGL_RawMetricsConfig_Create_Params configParams = { NVPW_EGL_RawMetricsConfig_Create_Params_STRUCT_SIZE };
+        NVPW_EGL_RawCounterConfig_Create_Params configParams = { NVPW_EGL_RawCounterConfig_Create_Params_STRUCT_SIZE };
         configParams.activityKind = NVPA_ACTIVITY_KIND_PROFILER;
         configParams.pChipName = pChipName;
 
-        NVPA_Status nvpaStatus = NVPW_EGL_RawMetricsConfig_Create(&configParams);
+        NVPA_Status nvpaStatus = NVPW_EGL_RawCounterConfig_Create(&configParams);
         if (nvpaStatus)
         {
-            NV_PERF_LOG_ERR(20, "NVPW_EGL_RawMetricsConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            NV_PERF_LOG_ERR(20, "NVPW_EGL_RawCounterConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
             return nullptr;
         }
 
-        return configParams.pRawMetricsConfig;
+        return configParams.pRawCounterConfig;
     }
 
     inline bool EGLIsGpuSupported(size_t sliIndex = 0)

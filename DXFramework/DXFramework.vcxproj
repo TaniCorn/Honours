@@ -72,7 +72,7 @@
       <AdditionalLibraryDirectories>..\lib\Debug;..\ExternalLib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /E /Y /I "$(SolutionDir)\res" "../lib/Debug\res\"</Command>
+      <Command>xcopy /E /Y /I "$(SolutionDir)\res" "../lib/Debug\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -99,7 +99,7 @@
       <AdditionalLibraryDirectories>..\lib\Release;..\ExternalLib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>xcopy /E /Y /I "$(SolutionDir)\res" "../lib/Release\res\"</Command>
+      <Command>xcopy /E /Y /I "$(SolutionDir)\res" "../lib/Release\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

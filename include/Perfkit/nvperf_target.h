@@ -2,7 +2,7 @@
 #define NVPERF_TARGET_H
 
 /*
- * Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+ * Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
  *
  * NOTICE TO USER:
  *
@@ -132,6 +132,18 @@ extern "C" {
         NVPW_WSL_SUPPORT_LEVEL_SUPPORTED_NON_WSL_CONFIGURATION
     } NVPW_WslSupportLevel;
 #endif //NVPW_WSL_SUPPORT_LEVEL_DEFINED
+
+#ifndef NVPW_MIG_SUPPORT_LEVEL_DEFINED
+#define NVPW_MIG_SUPPORT_LEVEL_DEFINED
+    /// MIG support level
+    typedef enum NVPW_MigSupportLevel
+    {
+        NVPW_MIG_SUPPORT_LEVEL_UNKNOWN = 0,
+        NVPW_MIG_SUPPORT_LEVEL_UNSUPPORTED,
+        NVPW_MIG_SUPPORT_LEVEL_SUPPORTED,
+        NVPW_MIG_SUPPORT_LEVEL_SUPPORTED_NON_MIG_CONFIGURATION
+    } NVPW_MigSupportLevel;
+#endif //NVPW_MIG_SUPPORT_LEVEL_DEFINED
 
     typedef struct NVPW_InitializeTarget_Params
     {
@@ -294,8 +306,6 @@ extern "C" {
 
 #define NVPW_API_SET_GPU_PERIODICSAMPLER       0x9f4c2571fc0b2e8aULL
 
-#define NVPW_API_SET_METRICSCONTEXT            0x7c8579f6f2144beaULL
-
 #define NVPW_API_SET_METRICSEVALUATOR          0x0368a8768d811af9ULL
 
 #define NVPW_API_SET_METRICS_AD10X_COMP        0xbe57278e12cb5288ULL
@@ -362,14 +372,29 @@ extern "C" {
     {
         /// clock status is unknown
         NVPW_DEVICE_CLOCK_STATUS_UNKNOWN,
-        /// clocks are locked to rated tdp values
+        /// clocks are locked to rated tdp values - Deprecated, use NVPW_DEVICE_CLOCK_STATUS_LOCKED instead
         NVPW_DEVICE_CLOCK_STATUS_LOCKED_TO_RATED_TDP,
         /// clocks are not locked and can boost above rated tdp
         NVPW_DEVICE_CLOCK_STATUS_BOOST_ENABLED,
         /// clocks are not locked and will not go above rated tdp
         NVPW_DEVICE_CLOCK_STATUS_BOOST_DISABLED,
+        /// clocks are locked
+        NVPW_DEVICE_CLOCK_STATUS_LOCKED,
+        /// clocks are not locked
+        NVPW_DEVICE_CLOCK_STATUS_UNLOCKED,
         NVPW_DEVICE_CLOCK_STATUS__COUNT
     } NVPW_Device_ClockStatus;
+
+    typedef enum NVPW_Device_ClockLevel
+    {
+        /// clock level is invalid
+        NVPW_DEVICE_CLOCK_LEVEL_INVALID,
+        /// clock level is at rated tdp
+        NVPW_DEVICE_CLOCK_LEVEL_RATED_TDP,
+        /// clock level is at turbo boost
+        NVPW_DEVICE_CLOCK_LEVEL_TURBO_BOOST,
+        NVPW_DEVICE_CLOCK_LEVEL__COUNT
+    } NVPW_Device_ClockLevel;
 
     typedef struct NVPW_Device_GetClockStatus_Params
     {
@@ -380,8 +405,10 @@ extern "C" {
         size_t deviceIndex;
         /// [in]
         NVPW_Device_ClockStatus clockStatus;
+        /// [in]
+        NVPW_Device_ClockLevel clockLevel;
     } NVPW_Device_GetClockStatus_Params;
-#define NVPW_Device_GetClockStatus_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_Device_GetClockStatus_Params, clockStatus)
+#define NVPW_Device_GetClockStatus_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_Device_GetClockStatus_Params, clockLevel)
 
     NVPA_Status NVPW_Device_GetClockStatus(NVPW_Device_GetClockStatus_Params* pParams);
 
@@ -394,6 +421,8 @@ extern "C" {
         NVPW_DEVICE_CLOCK_SETTING_DEFAULT,
         /// lock clocks at rated tdp base values
         NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP,
+        /// lock clocks at turbo boost values
+        NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_TURBO_BOOST,
         NVPW_DEVICE_CLOCK_SETTING__COUNT
     } NVPW_Device_ClockSetting;
 

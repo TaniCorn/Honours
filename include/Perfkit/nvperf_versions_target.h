@@ -2,7 +2,7 @@
 #define NVPERF_VERSIONS_TARGET_H
 
 /*
- * Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+ * Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
  *
  * NOTICE TO USER:
  *
@@ -111,8 +111,8 @@ extern "C" {
 #define NVPW_VULKAN_PROFILER_VERSION_PATCH 0
 
 /// SDK versions
-#define NVPW_SDK_VERSION_MAJOR 2023
-#define NVPW_SDK_VERSION_MINOR 5
+#define NVPW_SDK_VERSION_MAJOR 2025
+#define NVPW_SDK_VERSION_MINOR 1
 #define NVPW_SDK_VERSION_PATCH 0
 
 /// D3D11_PROFILER versions
@@ -166,8 +166,8 @@ extern "C" {
 #define NVPW_VULKAN_PROFILER_RELEASE_VERSION_PATCH 0
 
 /// SDK versions
-#define NVPW_SDK_RELEASE_VERSION_MAJOR 2023
-#define NVPW_SDK_RELEASE_VERSION_MINOR 5
+#define NVPW_SDK_RELEASE_VERSION_MAJOR 2025
+#define NVPW_SDK_RELEASE_VERSION_MINOR 1
 #define NVPW_SDK_RELEASE_VERSION_PATCH 0
 
 

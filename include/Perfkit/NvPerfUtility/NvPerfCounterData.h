@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -331,9 +331,33 @@ namespace nv { namespace perf {
         NVPA_Status nvpaStatus = NVPW_CounterData_GetNumRanges(&getNumRangeParams);
         if (nvpaStatus)
         {
+            NV_PERF_LOG_ERR(50, "NVPW_CounterData_GetNumRanges failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
             return 0;
         }
         return getNumRangeParams.numRanges;
+    }
+
+    inline bool ExtractCounterDataPrefixFromCounterData(const uint8_t* pCounterDataImage, size_t counterDataImageSize, std::vector<uint8_t>& counterDataPrefixExtracted)
+    {
+        NVPW_CounterData_ExtractCounterDataPrefix_Params extractCounterDataPrefixParams = { NVPW_CounterData_ExtractCounterDataPrefix_Params_STRUCT_SIZE };
+        extractCounterDataPrefixParams.pCounterDataSrc = pCounterDataImage;
+        extractCounterDataPrefixParams.counterDataSrcSize = counterDataImageSize;
+        NVPA_Status nvpaStatus = NVPW_CounterData_ExtractCounterDataPrefix(&extractCounterDataPrefixParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_CounterData_ExtractCounterDataPrefix failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+        counterDataPrefixExtracted.resize(extractCounterDataPrefixParams.counterDataPrefixSize);
+        extractCounterDataPrefixParams.pCounterDataPrefix = counterDataPrefixExtracted.data();
+        extractCounterDataPrefixParams.counterDataPrefixSize = counterDataPrefixExtracted.size();
+        nvpaStatus = NVPW_CounterData_ExtractCounterDataPrefix(&extractCounterDataPrefixParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_CounterData_ExtractCounterDataPrefix failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+        return true;
     }
 
     namespace profiler {

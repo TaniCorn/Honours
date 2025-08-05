@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ namespace nv { namespace perf {
         return D3DGetDeviceIdentifiers(pDXGIAdapter.Get(), sliIndex);
     }
 
-    inline NVPW_Device_ClockStatus D3D11GetDeviceClockState(ID3D11Device* pDevice)
+    inline ClockInfo D3D11GetDeviceClockState(ID3D11Device* pDevice)
     {
         size_t nvperfDeviceIndex = D3D11GetNvperfDeviceIndex(pDevice);
         return GetDeviceClockState(nvperfDeviceIndex);
@@ -171,10 +171,10 @@ namespace nv { namespace perf {
         return SetDeviceClockState(nvperfDeviceIndex, clockSetting);
     }
 
-    inline bool D3D11SetDeviceClockState(ID3D11Device* pDevice, NVPW_Device_ClockStatus clockStatus)
+    inline bool D3D11SetDeviceClockState(ID3D11Device* pDevice, const ClockInfo& clockInfo)
     {
         size_t nvperfDeviceIndex = D3D11GetNvperfDeviceIndex(pDevice);
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockInfo);
     }
 
     inline size_t D3D11CalculateMetricsEvaluatorScratchBufferSize(const char* pChipName)
@@ -208,20 +208,20 @@ namespace nv { namespace perf {
 
 namespace nv { namespace perf { namespace profiler {
 
-    inline NVPA_RawMetricsConfig* D3D11CreateRawMetricsConfig(const char* pChipName)
+    inline NVPW_RawCounterConfig* D3D11CreateRawCounterConfig(const char* pChipName)
     {
-        NVPW_D3D11_RawMetricsConfig_Create_Params configParams = { NVPW_D3D11_RawMetricsConfig_Create_Params_STRUCT_SIZE };
+        NVPW_D3D11_RawCounterConfig_Create_Params configParams = { NVPW_D3D11_RawCounterConfig_Create_Params_STRUCT_SIZE };
         configParams.activityKind = NVPA_ACTIVITY_KIND_PROFILER;
         configParams.pChipName = pChipName;
 
-        NVPA_Status nvpaStatus = NVPW_D3D11_RawMetricsConfig_Create(&configParams);
+        NVPA_Status nvpaStatus = NVPW_D3D11_RawCounterConfig_Create(&configParams);
         if (nvpaStatus)
         {
-            NV_PERF_LOG_ERR(20, "NVPW_D3D11_RawMetricsConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            NV_PERF_LOG_ERR(20, "NVPW_D3D11_RawCounterConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
             return nullptr;
         }
 
-        return configParams.pRawMetricsConfig;
+        return configParams.pRawCounterConfig;
     }
 
     inline bool D3D11IsGpuSupported(ID3D11Device* pDevice, size_t sliIndex = 0)

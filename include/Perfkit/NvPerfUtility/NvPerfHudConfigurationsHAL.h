@@ -1,5 +1,5 @@
 /*
-* Copyright 2021-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2021-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include "NvPerfHudConfigurationsGA10X.h"
 #include "NvPerfHudConfigurationsGA10B.h"
 #include "NvPerfHudConfigurationsAD10X.h"
+#include "NvPerfHudConfigurationsGB10B.h"
+#include "NvPerfHudConfigurationsGB20X.h"
 
 namespace nv { namespace perf { namespace hud {
 
@@ -56,6 +58,21 @@ namespace nv { namespace perf { namespace hud {
                 )
             {
                 return ad10x::HudConfigurations::GetHudConfigurationsSize();
+            }
+            else if (false
+                || !strcmp(pChipName, "GB10B")
+                )
+            {
+                return gb10b::HudConfigurations::GetHudConfigurationsSize();
+            }
+            else if (false
+                || !strcmp(pChipName, "GB202")
+                || !strcmp(pChipName, "GB203")
+                || !strcmp(pChipName, "GB205")
+                || !strcmp(pChipName, "GB206")
+                )
+            {
+                return gb20x::HudConfigurations::GetHudConfigurationsSize();
             }
             else
             {
@@ -92,6 +109,21 @@ namespace nv { namespace perf { namespace hud {
             {
                 return ad10x::HudConfigurations::GetHudConfigurationsFileNames();
             }
+            else if (false
+                || !strcmp(pChipName, "GB10B")
+                )
+            {
+                return gb10b::HudConfigurations::GetHudConfigurationsFileNames();
+            }
+            else if (false
+                || !strcmp(pChipName, "GB202")
+                || !strcmp(pChipName, "GB203")
+                || !strcmp(pChipName, "GB205")
+                || !strcmp(pChipName, "GB206")
+                )
+            {
+                return gb20x::HudConfigurations::GetHudConfigurationsFileNames();
+            }
             else
             {
                 NV_PERF_LOG_ERR(20, "Unknown chip \"%s\"\n", pChipName);
@@ -126,6 +158,21 @@ namespace nv { namespace perf { namespace hud {
                 )
             {
                 return ad10x::HudConfigurations::GetHudConfigurations();
+            }
+            else if (false
+                || !strcmp(pChipName, "GB10B")
+                )
+            {
+                return gb10b::HudConfigurations::GetHudConfigurations();
+            }
+            else if (false
+                || !strcmp(pChipName, "GB202")
+                || !strcmp(pChipName, "GB203")
+                || !strcmp(pChipName, "GB205")
+                || !strcmp(pChipName, "GB206")
+                )
+            {
+                return gb20x::HudConfigurations::GetHudConfigurations();
             }
             else
             {

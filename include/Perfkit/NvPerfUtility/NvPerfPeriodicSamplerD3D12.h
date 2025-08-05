@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,6 +24,12 @@
 #include "NvPerfMiniTraceD3D12.h"
 #include "NvPerfPeriodicSamplerGpu.h"
 #include "NvPerfScopeExitGuard.h"
+#include "NvPerfUtilities.h"
+#include <chrono>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
+#include <functional>
 
 struct ID3D12Device;
 struct ID3D12CommandQueue;
@@ -361,31 +367,51 @@ namespace nv { namespace perf { namespace sampler {
                 NV_PERF_LOG_ERR(50, "Not in a session, this function is skipped\n");
                 return false;
             }
-            const size_t numSamplingRangesToDecode = 1;
-            size_t numSamplingRangesDecoded = 0;
-            bool recordBufferOverflow = false;
-            size_t numSamplesDropped = 0;
-            size_t numSamplesMerged = 0;
-            bool success = m_periodicSamplerGpu.DecodeCounters(
-                m_counterData.GetCounterData(),
-                numSamplingRangesToDecode,
-                numSamplingRangesDecoded,
-                recordBufferOverflow,
-                numSamplesDropped,
-                numSamplesMerged);
+            GpuPeriodicSampler::GetRecordBufferStatusParams getRecordBufferStatusParams = {};
+            getRecordBufferStatusParams.queryOverflow = true;
+            getRecordBufferStatusParams.queryNumUnreadBytes = true;
+            bool success = m_periodicSamplerGpu.GetRecordBufferStatus(getRecordBufferStatusParams);
             if (!success)
             {
                 return false;
             }
-            if (recordBufferOverflow)
+            if (!!getRecordBufferStatusParams.overflow)
             {
                 NV_PERF_LOG_ERR(20, "Record buffer overflow has been detected! Please try to 1) reduce sampling frequency 2) increase record buffer size "
 "3) call DecodeCounters() more frequently\n");
                 return false;
             }
+            if (getRecordBufferStatusParams.numUnreadBytes == 0)
+            {
+                return true;
+            }
+
+            NVPW_GPU_PeriodicSampler_DecodeStopReason decodeStopReason = NVPW_GPU_PERIODIC_SAMPLER_DECODE_STOP_REASON_OTHER;
+            size_t numSamplesMerged = 0;
+            size_t numBytesConsumed = 0;
+            success = m_periodicSamplerGpu.DecodeCounters(
+                m_counterData.GetCounterData(),
+                getRecordBufferStatusParams.numUnreadBytes,
+                decodeStopReason,
+                numSamplesMerged,
+                numBytesConsumed);
+            if (!success)
+            {
+                return false;
+            }
+            if (decodeStopReason != NVPW_GPU_PERIODIC_SAMPLER_DECODE_STOP_REASON_ALL_GIVEN_BYTES_READ)
+            {
+                NV_PERF_LOG_WRN(100, "DecodeCounters stopped unexpectedly. Stop Reason: %d \n", decodeStopReason);
+            }
             if (numSamplesMerged)
             {
                 NV_PERF_LOG_WRN(100, "Merged samples have been detected! This may lead to reduced accuracy. please try to reduce the sampling frequency.\n");
+            }
+
+            success = m_periodicSamplerGpu.AcknowledgeRecordBuffer(numBytesConsumed);
+            if (!success)
+            {
+                return false;
             }
 
             success = m_counterData.UpdatePut();
@@ -433,4 +459,347 @@ namespace nv { namespace perf { namespace sampler {
         }
     };
 
+    class PeriodicSamplerOneShotD3D12
+    {
+    public:
+        enum class SamplerStatus
+        {
+            Uninitialized,
+            Failed,
+            Initialized,
+            Sampling,
+        };
+        enum class AppendDateTime
+        {
+            no,
+            yes
+        };
+        struct OutputOption
+        {
+            std::string directoryName = "OneShot";
+            AppendDateTime appendDateTime = AppendDateTime::yes;
+        };
+        OutputOption m_outputOption;
+        CounterConfiguration m_counterConfiguration;
+        sampler::GpuPeriodicSampler m_periodicSamplerGpu;
+        std::vector<uint8_t> m_counterData;              // This is used to store the counter values collected during profiling.
+        std::function<void(const char*)> m_onStopSampling;
+        std::string m_outputDirectory;
+        SamplerStatus m_status;
+        bool m_inCollection;
+        size_t m_samplingIntervalNs;
+        size_t m_maxDurationNs;
+        size_t m_numFramesToSample;
+        size_t m_numFramesSampled;
+
+        PeriodicSamplerOneShotD3D12()
+            : m_status(SamplerStatus::Uninitialized)
+            , m_inCollection(false)
+            , m_samplingIntervalNs(0)
+            , m_maxDurationNs(0)
+            , m_numFramesToSample(0)
+            , m_numFramesSampled(0)
+        {
+        }
+        PeriodicSamplerOneShotD3D12(const PeriodicSamplerOneShotD3D12& sampler) = delete;
+        PeriodicSamplerOneShotD3D12(PeriodicSamplerOneShotD3D12&& sampler) = default;
+        ~PeriodicSamplerOneShotD3D12()
+        {
+            Reset();
+        }
+        PeriodicSamplerOneShotD3D12& operator=(const PeriodicSamplerOneShotD3D12& sampler) = delete;
+        PeriodicSamplerOneShotD3D12& operator=(PeriodicSamplerOneShotD3D12&& sampler) = default;
+
+        SamplerStatus GetSamplerStatus()
+        {
+            return m_status;
+        }
+
+        bool Initialize(ID3D12Device* pDevice, size_t samplingIntervalNs, size_t maxDurationPerFrameNs, size_t numFramesToSample,
+                        std::function<void(const char*)> onStopSampling, const CounterConfiguration& counterConfiguration
+        )
+        {
+            if (m_status != SamplerStatus::Uninitialized)
+            {
+                NV_PERF_LOG_ERR(50, "Not in an initializable state\n");
+                return false;
+            }
+            auto setStatusToFailed = ScopeExitGuard([&]() {
+                m_status = SamplerStatus::Failed;
+            });
+
+            if (counterConfiguration.numPasses != 1)
+            {
+                NV_PERF_LOG_ERR(20, "Number of passes is not 1.\n");
+                return false;
+            }
+            m_counterConfiguration = counterConfiguration;
+
+            if (!InitializeNvPerf())
+            {
+                NV_PERF_LOG_ERR(10, "InitializeNvPerf failed\n");
+                return false;
+            }
+
+            if (!D3D12LoadDriver())
+            {
+                NV_PERF_LOG_ERR(10, "Could not load driver\n");
+                return false;
+            }
+
+            if (!D3D12IsNvidiaDevice(pDevice))
+            {
+                NV_PERF_LOG_ERR(10, "Not running on an NVIDIA device\n");
+                return false;
+            }
+
+            const size_t deviceIndex = D3D12GetNvperfDeviceIndex(pDevice);
+            if (deviceIndex == (size_t)~0)
+            {
+                NV_PERF_LOG_ERR(20, "D3D12GetNvperfDeviceIndex failed\n");
+                return false;
+            }
+
+            bool success = m_periodicSamplerGpu.Initialize(deviceIndex);
+            if (!success)
+            {
+                NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::Initialize failed\n");
+                return false;
+            }
+
+            const DeviceIdentifiers deviceIdentifiers = m_periodicSamplerGpu.GetDeviceIdentifiers();
+            const char* pChipName = deviceIdentifiers.pChipName;
+
+            m_samplingIntervalNs = samplingIntervalNs;
+            m_maxDurationNs = maxDurationPerFrameNs * numFramesToSample;
+            success = InitializeCounterData();
+            if (!success)
+            {
+                NV_PERF_LOG_ERR(20, "InitializeCounterData failed\n");
+                return false;
+            }
+
+            m_numFramesToSample = numFramesToSample;
+            m_numFramesSampled = 0;
+            const size_t maxSamples = m_maxDurationNs / m_samplingIntervalNs;
+
+            size_t recordBufferSize = 0;
+            success = GpuPeriodicSamplerCalculateRecordBufferSize(deviceIndex, m_counterConfiguration.configImage, maxSamples, recordBufferSize);
+            if (!success)
+            {
+                NV_PERF_LOG_ERR(20, "GpuPeriodicSamplerCalculateRecordBufferSize failed\n");
+                return false;
+            }
+    
+            const GpuPeriodicSampler::GpuPulseSamplingInterval samplingInterval = m_periodicSamplerGpu.GetGpuPulseSamplingInterval((uint32_t)m_samplingIntervalNs);
+            success = m_periodicSamplerGpu.BeginSession(
+                recordBufferSize,
+                1,
+                {samplingInterval.triggerSource},
+                samplingInterval.samplingInterval
+            );
+            if (!success)
+            {
+                NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::BeginSession failed\n");
+                return false;
+            }
+
+            success = m_periodicSamplerGpu.SetConfig(m_counterConfiguration.configImage, 0);
+            if (!success)
+            {
+                NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::SetConfig failed\n");
+                return false;
+            }
+            m_onStopSampling = onStopSampling;
+            setStatusToFailed.Dismiss();
+            m_status = SamplerStatus::Initialized;
+            return true;
+        }
+
+        void StartCollectionOnFrameEnd()
+        {
+            m_inCollection = true;
+        }
+
+        bool OnFrameEnd()
+        {
+            if (m_inCollection && m_status == SamplerStatus::Sampling)
+            {
+                ++m_numFramesSampled;
+                if (m_numFramesSampled == m_numFramesToSample)
+                {
+                    m_onStopSampling(m_outputDirectory.c_str());
+                    bool success = m_periodicSamplerGpu.StopSampling();
+                    if (!success)
+                    {
+                        NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::StopSampling failed\n");
+                        return false;
+                    }
+                    m_inCollection = false;
+                    m_status = SamplerStatus::Initialized;
+
+                    nv::perf::sampler::GpuPeriodicSampler::GetRecordBufferStatusParams getRecordBufferStatusParams = {};
+                    getRecordBufferStatusParams.queryOverflow = true;
+                    getRecordBufferStatusParams.queryNumUnreadBytes = true;
+                    success = m_periodicSamplerGpu.GetRecordBufferStatus(getRecordBufferStatusParams);
+                    if (!success)
+                    {
+                        NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::GetRecordBufferStatus failed\n");
+                        return false;
+                    }
+
+                    if (!!getRecordBufferStatusParams.overflow)
+                    {
+                        NV_PERF_LOG_WRN(20, "Record buffer overflow has been detected! Please try to 1) reduce sampling frequency 2) increase record buffer size ");
+                    }
+
+                    if (getRecordBufferStatusParams.numUnreadBytes == 0)
+                    {
+                        NV_PERF_LOG_ERR(20, "Nothing to decode\n");
+                        return false;
+                    }
+
+                    // Decode the record buffer and store the decoded counters into the counter data.
+                    NVPW_GPU_PeriodicSampler_DecodeStopReason decodeStopReason = NVPW_GPU_PERIODIC_SAMPLER_DECODE_STOP_REASON_OTHER;
+                    size_t numSamplesMerged = 0;
+                    size_t numBytesConsumed = 0;
+                    success = m_periodicSamplerGpu.DecodeCounters(m_counterData, getRecordBufferStatusParams.numUnreadBytes, decodeStopReason, numSamplesMerged, numBytesConsumed);
+                    if (!success)
+                    {
+                        NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::DecodeCounters failed\n");
+                        return false;
+                    }
+
+                    if (!numBytesConsumed)
+                    {
+                        NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::DecodeCounters: No bytes consumed\n");
+                        return false;
+                    }
+
+                    if (decodeStopReason != NVPW_GPU_PERIODIC_SAMPLER_DECODE_STOP_REASON_ALL_GIVEN_BYTES_READ)
+                    {
+                        NV_PERF_LOG_WRN(20, "DecodeCounters stopped unexpectedly. Stop Reason: %d \n", decodeStopReason);
+                    }
+
+                    success = m_periodicSamplerGpu.AcknowledgeRecordBuffer(numBytesConsumed);
+                    if (!success)
+                    {
+                        NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::AcknowledgeRecordBuffer failed\n");
+                        return false;
+                    }
+                    size_t counterDataSize = 0;
+                    success = CounterDataTrimInPlace(m_counterData.data(), m_counterData.size(), counterDataSize);
+                    {
+                        std::string counterDataFileName = nv::perf::utilities::JoinDriectoryAndFileName(m_outputDirectory, "counterData.bin");
+                        std::ofstream counterFile(counterDataFileName, std::ios::binary);
+                        if (!counterFile.is_open())
+                        {
+                            NV_PERF_LOG_ERR(20, "Failed to open %s for writing\n", counterDataFileName.c_str());
+                            return false;
+                        }
+                        counterFile.write(reinterpret_cast<const char*>(m_counterData.data()), counterDataSize);
+                        if (!counterFile.good())
+                        {
+                            NV_PERF_LOG_ERR(20, "Failed to write to %s\n", counterDataFileName.c_str());
+                            return false;
+                        }
+                    }
+
+                    success = InitializeCounterData();
+                    if (!success)
+                    {
+                        NV_PERF_LOG_ERR(20, "InitializeCounterData failed\n");
+                        return false;
+                    }
+                    m_status = SamplerStatus::Initialized;
+                    m_inCollection = false;
+                    m_numFramesSampled = 0;
+                    return true;
+                }
+                return true;
+            }
+            else if (m_inCollection && m_status == SamplerStatus::Initialized)
+            {
+                std::string outputDirName = m_outputOption.directoryName;
+                if (m_outputOption.appendDateTime == AppendDateTime::yes)
+                {
+                    auto formatTime = [](const time_t& secondsSinceEpoch) -> std::string{
+                        struct tm now_time;
+                        const errno_t ret = localtime_s(&now_time, &secondsSinceEpoch);
+                        if (ret)
+                        {
+                            return std::string();
+                        }
+
+                        std::stringstream sstream;
+                        sstream << std::setfill('0') << 1900 + now_time.tm_year << std::setw(2) << 1 + now_time.tm_mon << std::setw(2) << now_time.tm_mday << "_"
+                                << std::setw(2) << now_time.tm_hour << std::setw(2) << now_time.tm_min << std::setw(2) << now_time.tm_sec;
+                        return sstream.str();
+                    };
+
+                    auto now = std::chrono::system_clock::now();
+                    const uint64_t secondsSinceEpoch = static_cast<uint64_t>(std::chrono::system_clock::to_time_t(now));
+                    const std::string formattedTime = formatTime(secondsSinceEpoch);
+                    outputDirName += std::string(1, NV_PERF_PATH_SEPARATOR) + formattedTime;
+                }
+                if (outputDirName.length() > 0 && outputDirName.back() != NV_PERF_PATH_SEPARATOR)
+                {
+                    outputDirName += NV_PERF_PATH_SEPARATOR;
+                }
+                for (size_t di = 0; di < outputDirName.length(); ++di)
+                {
+                    if (outputDirName[di] == NV_PERF_PATH_SEPARATOR)
+                    {
+                        std::string parentDir(outputDirName, 0, di);
+                        BOOL dirCreated = CreateDirectoryA(parentDir.c_str(), NULL);
+                        if (!dirCreated)
+                        {
+                            /* it probably already exists */
+                        }
+                    }
+                }
+                m_outputDirectory = outputDirName;
+
+                bool success = m_periodicSamplerGpu.StartSampling();
+                if (!success)
+                {
+                    m_inCollection = false;
+                    NV_PERF_LOG_ERR(20, "GpuPeriodicSampler::StartSampling failed\n");
+                    return false;
+                }
+                m_numFramesSampled = 0;
+                m_status = SamplerStatus::Sampling;
+            }
+            return true;
+        }
+        bool Reset()
+        {
+            m_periodicSamplerGpu.Reset();
+            m_counterData.clear();
+            m_counterConfiguration = {};
+            m_outputDirectory.clear();
+            m_status = SamplerStatus::Uninitialized;
+            m_inCollection = false;
+            m_samplingIntervalNs = 0;
+            m_maxDurationNs = 0;
+            return true;
+        }
+    private:
+        bool InitializeCounterData()
+        {
+            const size_t maxSamples = m_maxDurationNs / m_samplingIntervalNs;
+            m_counterData.clear();
+            size_t deviceIndex = m_periodicSamplerGpu.GetDeviceIndex();
+            bool success = GpuPeriodicSamplerCreateCounterData(
+                    deviceIndex, m_counterConfiguration.counterDataPrefix.data(), m_counterConfiguration.counterDataPrefix.size(),
+                    (uint32_t)maxSamples, NVPW_PERIODIC_SAMPLER_COUNTER_DATA_APPEND_MODE_LINEAR, m_counterData
+            );
+            if (!success)
+            {
+                NV_PERF_LOG_ERR(20, "GpuPeriodicSamplerCreateCounterData failed\n");
+                return false;
+            }
+            return true;
+        }
+    };
 }}}

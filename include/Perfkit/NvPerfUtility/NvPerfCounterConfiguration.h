@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 
 #include <stdint.h>
 #include <vector>
+#include <fstream>
 #include "NvPerfInit.h"
 #include "NvPerfMetricsConfigBuilder.h"
+#include "NvPerfScopeExitGuard.h"
 
 namespace nv { namespace perf {
 
@@ -110,4 +112,48 @@ namespace nv { namespace perf {
         return true;
     }
 
+    /// Load the configuration and counter data prefix from files.
+    inline bool LoadConfiguration(
+        const char* pConfigImageFileName,
+        const char* pCounterDataPrefixFileName,
+        CounterConfiguration& configuration)
+    {
+        // Load the configuration from file.
+        std::vector<uint8_t> configImage;
+        {
+            std::ifstream configImageFile(pConfigImageFileName, std::ios::binary);
+            if (configImageFile.fail())
+            {
+                NV_PERF_LOG_ERR(10, "Failed to open file %s\n", pConfigImageFileName);
+                return false;
+            }
+            configImage.assign(std::istreambuf_iterator<char>(configImageFile), std::istreambuf_iterator<char>());
+        }
+
+        // Load the counter data prefix from file.
+        std::vector<uint8_t> counterDataPrefix;
+        {
+            std::ifstream counterDataPrefixFile(pCounterDataPrefixFileName, std::ios::binary);
+            if (counterDataPrefixFile.fail())
+            {
+                NV_PERF_LOG_ERR(10, "Failed to open file %s\n", pCounterDataPrefixFileName);
+                return false;
+            }
+            counterDataPrefix.assign(std::istreambuf_iterator<char>(counterDataPrefixFile), std::istreambuf_iterator<char>());
+        }
+
+        NVPW_Config_GetNumPasses_V2_Params getNumPassesParams = { NVPW_Config_GetNumPasses_V2_Params_STRUCT_SIZE };
+        getNumPassesParams.pConfig = configImage.data();
+        NVPA_Status nvpaStatus = NVPW_Config_GetNumPasses_V2(&getNumPassesParams);
+        if (nvpaStatus != NVPA_STATUS_SUCCESS)
+        {
+            NV_PERF_LOG_ERR(10, "NVPW_Config_GetNumPasses_V2 failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+
+        configuration.configImage = std::move(configImage);
+        configuration.counterDataPrefix = std::move(counterDataPrefix);
+        configuration.numPasses = getNumPassesParams.numPasses;
+        return true;
+    }
 }}

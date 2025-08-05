@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -87,22 +87,22 @@ namespace nv { namespace perf {
         return deviceIdentifiers;
     }
 
-    inline NVPW_Device_ClockStatus OpenGLGetDeviceClockState()
+    inline ClockInfo OpenGLGetDeviceClockState()
     {
         size_t nvperfDeviceIndex = OpenGLGetNvperfDeviceIndex();
         return GetDeviceClockState(nvperfDeviceIndex);
     }
 
-    inline bool OpenGLSetDeviceClockState(NVPW_Device_ClockSetting clockStatus)
+    inline bool OpenGLSetDeviceClockState(NVPW_Device_ClockSetting clockSetting)
     {
         size_t nvperfDeviceIndex = OpenGLGetNvperfDeviceIndex();
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockSetting);
     }
 
-    inline bool OpenGLSetDeviceClockState(NVPW_Device_ClockStatus clockStatus)
+    inline bool OpenGLSetDeviceClockState(const ClockInfo& clockInfo)
     {
         size_t nvperfDeviceIndex = OpenGLGetNvperfDeviceIndex();
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockInfo);
     }
 
     inline size_t OpenGLCalculateMetricsEvaluatorScratchBufferSize(const char* pChipName)
@@ -137,20 +137,22 @@ namespace nv { namespace perf {
 
 namespace nv { namespace perf { namespace profiler {
 
-    inline NVPA_RawMetricsConfig* OpenGLCreateRawMetricsConfig(const char* pChipName)
+// Wait Until Next Binary Drop
+
+    inline NVPW_RawCounterConfig* OpenGLCreateRawCounterConfig(const char* pChipName)
     {
-        NVPW_OpenGL_RawMetricsConfig_Create_Params configParams = { NVPW_OpenGL_RawMetricsConfig_Create_Params_STRUCT_SIZE };
+        NVPW_OpenGL_RawCounterConfig_Create_Params configParams = { NVPW_OpenGL_RawCounterConfig_Create_Params_STRUCT_SIZE };
         configParams.activityKind = NVPA_ACTIVITY_KIND_PROFILER;
         configParams.pChipName = pChipName;
 
-        NVPA_Status nvpaStatus = NVPW_OpenGL_RawMetricsConfig_Create(&configParams);
+        NVPA_Status nvpaStatus = NVPW_OpenGL_RawCounterConfig_Create(&configParams);
         if (nvpaStatus)
         {
-            NV_PERF_LOG_ERR(20, "NVPW_OpenGL_RawMetricsConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            NV_PERF_LOG_ERR(20, "NVPW_OpenGL_RawCounterConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
             return nullptr;
         }
 
-        return configParams.pRawMetricsConfig;
+        return configParams.pRawCounterConfig;
     }
 
     inline bool OpenGLIsGpuSupported(size_t sliIndex = 0)

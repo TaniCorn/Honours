@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -23,6 +23,32 @@
 #include "NvPerfInit.h"
 
 namespace nv { namespace perf {
+
+    bool ToMetricEvalRequest(NVPW_MetricsEvaluator* pMetricsEvaluator, const char* pMetricName, NVPW_MetricEvalRequest& metricEvalRequest);
+    bool GetMetricTypeAndIndex(NVPW_MetricsEvaluator* pMetricsEvaluator, const char* pMetricName, NVPW_MetricType& metricType, size_t& metricIndex);
+    bool GetSupportedSubmetrics(NVPW_MetricsEvaluator* pMetricsEvaluator, NVPW_MetricType metricType, std::vector<NVPW_Submetric>& submetrics);
+    bool MetricsEvaluatorSetDeviceAttributes(NVPW_MetricsEvaluator* pMetricsEvaluator, const uint8_t* pCounterDataImage, size_t counterDataImageSize);
+    bool EvaluateToGpuValues(
+        NVPW_MetricsEvaluator* pMetricsEvaluator,
+        const uint8_t* pCounterDataImage,
+        size_t counterDataImageSize,
+        size_t rangeIndex,
+        size_t numMetricEvalRequests,
+        const NVPW_MetricEvalRequest* pMetricEvalRequests,
+        double* pMetricValues);
+    bool GetMetricDimUnits(NVPW_MetricsEvaluator* pMetricsEvaluator, const NVPW_MetricEvalRequest& metricRequest, std::vector<NVPW_DimUnitFactor>& dimUnits);
+    const char* GetMetricDescription(NVPW_MetricsEvaluator* pMetricsEvaluator, NVPW_MetricType metricType, size_t metricIndex);
+    NVPW_HwUnit GetMetricHwUnit(NVPW_MetricsEvaluator* pMetricsEvaluator, NVPW_MetricType metricType, size_t metricIndex);
+    bool GetMetricRawCounterDependencies(
+        NVPW_MetricsEvaluator* pMetricsEvaluator,
+        const NVPW_MetricEvalRequest* pMetricEvalRequests,
+        size_t numMetricEvalRequests,
+        std::vector<const char*>& rawDependencies,
+        std::vector<const char*>& optionalRawDependencies);
+    bool UserDefinedMetrics_Initialize(NVPW_MetricsEvaluator* pMetricsEvaluator, void* pOutputUserData, NVPW_MetricsEvaluator_UserDefinedMetrics_OutputCallback stdoutCallback, NVPW_MetricsEvaluator_UserDefinedMetrics_OutputCallback stderrCallback);
+    bool UserDefinedMetrics_Initialize(NVPW_MetricsEvaluator* pMetricsEvaluator);
+    bool UserDefinedMetrics_Execute(NVPW_MetricsEvaluator* pMetricsEvaluator, const std::string& script);
+    bool UserDefinedMetrics_Commit(NVPW_MetricsEvaluator* pMetricsEvaluator);
 
     // Smart Pointer for NVPW_MetricsEvaluator
     class MetricsEvaluator
@@ -85,6 +111,11 @@ namespace nv { namespace perf {
             return m_pMetricsEvaluator;
         }
 
+        NVPW_MetricsEvaluator* Get() const
+        {
+            return m_pMetricsEvaluator;
+        }
+
         void Reset()
         {
             if (m_pMetricsEvaluator != nullptr)
@@ -100,49 +131,144 @@ namespace nv { namespace perf {
             }
             m_scratchBuffer.clear();
         }
+
+        bool ToMetricEvalRequest(const char* pMetricName, NVPW_MetricEvalRequest& metricEvalRequest)
+        {
+            return nv::perf::ToMetricEvalRequest(m_pMetricsEvaluator, pMetricName, metricEvalRequest);
+        }
+
+        bool GetMetricTypeAndIndex(const char* pMetricName, NVPW_MetricType& metricType, size_t& metricIndex)
+        {
+            return nv::perf::GetMetricTypeAndIndex(m_pMetricsEvaluator, pMetricName, metricType, metricIndex);
+        }
+
+        bool GetSupportedSubmetrics(NVPW_MetricType metricType, std::vector<NVPW_Submetric>& submetrics)
+        {
+            return nv::perf::GetSupportedSubmetrics(m_pMetricsEvaluator, metricType, submetrics);
+        }
+
+        bool MetricsEvaluatorSetDeviceAttributes(const uint8_t* pCounterDataImage, size_t counterDataImageSize)
+        {
+            return nv::perf::MetricsEvaluatorSetDeviceAttributes(m_pMetricsEvaluator, pCounterDataImage, counterDataImageSize);
+        }
+
+        bool EvaluateToGpuValues(
+            const uint8_t* pCounterDataImage,
+            size_t counterDataImageSize,
+            size_t rangeIndex,
+            size_t numMetricEvalRequests,
+            const NVPW_MetricEvalRequest* pMetricEvalRequests,
+            double* pMetricValues)
+        {
+            return nv::perf::EvaluateToGpuValues(m_pMetricsEvaluator, pCounterDataImage, counterDataImageSize, rangeIndex, numMetricEvalRequests, pMetricEvalRequests, pMetricValues);
+        }
+
+        bool GetMetricDimUnits(const NVPW_MetricEvalRequest& metricRequest, std::vector<NVPW_DimUnitFactor>& dimUnits)
+        {
+            return nv::perf::GetMetricDimUnits(m_pMetricsEvaluator, metricRequest, dimUnits);
+        }
+
+        const char* GetMetricDescription(NVPW_MetricType metricType, size_t metricIndex)
+        {
+            return nv::perf::GetMetricDescription(m_pMetricsEvaluator, metricType, metricIndex);
+        }
+
+        NVPW_HwUnit GetMetricHwUnit(NVPW_MetricType metricType, size_t metricIndex)
+        {
+            return nv::perf::GetMetricHwUnit(m_pMetricsEvaluator, metricType, metricIndex);
+        }
+
+        bool GetMetricRawCounterDependencies(
+            const NVPW_MetricEvalRequest* pMetricEvalRequests,
+            size_t numMetricEvalRequests,
+            std::vector<const char*>& rawDependencies,
+            std::vector<const char*>& optionalRawDependencies)
+        {
+            return nv::perf::GetMetricRawCounterDependencies(m_pMetricsEvaluator, pMetricEvalRequests, numMetricEvalRequests, rawDependencies, optionalRawDependencies);
+        }
+
+        bool UserDefinedMetrics_Initialize()
+        {
+            return nv::perf::UserDefinedMetrics_Initialize(m_pMetricsEvaluator);
+        }
+
+        bool UserDefinedMetrics_Initialize(void* pOutputUserData, NVPW_MetricsEvaluator_UserDefinedMetrics_OutputCallback stdoutCallback, NVPW_MetricsEvaluator_UserDefinedMetrics_OutputCallback stderrCallback)
+        {
+            return nv::perf::UserDefinedMetrics_Initialize(m_pMetricsEvaluator, pOutputUserData, stdoutCallback, stderrCallback);
+        }
+
+        bool UserDefinedMetrics_Execute(const std::string& script)
+        {
+            return nv::perf::UserDefinedMetrics_Execute(m_pMetricsEvaluator, script);
+        }
+
+        bool UserDefinedMetrics_Commit()
+        {
+            return nv::perf::UserDefinedMetrics_Commit(m_pMetricsEvaluator);
+        }
     };
 
     class MetricsEnumerator
     {
     public:
+        struct MetricsDB
+        {
+            const char* pMetricNames = nullptr;
+            const size_t* pMetricNameBeginIndices = nullptr;
+            size_t numMetrics = 0;
+
+            MetricsDB() = default;
+            MetricsDB(const char* pMetricNames, const size_t* pMetricNameBeginIndices, size_t numMetrics)
+                : pMetricNames(pMetricNames)
+                , pMetricNameBeginIndices(pMetricNameBeginIndices)
+                , numMetrics(numMetrics)
+            {
+            }
+            MetricsDB(const MetricsDB& metricsDB) = default;
+            bool operator==(const MetricsDB& rhs) const
+            {
+                return pMetricNames == rhs.pMetricNames
+                    && pMetricNameBeginIndices == rhs.pMetricNameBeginIndices
+                    && numMetrics == rhs.numMetrics;
+            }
+            bool operator!=(const MetricsDB& rhs) const
+            {
+                return !(*this == rhs);
+            }
+        };
+
         class Iterator
         {
         private:
-            // note these are pointing to the .RO section of the library, so their lifetime are not bound to any particular metrics enumerator or metrics evaluator instance
-            const char* m_pMetricNames;
-            const size_t* m_pMetricNameBeginIndices;
-            size_t m_numMetrics;
+            MetricsDB m_predefinedMetricsDB;
+            MetricsDB m_userDefinedMetricsDB;
             size_t m_metricIndex;
         public:
             Iterator()
-                : m_pMetricNames(nullptr)
-                , m_pMetricNameBeginIndices(nullptr)
-                , m_numMetrics(0)
+                : m_predefinedMetricsDB()
+                , m_userDefinedMetricsDB()
                 , m_metricIndex(0)
             {
             }
 
-            Iterator(const char* pMetricNames, const size_t* pMetricNameBeginIndices, size_t numMetrics, size_t metricIndex)
-                : m_pMetricNames(pMetricNames)
-                , m_pMetricNameBeginIndices(pMetricNameBeginIndices)
-                , m_numMetrics(numMetrics)
+            Iterator(const MetricsDB& predefinedMetricsDB, const MetricsDB& userDefinedMetricsDB, size_t metricIndex)
+                : m_predefinedMetricsDB(predefinedMetricsDB)
+                , m_userDefinedMetricsDB(userDefinedMetricsDB)
                 , m_metricIndex(metricIndex)
             {
             }
 
             Iterator(const Iterator& iterator)
-                : m_pMetricNames(iterator.m_pMetricNames)
-                , m_pMetricNameBeginIndices(iterator.m_pMetricNameBeginIndices)
-                , m_numMetrics(iterator.m_numMetrics)
+                : m_predefinedMetricsDB(iterator.m_predefinedMetricsDB)
+                , m_userDefinedMetricsDB(iterator.m_userDefinedMetricsDB)
                 , m_metricIndex(iterator.m_metricIndex)
             {
             }
 
             Iterator& operator=(const Iterator& rhs)
             {
-                m_pMetricNames = rhs.m_pMetricNames;
-                m_pMetricNameBeginIndices = rhs.m_pMetricNameBeginIndices;
-                m_numMetrics = rhs.m_numMetrics;
+                m_predefinedMetricsDB = rhs.m_predefinedMetricsDB;
+                m_userDefinedMetricsDB = rhs.m_userDefinedMetricsDB;
                 m_metricIndex = rhs.m_metricIndex;
                 return *this;
             }
@@ -154,15 +280,14 @@ namespace nv { namespace perf {
 
             bool operator==(const Iterator& rhs) const
             {
-                return m_pMetricNames == rhs.m_pMetricNames
-                    && m_pMetricNameBeginIndices == rhs.m_pMetricNameBeginIndices
-                    && m_numMetrics == rhs.m_numMetrics
+                return m_predefinedMetricsDB == rhs.m_predefinedMetricsDB
+                    && m_userDefinedMetricsDB == rhs.m_userDefinedMetricsDB
                     && m_metricIndex == rhs.m_metricIndex;
             }
 
             Iterator operator++()
             {
-                if (m_metricIndex < m_numMetrics)
+                if (m_metricIndex < m_predefinedMetricsDB.numMetrics + m_userDefinedMetricsDB.numMetrics)
                 {
                     ++m_metricIndex;
                 }
@@ -176,90 +301,129 @@ namespace nv { namespace perf {
                 return prev;
             }
 
-            // no validity check
             const char* operator*() const
             {
-                const char* pMetricName = &m_pMetricNames[m_pMetricNameBeginIndices[m_metricIndex]];
-                return pMetricName;
+                if (m_metricIndex < m_predefinedMetricsDB.numMetrics)
+                {
+                    const char* pMetricName = &m_predefinedMetricsDB.pMetricNames[m_predefinedMetricsDB.pMetricNameBeginIndices[m_metricIndex]];
+                    return pMetricName;
+                }
+                else if (m_metricIndex < m_predefinedMetricsDB.numMetrics + m_userDefinedMetricsDB.numMetrics)
+                {
+                    const char* pMetricName = &m_userDefinedMetricsDB.pMetricNames[m_userDefinedMetricsDB.pMetricNameBeginIndices[m_metricIndex - m_predefinedMetricsDB.numMetrics]];
+                    return pMetricName;
+                }
+                else
+                {
+                    return "";
+                }
             }
         };
 
     private:
-        // note these are pointing to the .RO section of the library, so their lifetime are not bound to any particular metrics evaluator instance
-        const char* m_pMetricNames;
-        const size_t* m_pMetricNameBeginIndices;
-        size_t m_numMetrics;
+        MetricsDB m_predefinedMetricsDB;
+        MetricsDB m_userDefinedMetricsDB;
 
     public:
         MetricsEnumerator()
-            : m_pMetricNames(nullptr)
-            , m_pMetricNameBeginIndices(nullptr)
-            , m_numMetrics(0)
+            : m_predefinedMetricsDB()
+            , m_userDefinedMetricsDB()
         {
         }
 
-        MetricsEnumerator(const char* pMetricNames, const size_t* pMetricNameBeginIndices, size_t numMetrics)
-            : m_pMetricNames(pMetricNames)
-            , m_pMetricNameBeginIndices(pMetricNameBeginIndices)
-            , m_numMetrics(numMetrics)
+        MetricsEnumerator(const MetricsDB& predefinedMetricsDB, const MetricsDB& userDefinedMetricsDB)
+            : m_predefinedMetricsDB(predefinedMetricsDB)
+            , m_userDefinedMetricsDB(userDefinedMetricsDB)
         {
         }
 
         MetricsEnumerator(const MetricsEnumerator& metricsEnumerator)
-            : m_pMetricNames(metricsEnumerator.m_pMetricNames)
-            , m_pMetricNameBeginIndices(metricsEnumerator.m_pMetricNameBeginIndices)
-            , m_numMetrics(metricsEnumerator.m_numMetrics)
+            : m_predefinedMetricsDB(metricsEnumerator.m_predefinedMetricsDB)
+            , m_userDefinedMetricsDB(metricsEnumerator.m_userDefinedMetricsDB)
         {
         }
 
         MetricsEnumerator& operator=(const MetricsEnumerator& rhs)
         {
-            m_pMetricNames = rhs.m_pMetricNames;
-            m_pMetricNameBeginIndices = rhs.m_pMetricNameBeginIndices;
-            m_numMetrics = rhs.m_numMetrics;
+            m_predefinedMetricsDB = rhs.m_predefinedMetricsDB;
+            m_userDefinedMetricsDB = rhs.m_userDefinedMetricsDB;
             return *this;
         }
 
-        // no bounds check
         const char* operator[](size_t index) const
         {
-            const char* pMetricName = &m_pMetricNames[m_pMetricNameBeginIndices[index]];
-            return pMetricName;
+            const Iterator iterator(m_predefinedMetricsDB, m_userDefinedMetricsDB, index);
+            return *iterator;
         }
 
         Iterator begin() const
         {
-            return Iterator(m_pMetricNames, m_pMetricNameBeginIndices, m_numMetrics, 0);
+            return Iterator(m_predefinedMetricsDB, m_userDefinedMetricsDB, 0);
         }
 
         Iterator end() const
         {
-            return Iterator(m_pMetricNames, m_pMetricNameBeginIndices, m_numMetrics, m_numMetrics);
+            return Iterator(m_predefinedMetricsDB, m_userDefinedMetricsDB, size());
         }
 
         size_t size() const
         {
-            return m_numMetrics;
+            return m_predefinedMetricsDB.numMetrics + m_userDefinedMetricsDB.numMetrics;
         }
 
         bool empty() const
         {
-            return !m_numMetrics;
+            return !size();
         }
     };
 
-    inline MetricsEnumerator EnumerateMetrics(NVPW_MetricsEvaluator* pMetricsEvaluator, NVPW_MetricType metricType)
+    enum class MetricEnumerationOption
     {
-        NVPW_MetricsEvaluator_GetMetricNames_Params metricsEvaluatorGetMetricNamesParams = { NVPW_MetricsEvaluator_GetMetricNames_Params_STRUCT_SIZE };
-        metricsEvaluatorGetMetricNamesParams.pMetricsEvaluator = pMetricsEvaluator;
-        metricsEvaluatorGetMetricNamesParams.metricType = static_cast<uint8_t>(metricType);
-        const NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_GetMetricNames(&metricsEvaluatorGetMetricNamesParams);
-        if (nvpaStatus != NVPA_STATUS_SUCCESS)
+        PredefinedOnly,
+        UserDefinedOnly,
+        PredefinedAndUserDefined
+    };
+
+    inline MetricsEnumerator EnumerateMetrics(NVPW_MetricsEvaluator* pMetricsEvaluator, NVPW_MetricType metricType, MetricEnumerationOption option = MetricEnumerationOption::PredefinedAndUserDefined)
+    {
+        MetricsEnumerator::MetricsDB predefinedMetricsDB;
+        if (option == MetricEnumerationOption::PredefinedOnly || option == MetricEnumerationOption::PredefinedAndUserDefined)
         {
-            NV_PERF_LOG_ERR(80, "NVPW_MetricsEvaluator_GetMetricNames failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
-            return MetricsEnumerator();
+            NVPW_MetricsEvaluator_GetMetricNames_Params metricsEvaluatorGetMetricNamesParams = { NVPW_MetricsEvaluator_GetMetricNames_Params_STRUCT_SIZE };
+            metricsEvaluatorGetMetricNamesParams.pMetricsEvaluator = pMetricsEvaluator;
+            metricsEvaluatorGetMetricNamesParams.metricType = static_cast<uint8_t>(metricType);
+            const NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_GetMetricNames(&metricsEvaluatorGetMetricNamesParams);
+            if (nvpaStatus != NVPA_STATUS_SUCCESS)
+            {
+                NV_PERF_LOG_ERR(80, "NVPW_MetricsEvaluator_GetMetricNames failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+                return MetricsEnumerator();
+            }
+            predefinedMetricsDB = { metricsEvaluatorGetMetricNamesParams.pMetricNames, metricsEvaluatorGetMetricNamesParams.pMetricNameBeginIndices, metricsEvaluatorGetMetricNamesParams.numMetrics };
         }
-        return MetricsEnumerator(metricsEvaluatorGetMetricNamesParams.pMetricNames, metricsEvaluatorGetMetricNamesParams.pMetricNameBeginIndices, metricsEvaluatorGetMetricNamesParams.numMetrics);
+
+        MetricsEnumerator::MetricsDB userDefinedMetricsDB;
+        if (option == MetricEnumerationOption::UserDefinedOnly || option == MetricEnumerationOption::PredefinedAndUserDefined)
+        {
+            NVPW_MetricsEvaluator_UserDefinedMetrics_GetMetricNames_Params metricsEvaluatorGetMetricNamesParams = { NVPW_MetricsEvaluator_UserDefinedMetrics_GetMetricNames_Params_STRUCT_SIZE };
+            metricsEvaluatorGetMetricNamesParams.pMetricsEvaluator = pMetricsEvaluator;
+            metricsEvaluatorGetMetricNamesParams.metricType = static_cast<uint8_t>(metricType);
+            const NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_UserDefinedMetrics_GetMetricNames(&metricsEvaluatorGetMetricNamesParams);
+            if (nvpaStatus != NVPA_STATUS_SUCCESS)
+            {
+                if (option == MetricEnumerationOption::UserDefinedOnly)
+                {
+                    NV_PERF_LOG_ERR(80, "NVPW_MetricsEvaluator_UserDefinedMetrics_GetMetricNames failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+                    return MetricsEnumerator();
+                }
+                // else ignore the error. It's possible that user defined metrics feature is not used which is the case for all legacy code.
+            }
+            else
+            {
+                userDefinedMetricsDB = { metricsEvaluatorGetMetricNamesParams.pMetricNames, metricsEvaluatorGetMetricNamesParams.pMetricNameBeginIndices, metricsEvaluatorGetMetricNamesParams.numMetrics };
+            }
+        }
+
+        return MetricsEnumerator(predefinedMetricsDB, userDefinedMetricsDB);
     }
 
     inline MetricsEnumerator EnumerateCounters(NVPW_MetricsEvaluator* pMetricsEvaluator)
@@ -451,7 +615,7 @@ namespace nv { namespace perf {
         const NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest(&toMetricEvalRequestParams);
         if (nvpaStatus != NVPA_STATUS_SUCCESS)
         {
-            NV_PERF_LOG_WRN(80, "NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            NV_PERF_LOG_WRN(20, "Metric \"%s\" NVPW_MetricsEvaluator_ConvertMetricNameToMetricEvalRequest failed, nvpaStatus = %s\n", pMetricName, FormatStatus(nvpaStatus).c_str());
             return false;
         }
         return true;
@@ -562,11 +726,17 @@ namespace nv { namespace perf {
         getMetricDimUnitsParams.metricEvalRequestStructSize = NVPW_MetricEvalRequest_STRUCT_SIZE;
         getMetricDimUnitsParams.dimUnitFactorStructSize = NVPW_DimUnitFactor_STRUCT_SIZE;
         NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_GetMetricDimUnits(&getMetricDimUnitsParams);
-        if (nvpaStatus != NVPA_STATUS_SUCCESS || !getMetricDimUnitsParams.numDimUnits)
+        if (nvpaStatus != NVPA_STATUS_SUCCESS)
         {
             NV_PERF_LOG_WRN(80, "NVPW_MetricsEvaluator_GetMetricDimUnits failed for metric = %s, nvpaStatus = %s\n", ToString(pMetricsEvaluator, metricRequest).c_str(), FormatStatus(nvpaStatus).c_str());
             return false;
         }
+        if (!getMetricDimUnitsParams.numDimUnits)
+        {
+            dimUnits.clear();
+            return true;
+        }
+
         dimUnits.resize(getMetricDimUnitsParams.numDimUnits);
         getMetricDimUnitsParams.pDimUnits = dimUnits.data();
         nvpaStatus = NVPW_MetricsEvaluator_GetMetricDimUnits(&getMetricDimUnitsParams);
@@ -761,6 +931,97 @@ namespace nv { namespace perf {
             printFormattedDimUnits(denominatorCount, printNumerator);
         }
         return sstream.str();
+    }
+
+    inline bool GetMetricRawCounterDependencies(
+        NVPW_MetricsEvaluator* pMetricsEvaluator,
+        const NVPW_MetricEvalRequest* pMetricEvalRequests,
+        size_t numMetricEvalRequests,
+        std::vector<const char*>& rawDependencies,
+        std::vector<const char*>& optionalRawDependencies)
+    {
+        NVPW_MetricsEvaluator_GetMetricRawDependencies_Params getMetricRawDependenciesParams = { NVPW_MetricsEvaluator_GetMetricRawDependencies_Params_STRUCT_SIZE };
+        getMetricRawDependenciesParams.pMetricsEvaluator = pMetricsEvaluator;
+        getMetricRawDependenciesParams.pMetricEvalRequests = pMetricEvalRequests;
+        getMetricRawDependenciesParams.numMetricEvalRequests = numMetricEvalRequests;
+        getMetricRawDependenciesParams.metricEvalRequestStructSize = NVPW_MetricEvalRequest_STRUCT_SIZE;
+        getMetricRawDependenciesParams.metricEvalRequestStrideSize = sizeof(NVPW_MetricEvalRequest);
+        NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_GetMetricRawDependencies(&getMetricRawDependenciesParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_MetricsEvaluator_GetMetricRawDependencies failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+
+        rawDependencies.resize(getMetricRawDependenciesParams.numRawDependencies);
+        optionalRawDependencies.resize(getMetricRawDependenciesParams.numOptionalRawDependencies);
+        getMetricRawDependenciesParams.ppRawDependencies = rawDependencies.data();
+        getMetricRawDependenciesParams.ppOptionalRawDependencies = optionalRawDependencies.data();
+        nvpaStatus = NVPW_MetricsEvaluator_GetMetricRawDependencies(&getMetricRawDependenciesParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_MetricsEvaluator_GetMetricRawDependencies failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+        return true;
+    }
+
+    inline bool UserDefinedMetrics_Initialize(NVPW_MetricsEvaluator* pMetricsEvaluator, void* pOutputUserData, NVPW_MetricsEvaluator_UserDefinedMetrics_OutputCallback stdoutCallback, NVPW_MetricsEvaluator_UserDefinedMetrics_OutputCallback stderrCallback)
+    {
+        NVPW_MetricsEvaluator_UserDefinedMetrics_Initialize_Params userDefinedMetricsInitializeParams{NVPW_MetricsEvaluator_UserDefinedMetrics_Initialize_Params_STRUCT_SIZE};
+        userDefinedMetricsInitializeParams.pMetricsEvaluator = pMetricsEvaluator;
+        userDefinedMetricsInitializeParams.pOutputUserData = pOutputUserData;
+        userDefinedMetricsInitializeParams.stdoutCallback = stdoutCallback;
+        userDefinedMetricsInitializeParams.stderrCallback = stderrCallback;
+        NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_UserDefinedMetrics_Initialize(&userDefinedMetricsInitializeParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_MetricsEvaluator_UserDefinedMetrics_Initialize failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+        return true;
+    }
+
+    inline void UserDefinedMetrics_DefaultStdoutCallback(void*, const char* pOutputString)
+    {
+        NV_PERF_LOG_INF(50, "%s\n", pOutputString);
+    }
+
+    inline void UserDefinedMetrics_DefaultStderrCallback(void*, const char* pOutputString)
+    {
+        NV_PERF_LOG_ERR(50, "%s\n", pOutputString);
+    }
+
+    inline bool UserDefinedMetrics_Initialize(NVPW_MetricsEvaluator* pMetricsEvaluator)
+    {
+        return UserDefinedMetrics_Initialize(pMetricsEvaluator, nullptr, UserDefinedMetrics_DefaultStdoutCallback, UserDefinedMetrics_DefaultStderrCallback);
+    }
+
+    inline bool UserDefinedMetrics_Execute(NVPW_MetricsEvaluator* pMetricsEvaluator, const std::string& script)
+    {
+        NVPW_MetricsEvaluator_UserDefinedMetrics_ExecuteScriptFromString_Params userDefinedMetricsExecuteScriptFromStringParams{NVPW_MetricsEvaluator_UserDefinedMetrics_ExecuteScriptFromString_Params_STRUCT_SIZE};
+        userDefinedMetricsExecuteScriptFromStringParams.pMetricsEvaluator = pMetricsEvaluator;
+        userDefinedMetricsExecuteScriptFromStringParams.pScriptString = script.c_str();
+        NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_UserDefinedMetrics_ExecuteScriptFromString(&userDefinedMetricsExecuteScriptFromStringParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_MetricsEvaluator_UserDefinedMetrics_ExecuteScriptFromString failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+        return true;
+    }
+
+    inline bool UserDefinedMetrics_Commit(NVPW_MetricsEvaluator* pMetricsEvaluator)
+    {
+        NVPW_MetricsEvaluator_UserDefinedMetrics_Commit_Params userDefinedMetricsCommitParams{NVPW_MetricsEvaluator_UserDefinedMetrics_Commit_Params_STRUCT_SIZE};
+        userDefinedMetricsCommitParams.pMetricsEvaluator = pMetricsEvaluator;
+        NVPA_Status nvpaStatus = NVPW_MetricsEvaluator_UserDefinedMetrics_Commit(&userDefinedMetricsCommitParams);
+        if (nvpaStatus)
+        {
+            NV_PERF_LOG_ERR(50, "NVPW_MetricsEvaluator_UserDefinedMetrics_Commit failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            return false;
+        }
+        return true;
     }
 
 }}

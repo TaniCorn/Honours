@@ -1,5 +1,5 @@
 /*
-* Copyright 2021-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2021-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -407,12 +407,12 @@ protected:
                     const RingBuffer<double>& valBuffer;
                 };
 
-                auto getter = [](void* data_, int idx) -> ImPlotPoint {
+                auto getter = [](int idx, void* data_) -> ImPlotPoint {
                     const auto& data = *static_cast<const UserData*>(data_);
                     ImPlotPoint point(data.timestampBuffer.Get(idx + data.dataOffset), data.valBuffer.Get(idx + data.dataOffset));
                     return point;
                 };
-                auto getterWithoutValBuffer = [](void* data_, int idx) -> ImPlotPoint {
+                auto getterWithoutValBuffer = [](int idx, void* data_) -> ImPlotPoint {
                     const auto& data = *static_cast<UserData*>(data_);
                     // Assumes the minimum y of stacked plots is 0.
                     // This might not always hold, but ImPlot does not let you query a dynamic minimum.

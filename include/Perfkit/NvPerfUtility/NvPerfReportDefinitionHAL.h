@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include "NvPerfReportDefinitionGA10X.h"
 #include "NvPerfReportDefinitionGA10B.h"
 #include "NvPerfReportDefinitionAD10X.h"
+#include "NvPerfReportDefinitionGB10B.h"
+#include "NvPerfReportDefinitionGB20X.h"
 
 namespace nv { namespace perf {
 
@@ -53,10 +55,23 @@ namespace nv { namespace perf {
                      || !strcmp(pChipName, "AD104")
                      || !strcmp(pChipName, "AD106")
                      || !strcmp(pChipName, "AD107")
-            )    
+            ) 
             {
                 return ad10x::PerRangeReport::GetReportDefinition();
             }
+            else if (!strcmp(pChipName, "GB10B"))
+            {
+                return gb10b::PerRangeReport::GetReportDefinition();
+            }
+            else if (false
+                     || !strcmp(pChipName, "GB202")
+                     || !strcmp(pChipName, "GB203")
+                     || !strcmp(pChipName, "GB205")
+                     || !strcmp(pChipName, "GB206")
+            )
+            {
+                return gb20x::PerRangeReport::GetReportDefinition();
+            }        
             else
             {
                 NV_PERF_LOG_ERR(20, "Unknown chip \"%s\"\n", pChipName);
@@ -96,6 +111,19 @@ namespace nv { namespace perf {
             {
                 return ad10x::SummaryReport::GetReportDefinition();
             }
+            else if (!strcmp(pChipName, "GB10B"))
+            {
+                return gb10b::SummaryReport::GetReportDefinition();
+            }
+            else if (false
+                     || !strcmp(pChipName, "GB202")
+                     || !strcmp(pChipName, "GB203")
+                     || !strcmp(pChipName, "GB205")
+                     || !strcmp(pChipName, "GB206")
+            )
+            {
+                return gb20x::SummaryReport::GetReportDefinition();
+            }        
             else
             {
                 NV_PERF_LOG_ERR(20, "Unknown chip \"%s\"\n", pChipName);

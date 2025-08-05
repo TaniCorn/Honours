@@ -7,12 +7,12 @@ workspace "SparseVoxelOctreeRenderer"
 
     filter "system:windows"
     postbuildcommands {
-        'xcopy /E /Y /I "%{wks.location}\\res" "%{cfg.targetdir}\\res\\"'
+        'xcopy /E /Y /I "%{wks.location}\\res" "%{cfg.targetdir}\\"'
     }
     
     filter "system:linux or macosx"
     postbuildcommands {
-        'cp -r "%{wks.location}/res" "%{cfg.targetdir}/res"'
+        'cp -r "%{wks.location}/res" "%{cfg.targetdir}"'
     }
 
     filter {} -- clear filter

@@ -2,7 +2,7 @@
 #define NVPERF_VULKANSC_TARGET_H
 
 /*
- * Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+ * Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
  *
  * NOTICE TO USER:
  *
@@ -62,33 +62,6 @@ extern "C" {
  *  @file   nvperf_vulkansc_target.h
  */
 
-/***************************************************************************//**
- *  @name   External Types
- *  @{
- */
-
-
-    struct VkInstance_T;
-    typedef struct VkInstance_T* VkInstance;
-    struct VkPhysicalDevice_T;
-    typedef struct VkPhysicalDevice_T* VkPhysicalDevice;
-    struct VkDevice_T;
-    typedef struct VkDevice_T* VkDevice;
-    struct VkQueue_T;
-    typedef struct VkQueue_T* VkQueue;
-    struct VkCommandBuffer_T;
-    typedef struct VkCommandBuffer_T* VkCommandBuffer;
-#if defined(__LP64__) || defined(_WIN64) || (defined(__x86_64__) && !defined(__ILP32__) ) || defined(_M_X64) || defined(__ia64) || defined (_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-    typedef struct VkDeviceMemory_T *(VkDeviceMemory);
-#else
-    typedef uint64_t VkDeviceMemory;
-#endif
-
-
-/**
- *  @}
- ******************************************************************************/
- 
     typedef struct NVPW_VKSC_Profiler_CounterDataImageOptions
     {
         /// [in]
@@ -184,7 +157,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkInstance instance;
+        struct VkInstance_T* instance;
     } NVPW_VKSC_LoadDriver_Params;
 #define NVPW_VKSC_LoadDriver_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_VKSC_LoadDriver_Params, instance)
 
@@ -197,13 +170,13 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkPhysicalDevice physicalDevice;
+        struct VkPhysicalDevice_T* physicalDevice;
         /// [in]
         size_t sliIndex;
         /// [out]
         size_t deviceIndex;
         /// [in]
-        VkInstance instance;
+        struct VkInstance_T* instance;
         /// [in] Either a pointer to the loaders vkGetInstanceProcAddr or a pointer to the next layers
         /// vkGetInstanceProcAddr
         void* pfnGetInstanceProcAddr;
@@ -248,9 +221,9 @@ extern "C" {
         /// [out] is apiVersion officially supported by the NvPerf API
         NVPA_Bool isOfficiallySupportedVersion;
         /// [in] [optional]
-        VkInstance instance;
+        struct VkInstance_T* instance;
         /// [in] [optional]
-        VkPhysicalDevice physicalDevice;
+        struct VkPhysicalDevice_T* physicalDevice;
         /// [in] [optional] Either a pointer to the loaders vkGetInstanceProcAddr or a pointer to the next layers
         /// vkGetInstanceProcAddr
         void* pfnGetInstanceProcAddr;
@@ -323,9 +296,9 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkDevice device;
+        struct VkDevice_T* device;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
         /// [in] Set to 1 if every pass is synchronized with CPU; for asynchronous collection, increase to
         /// (softwarePipelineDepth + 2).
         size_t numTraceBuffers;
@@ -336,13 +309,13 @@ extern "C" {
         uint8_t* pTraceArena;
         /// [in] The VK object holding tracebuffer. It must be created at the index of
         /// VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT flags.
-        VkDeviceMemory traceArenaDeviceMemory;
+        struct VkDeviceMemory_T* traceArenaDeviceMemory;
         /// [in] size of GPU PerfmonBuffer. This argument must be greater than 0.
         size_t perfmonBufferGpuSize;
         /// [in]
-        VkInstance instance;
+        struct VkInstance_T* instance;
         /// [in]
-        VkPhysicalDevice physicalDevice;
+        struct VkPhysicalDevice_T* physicalDevice;
         /// [in] Either a pointer to the loaders vkGetInstanceProcAddr or a pointer to the next layers
         /// vkGetInstanceProcAddr
         void* pfnGetInstanceProcAddr;
@@ -360,7 +333,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
         /// [in] Maximum number of milliseconds to wait for pending GPU operations. Pass 0xFFFFFFFF to wait forever
         uint32_t timeout;
         /// [out] becomes true if timeout is reached while waiting for pending GPU operations.
@@ -377,7 +350,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
         /// [in] The number of operations to process. Passing `0` will block until EndSession is called
         uint32_t numOperations;
         /// [in] Maximum number of milliseconds to wait for pending GPU operations. Pass 0xFFFFFFFF to wait forever
@@ -396,7 +369,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
         /// [in] Config created by e.g. NVPW_RawMetricsConfig_GetConfigImage().  Must be align(8).
         const uint8_t* pConfig;
         size_t configSize;
@@ -421,7 +394,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
     } NVPW_VKSC_Profiler_Queue_ClearConfig_Params;
 #define NVPW_VKSC_Profiler_Queue_ClearConfig_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_VKSC_Profiler_Queue_ClearConfig_Params, queue)
 
@@ -434,7 +407,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
     } NVPW_VKSC_Profiler_Queue_BeginPass_Params;
 #define NVPW_VKSC_Profiler_Queue_BeginPass_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_VKSC_Profiler_Queue_BeginPass_Params, queue)
 
@@ -447,7 +420,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
         /// [out] The passIndex that will be collected by the *next* BeginPass.
         size_t passIndex;
         /// [out] The targetNestingLevel that will be collected by the *next* BeginPass.
@@ -466,7 +439,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkCommandBuffer commandBuffer;
+        struct VkCommandBuffer_T* commandBuffer;
         /// [in] specifies the range that subsequent launches' counters will be assigned to; must not be NULL
         const char* pRangeName;
         /// [in] assign to strlen(pRangeName) if known; if set to zero, the library will call strlen()
@@ -483,7 +456,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkCommandBuffer commandBuffer;
+        struct VkCommandBuffer_T* commandBuffer;
     } NVPW_VKSC_Profiler_CommandBuffer_PopRangeGraphics_Params;
 #define NVPW_VKSC_Profiler_CommandBuffer_PopRangeGraphics_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_VKSC_Profiler_CommandBuffer_PopRangeGraphics_Params, commandBuffer)
 
@@ -496,7 +469,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkCommandBuffer commandBuffer;
+        struct VkCommandBuffer_T* commandBuffer;
         /// [in] specifies the range that subsequent launches' counters will be assigned to; must not be NULL
         const char* pRangeName;
         /// [in] assign to strlen(pRangeName) if known; if set to zero, the library will call strlen()
@@ -513,7 +486,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkCommandBuffer commandBuffer;
+        struct VkCommandBuffer_T* commandBuffer;
     } NVPW_VKSC_Profiler_CommandBuffer_PopRangeCompute_Params;
 #define NVPW_VKSC_Profiler_CommandBuffer_PopRangeCompute_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_VKSC_Profiler_CommandBuffer_PopRangeCompute_Params, commandBuffer)
 
@@ -526,7 +499,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
     } NVPW_VKSC_Profiler_Queue_InitializeRangeCommands_Params;
 #define NVPW_VKSC_Profiler_Queue_InitializeRangeCommands_Params_STRUCT_SIZE NVPA_STRUCT_SIZE(NVPW_VKSC_Profiler_Queue_InitializeRangeCommands_Params, queue)
 
@@ -545,7 +518,7 @@ extern "C" {
         /// [in] assign to NULL
         void* pPriv;
         /// [in]
-        VkQueue queue;
+        struct VkQueue_T* queue;
         /// [in]
         size_t counterDataImageSize;
         /// [in]

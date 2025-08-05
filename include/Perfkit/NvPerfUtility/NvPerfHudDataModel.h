@@ -1,5 +1,5 @@
 /*
-* Copyright 2021-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2021-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -31,12 +31,11 @@
 #include <sstream>
 #include <vector>
 
-#include <ryml_all.hpp>
-
 #include "NvPerfInit.h"
 #include "NvPerfCounterConfiguration.h"
 #include "NvPerfCounterData.h"
 #include "NvPerfHudConfigurationsHAL.h"
+#include "NvPerfMetricsConfigLoader.h"
 #include "NvPerfMetricsEvaluator.h"
 #include "NvPerfPeriodicSamplerCommon.h"
 
@@ -44,7 +43,7 @@ namespace nv { namespace perf { namespace hud {
 
     class Widget;
 
-    std::unique_ptr<Widget> WidgetFromYaml(const ryml::NodeRef& node, bool* pValid);
+    std::unique_ptr<Widget> WidgetFromYaml(const ryml::NodeRef& node, bool* pValid, const std::string& chipName, bool* pSkipped);
 
     // RYML helpers ///////////////////////////////////////////////////////////
 
@@ -78,13 +77,13 @@ namespace nv { namespace perf { namespace hud {
             return default_;
         }
 
-        bool value;
+        bool value = false;
 
         try
         {
             node >> value;
         }
-        catch (std::runtime_error)
+        catch (std::runtime_error&)
         {
             // error.what() is useless: ":0:0 (0B): ERROR: could not deserialize value"
             NV_PERF_LOG_WRN(50, "Failed parsing boolean from \"%s\". Using default.\n", ToString(node).c_str());
@@ -511,11 +510,15 @@ namespace nv { namespace perf { namespace hud {
         {
         }
 
-        static MetricSignal FromYaml(const ryml::NodeRef& node, bool* pValid)
+        static MetricSignal FromYaml(const ryml::NodeRef& node, bool* pValid, const std::string& chipName, bool* pSkipped)
         {
             if (pValid)
             {
                 *pValid = false;
+            }
+            if (pSkipped)
+            {
+                *pSkipped = false;
             }
 
             if (!node.valid())
@@ -531,6 +534,7 @@ namespace nv { namespace perf { namespace hud {
             double maxValue   = std::numeric_limits<double>::quiet_NaN();
             double multiplier = std::numeric_limits<double>::quiet_NaN();
             std::string unit;
+            std::vector<std::string> dedicatedChips;
 
             if (node.is_keyval() || node.is_val()) // keyval from ScalarText can be a minimal entry in a dashed list
             {
@@ -544,7 +548,7 @@ namespace nv { namespace perf { namespace hud {
                     return MetricSignal();
                 }
 
-                return MetricSignal::FromYaml(node.child(0), pValid);
+                return MetricSignal::FromYaml(node.child(0), pValid, chipName, pSkipped);
             }
             else
             {
@@ -561,6 +565,7 @@ namespace nv { namespace perf { namespace hud {
                 auto maxNode         = node.find_child("max");
                 auto multiplierNode  = node.find_child("multiplier");
                 auto unitNode        = node.find_child("unit");
+                auto dedicatedChipsNode = node.find_child("dedicatedChips");
 
                 if (labelNode.valid())
                 {
@@ -636,6 +641,28 @@ namespace nv { namespace perf { namespace hud {
                         unit = MetricSignal::HideUnit();
                     }
                 }
+
+                if (dedicatedChipsNode.valid())
+                {
+                    if (!dedicatedChipsNode.is_seq())
+                    {
+                        NV_PERF_LOG_WRN(100, "Invalid dedicatedChips\n");
+                    }
+                    else
+                    {
+                        for (const ryml::NodeRef& dedicatedChipNode : dedicatedChipsNode.children())
+                        {
+                            if (!dedicatedChipNode.valid() || !dedicatedChipNode.is_val())
+                            {
+                                NV_PERF_LOG_WRN(100, "Missing or invalid dedicatedChip\n");
+                                continue;
+                            }
+                            std::string dedicatedChip;
+                            dedicatedChipNode >> dedicatedChip;
+                            dedicatedChips.emplace_back(dedicatedChip);
+                        }
+                    }
+                }
             }
 
             if (!std::regex_match(metric, std::regex("^[A-Za-z][A-Za-z0-9._]+$")))
@@ -643,11 +670,23 @@ namespace nv { namespace perf { namespace hud {
                 NV_PERF_LOG_ERR(20, "Invalid metric \"%s\"\n", metric.c_str());
                 return MetricSignal();
             }
+            if (pSkipped)
+            {
+                if (!dedicatedChips.empty())
+                {
+                    if (std::find(dedicatedChips.begin(), dedicatedChips.end(), chipName) == dedicatedChips.end())
+                    {
+                        NV_PERF_LOG_INF(20, "Skip undedicated metric on %s: %s\n", chipName.c_str(), metric.c_str());
+                        *pSkipped = true;
+                    }
+                }
+            }
 
             if (pValid)
             {
                 *pValid = true;
             }
+
             return MetricSignal(label, description, metric, color, maxValue, multiplier, unit);
         }
 
@@ -794,7 +833,7 @@ namespace nv { namespace perf { namespace hud {
             widgets.clear();
         }
 
-        static Panel FromYaml(const ryml::NodeRef& node, bool* pValid)
+        static Panel FromYaml(const ryml::NodeRef& node, bool* pValid, const std::string& chipName)
         {
             if (pValid)
             {
@@ -831,16 +870,19 @@ namespace nv { namespace perf { namespace hud {
             for (const ryml::NodeRef& widgetNode : widgetsNode.children())
             {
                 bool valid;
-                std::unique_ptr<Widget> widget = WidgetFromYaml(widgetNode, &valid);
+                bool skipped;
+                std::unique_ptr<Widget> widget = WidgetFromYaml(widgetNode, &valid, chipName, &skipped);
                 if (!valid)
                 {
                     NV_PERF_LOG_ERR(20, "Missing or invalid widget\n");
                     return Panel();
                 }
-
-                widgets.emplace_back(std::move(widget));
+                if (!skipped)
+                {
+                    widgets.emplace_back(std::move(widget));
+                }
             }
-            
+
             if (pValid)
             {
                 *pValid = true;
@@ -895,11 +937,15 @@ namespace nv { namespace perf { namespace hud {
         ScalarText(const StyledText& label_, MetricSignal metric_, int decimalPlaces_, ShowValue showValue_)
             : Widget(Widget::Type::ScalarText), label(label_), signal(metric_), decimalPlaces(decimalPlaces_), showValue(showValue_) {}
 
-        static ScalarText FromYaml(const ryml::NodeRef& node, bool* pValid)
+        static ScalarText FromYaml(const ryml::NodeRef& node, bool* pValid, const std::string& chipName, bool* pSkipped)
         {
             if (pValid)
             {
                 *pValid = false;
+            }
+            if (pSkipped)
+            {
+                *pSkipped = false;
             }
 
             auto labelNode         = node.find_child("label");
@@ -915,7 +961,7 @@ namespace nv { namespace perf { namespace hud {
                 return ScalarText();
             }
 
-            MetricSignal metric = MetricSignal::FromYaml(metricNode, &valid);
+            MetricSignal metric = MetricSignal::FromYaml(metricNode, &valid, chipName, pSkipped);
             if (!valid)
             {
                 NV_PERF_LOG_ERR(20, "Missing or invalid metric\n");
@@ -1084,11 +1130,15 @@ namespace nv { namespace perf { namespace hud {
         {
         }
 
-        static TimePlot FromYaml(const ryml::NodeRef& node, bool* pValid)
+        static TimePlot FromYaml(const ryml::NodeRef& node, bool* pValid, const std::string& chipName, bool* pSkipped)
         {
             if (pValid)
             {
                 *pValid = false;
+            }
+            if (pSkipped)
+            {
+                *pSkipped = false;
             }
 
             auto labelNode       = node.find_child("label");
@@ -1180,15 +1230,18 @@ namespace nv { namespace perf { namespace hud {
             for (const ryml::NodeRef& metricNode : metricsNode.children())
             {
                 bool valid;
-                MetricSignal metric = MetricSignal::FromYaml(metricNode, &valid);
+                bool skipped;
+                MetricSignal metric = MetricSignal::FromYaml(metricNode, &valid, chipName, &skipped);
                 if (!valid)
                 {
                     NV_PERF_LOG_ERR(20, "Missing or invalid metric\n");
                     return TimePlot();
                 }
-                metrics.emplace_back(metric);
+                if (!skipped)
+                {
+                    metrics.emplace_back(metric);
+                }
             }
-
             if (pValid)
             {
                 *pValid = true;
@@ -1237,11 +1290,16 @@ namespace nv { namespace perf { namespace hud {
 
     // WidgetFromYaml /////////////////////////////////////////////////////////
 
-    inline std::unique_ptr<Widget> WidgetFromYaml(const ryml::NodeRef& node, bool* pValid)
+    inline std::unique_ptr<Widget> WidgetFromYaml(const ryml::NodeRef& node, bool* pValid, const std::string& chipName, bool* pSkipped)
     {
         if (pValid)
         {
             *pValid = false;
+        }
+
+        if (pSkipped)
+        {
+            *pSkipped = false;
         }
 
         if (!node.valid() || !node.is_map())
@@ -1265,15 +1323,16 @@ namespace nv { namespace perf { namespace hud {
         }
         else if (type == "ScalarText")
         {
-            return std::make_unique<ScalarText>(ScalarText::FromYaml(node, pValid));
+            return std::make_unique<ScalarText>(ScalarText::FromYaml(node, pValid, chipName, pSkipped));
         }
         else if (type == "Separator")
         {
+            *pSkipped = false;
             return std::make_unique<Separator>(Separator::FromYaml(node, pValid));
         }
         else if (type == "TimePlot")
         {
-            return std::make_unique<TimePlot>(TimePlot::FromYaml(node, pValid));
+            return std::make_unique<TimePlot>(TimePlot::FromYaml(node, pValid, chipName, pSkipped));
         }
         else
         {
@@ -1374,28 +1433,32 @@ namespace nv { namespace perf { namespace hud {
     public:
         HudPresets() = default;
 
-        bool Initialize(const std::string& chipName)
+        bool Initialize(const std::string& chipName, bool loadPredefinedPresets = true)
         {
             m_loadedFiles.clear();
             m_presets.clear();
 
             m_chipName = chipName;
-            size_t bakedConfigurationsSize            = HudConfigurations::GetHudConfigurationsSize(chipName.c_str());
-            const char** bakedConfigurationsFileNames = HudConfigurations::GetHudConfigurationsFileNames(chipName.c_str());
-            const char** bakedConfigurations          = HudConfigurations::GetHudConfigurations(chipName.c_str());
 
-            if (bakedConfigurationsSize == 0)
+            if (loadPredefinedPresets)
             {
-                return false;
-            }
+                size_t bakedConfigurationsSize            = HudConfigurations::GetHudConfigurationsSize(chipName.c_str());
+                const char** bakedConfigurationsFileNames = HudConfigurations::GetHudConfigurationsFileNames(chipName.c_str());
+                const char** bakedConfigurations          = HudConfigurations::GetHudConfigurations(chipName.c_str());
 
-            for (size_t index = 0; index < bakedConfigurationsSize; ++index)
-            {
-                bool success = LoadFromString(bakedConfigurations[index], bakedConfigurationsFileNames[index]);
-                if (!success)
+                if (bakedConfigurationsSize == 0)
                 {
-                    NV_PERF_LOG_ERR(20, "Failed loading baked file \"%s\"\n", bakedConfigurationsFileNames[index]);
                     return false;
+                }
+
+                for (size_t index = 0; index < bakedConfigurationsSize; ++index)
+                {
+                    bool success = LoadFromString(bakedConfigurations[index], bakedConfigurationsFileNames[index]);
+                    if (!success)
+                    {
+                        NV_PERF_LOG_ERR(20, "Failed loading baked file \"%s\"\n", bakedConfigurationsFileNames[index]);
+                        return false;
+                    }
                 }
             }
 
@@ -1518,7 +1581,7 @@ namespace nv { namespace perf { namespace hud {
 
         const HudPreset& GetPreset(const std::string& name) const
         {
-            static HudPreset dummy;
+            static const HudPreset dummy;
 
             if (m_presets.size() == 0)
             {
@@ -1739,6 +1802,7 @@ namespace nv { namespace perf { namespace hud {
             std::vector<NVPW_MetricEvalRequest>* m_pMetricEvalRequests;
             std::map<std::string, size_t> m_metricNameToIndex;
             MetricsConfigBuilder m_configBuilder;
+            const RawCounterSchedulingHints* m_pSchedulingHints;
         
         public:
             CounterConfigBuilder()
@@ -1747,19 +1811,21 @@ namespace nv { namespace perf { namespace hud {
             {
             }
 
-            bool Initialize(const std::string& chipName, MetricsEvaluator& metricsEvaluator, std::vector<NVPW_MetricEvalRequest>& metricEvalRequests)
+            bool Initialize(const std::string& chipName, MetricsEvaluator& metricsEvaluator, std::vector<NVPW_MetricEvalRequest>& metricEvalRequests, const RawCounterSchedulingHints& schedulingHints)
             {
-                NVPA_RawMetricsConfig* pRawMetricsConfig = sampler::DeviceCreateRawMetricsConfig(chipName.c_str());
-                if (!pRawMetricsConfig)
+                NVPW_RawCounterConfig* pRawCounterConfig = sampler::DeviceCreateRawCounterConfig(chipName.c_str());
+                if (!pRawCounterConfig)
                 {
                     return false;
                 }
-                if (!m_configBuilder.Initialize(metricsEvaluator, pRawMetricsConfig, chipName.c_str()))
+                if (!m_configBuilder.Initialize(metricsEvaluator, pRawCounterConfig, chipName.c_str()))
                 {
                     return false;
                 }
+				
                 m_pMetricsEvaluator = &metricsEvaluator;
                 m_pMetricEvalRequests = &metricEvalRequests;
+                m_pSchedulingHints = &schedulingHints;
                 return true;
             }
 
@@ -1789,7 +1855,8 @@ namespace nv { namespace perf { namespace hud {
                     pRequest = &request;
                 }
 
-                if (!m_configBuilder.AddMetrics(pRequest, 1))
+                const bool KeepInstances = false; // Prefer to only keep the gpu values for better performance and storage efficiency
+                if (!m_configBuilder.AddMetrics(pRequest, 1, KeepInstances, *m_pSchedulingHints))
                 {
                     return InvalidIndex;
                 }
@@ -1808,6 +1875,7 @@ namespace nv { namespace perf { namespace hud {
                 }
                 if (counterConfiguration.numPasses != 1u)
                 {
+                    NV_PERF_LOG_ERR(10, "The resultant number of passes is not 1, actual = %llu\n", counterConfiguration.numPasses);
                     return false;
                 }
                 return true;
@@ -2060,7 +2128,7 @@ namespace nv { namespace perf { namespace hud {
             for (const ryml::NodeRef& panelNode : panelsNode.children())
             {
                 bool valid;
-                Panel panel = Panel::FromYaml(panelNode, &valid);
+                Panel panel = Panel::FromYaml(panelNode, &valid, m_chipName);
                 if (!valid)
                 {
                     NV_PERF_LOG_ERR(20, "Missing or invalid panel\n");
@@ -2125,7 +2193,7 @@ namespace nv { namespace perf { namespace hud {
             return true;
         }
 
-        bool Initialize(double samplingIntervalInSeconds, double plotTimeWidthInSeconds)
+        bool Initialize(double samplingIntervalInSeconds, double plotTimeWidthInSeconds, const MetricConfigObject& metricConfigObject = MetricConfigObject())
         {
             if (IsInitialized())
             {
@@ -2153,8 +2221,38 @@ namespace nv { namespace perf { namespace hud {
                 }
                 m_metricsEvaluator = MetricsEvaluator(pMetricsEvaluator, std::move(metricsEvaluatorScratchBuffer)); // transfer ownership to metricsEvaluator
             }
+
+            RawCounterSchedulingHints schedulingHints = {};
+            if (!metricConfigObject.IsLoaded())
+            {
+                const std::string allUserMetricsScript = metricConfigObject.GenerateScriptForAllNamespacedUserMetrics();
+                if (!allUserMetricsScript.empty())
+                {
+                    if (!m_metricsEvaluator.UserDefinedMetrics_Initialize())
+                    {
+                        return false;
+                    }
+                    if (!m_metricsEvaluator.UserDefinedMetrics_Execute(allUserMetricsScript))
+                    {
+                        return false;
+                    }
+                    if (!m_metricsEvaluator.UserDefinedMetrics_Commit())
+                    {
+                        return false;
+                    }
+                }
+                nv::perf::MetricsAndSchedulingHints metricsAndSchedulingHints = metricConfigObject.GetMetricsAndScheduleHints("");
+                for (auto& schedulingHint : metricsAndSchedulingHints.schedulingHints)
+                {
+                    for (auto& hint : schedulingHint.hints)
+                    {
+                        schedulingHints[hint.rawCounterName] = RawCounterConfigBuilder::ToRawCounterDomain(schedulingHint.domain.c_str());
+                    }
+                }
+            }
+
             CounterConfigBuilder counterConfigBuilder;
-            if (!counterConfigBuilder.Initialize(m_chipName.c_str(), m_metricsEvaluator, m_metricEvalRequests))
+            if (!counterConfigBuilder.Initialize(m_chipName.c_str(), m_metricsEvaluator, m_metricEvalRequests, schedulingHints))
             {
                 return false;
             }
@@ -2194,31 +2292,37 @@ namespace nv { namespace perf { namespace hud {
                 if (!success)
                 {
                     NV_PERF_LOG_WRN(50, "Could not create MetricEvalRequest for %s\n", signal.metric.c_str());
+                    return;
                 }
 
                 std::vector<NVPW_DimUnitFactor> dimUnitFactors;
                 success = GetMetricDimUnits(m_metricsEvaluator, request, dimUnitFactors);
-                if (success)
-                {
-                    std::string dimUnits = nv::perf::ToString(dimUnitFactors, [&](NVPW_DimUnitName dimUnit, bool plural) {
-                        return ToCString(m_metricsEvaluator, dimUnit, plural);
-                    });
-
-                    std::map<std::string, std::string> renameUnit
-                    {
-                        {"percent", "%"}
-                    };
-                    if (renameUnit.find(dimUnits) != renameUnit.end())
-                    {
-                        dimUnits = renameUnit[dimUnits];
-                    }
-
-                    signal.unit = dimUnits;
-                }
-                else
+                if (!success)
                 {
                     NV_PERF_LOG_WRN(50, "Could not get DimUnits for %s\n", signal.metric.c_str());
+                    return;
                 }
+
+                if (dimUnitFactors.empty())
+                {
+                    NV_PERF_LOG_INF(50, "%s is unit less. As a result, its unit will be displayed as empty. If this is not desired, please set the unit explicitly in the configuration file.\n", signal.metric.c_str());
+                    return;
+                }
+
+                std::string dimUnits = nv::perf::ToString(dimUnitFactors, [&](NVPW_DimUnitName dimUnit, bool plural) {
+                    return ToCString(m_metricsEvaluator, dimUnit, plural);
+                });
+
+                std::map<std::string, std::string> renameUnit
+                {
+                    {"percent", "%"}
+                };
+                if (renameUnit.find(dimUnits) != renameUnit.end())
+                {
+                    dimUnits = renameUnit[dimUnits];
+                }
+
+                signal.unit = dimUnits;
             };
 
             // sets maxValue statically if possible, otherwise registers metricIndexMaxValue to query the value per sample/frame
@@ -2388,6 +2492,11 @@ namespace nv { namespace perf { namespace hud {
             m_isInitialized = true;
 
             return true;
+        }
+
+        bool Initialize(const MetricConfigObject& metricConfigObject)
+        {
+            return Initialize(4, 1 / 60.0, metricConfigObject);
         }
 
         bool IsInitialized() const

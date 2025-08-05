@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -260,11 +260,12 @@ namespace nv { namespace perf { namespace profiler {
                 NVPW_MetricsEvaluator* pMetricsEvaluator = nv::perf::VulkanCreateMetricsEvaluator(scratchBuffer.data(), scratchBuffer.size(), deviceIdentifiers.pChipName);
                 return pMetricsEvaluator;
             };
-            auto createRawMetricsConfig = [&]() {
-                NVPA_RawMetricsConfig* pRawMetricsConfig = nv::perf::profiler::VulkanCreateRawMetricsConfig(deviceIdentifiers.pChipName);
-                return pRawMetricsConfig;
+			
+            auto createRawCounterConfig = [&]() {
+                NVPW_RawCounterConfig* pRawCounterConfig = nv::perf::profiler::VulkanCreateRawCounterConfig(deviceIdentifiers.pChipName);
+                return pRawCounterConfig;
             };
-            if (!m_stateMachine.InitializeReportMetrics(deviceIndex, deviceIdentifiers, createMetricsEvaluator, createRawMetricsConfig, additionalMetrics))
+            if (!m_stateMachine.InitializeReportMetrics(deviceIndex, deviceIdentifiers, createMetricsEvaluator, createRawCounterConfig, additionalMetrics))
             {
                 NV_PERF_LOG_ERR(10, "m_stateMachine.InitializeReportMetrics failed\n");
                 return false;

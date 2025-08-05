@@ -6,11 +6,19 @@
 	#include "Perfkit/NvPerfUtility/NVPerfReportGeneratorD3D11.h"
 	#include "Perfkit/windows-desktop-x64/nvperf_host_impl.h"
 	#include "Perfkit/nvperf_target.h"
+	//nv::perf::profiler::ReportGeneratorD3D11 g_nvperf;
+	//nv::perf::ClockInfo g_clockStatus; // Used to restore clock state when exiting
+	//const ULONGLONG g_warmupTicks = 500u; /* milliseconds */
+	//ULONGLONG g_startTicks = 0u;
+	//ULONGLONG g_currentTicks = 0u;
+
 	nv::perf::profiler::ReportGeneratorD3D11 g_nvperf;
-	NVPW_Device_ClockStatus g_clockStatus = NVPW_DEVICE_CLOCK_STATUS_UNKNOWN; // Used to restore clock state when exiting
-	const ULONGLONG g_warmupTicks = 500u; /* milliseconds */
-	ULONGLONG g_startTicks = 0u;
-	ULONGLONG g_currentTicks = 0u;
+	const double m_nvperfWarmupTime = 0.5; // Wait 0.5s to allow the clock to stabalize before begining to profile
+	nv::perf::ClockInfo m_clockInfo; // Used to restore clock state when exiting
+
+	LARGE_INTEGER m_clockFreq;
+	LARGE_INTEGER m_startTimestamp;
+	double m_currentRunTime;
 #endif
 
 AppScene::AppScene()
@@ -77,16 +85,29 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 
 #if BENCHMARK
 	ConstructionPerf.SetModelNames(SVOModels->GetModelNames());
-	g_startTicks = GetTickCount64();
+	//g_startTicks = GetTickCount64();
+	//g_nvperf.InitializeReportGenerator(renderer->getDevice());
+	//g_nvperf.SetFrameLevelRangeName("Frame");
+	//g_nvperf.SetNumNestingLevels(2);
+	////g_nvperf.SetMaxNumRanges(2 + 8); // "Frame" + "Compute"2 + "Render"
+	//g_nvperf.outputOptions.directoryName = "HtmlReports\\Tracer";
+
+	//// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
+	//g_clockStatus = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
+	//nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
+
 	g_nvperf.InitializeReportGenerator(renderer->getDevice());
 	g_nvperf.SetFrameLevelRangeName("Frame");
 	g_nvperf.SetNumNestingLevels(2);
-	g_nvperf.SetMaxNumRanges(2 + 8); // "Frame" + "Compute"2 + "Render"
-	g_nvperf.outputOptions.directoryName = "HtmlReports\\Tracer";
+	g_nvperf.SetMaxNumRanges(2); // "Frame" + "Draw"
+	g_nvperf.outputOptions.directoryName = "HtmlReports\\D3D11";
 
 	// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
-	g_clockStatus = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
+	m_clockInfo = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
 	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
+
+	QueryPerformanceFrequency(&m_clockFreq);
+	QueryPerformanceCounter(&m_startTimestamp);
 #endif
 }
 
@@ -111,7 +132,7 @@ bool AppScene::frame()
 
 #ifdef BENCHMARK
 	g_nvperf.OnFrameStart(renderer->getDeviceContext());
-	g_nvperf.PushRange("RenderingVoxels");
+	g_nvperf.PushRange("Computing Voxel Renderer");
 #endif
 	RTViewer->GetRenderTexture()->clearRenderTarget(renderer->getDeviceContext(), 1, 0, 0, 1);
 
@@ -124,7 +145,7 @@ bool AppScene::frame()
 	SVOTraverser->Unbind(renderer->getDeviceContext());
 #ifdef BENCHMARK
 	g_nvperf.PopRange(); // Draw
-	g_nvperf.OnFrameStart(renderer->getDeviceContext());
+	g_nvperf.OnFrameEnd();
 #endif
 
 
@@ -234,8 +255,16 @@ void AppScene::PerfTrackerGUI()
 	{
 		ConstructionPerf.GUIRender(PerfTrack);
 
+		if (g_nvperf.IsCollectingReport())
+		{
+			ImGui::Text("Collecting Report");
+		}
+		else if (g_nvperf.GetInitStatus() == nv::perf::profiler::ReportGeneratorInitStatus::Succeeded)
+		{
+			ImGui::Text("Profile Successful");
+		}
+
 		if (ImGui::Button("NVIDIA Profiler Tracer")) {
-			//g_nvperf.InitializeReportGenerator(renderer->getDevice());
 			g_nvperf.StartCollectionOnNextFrame();
 		}
 		if(ImGui::Button("Stop NVIDIA Profiler Tracer")) {

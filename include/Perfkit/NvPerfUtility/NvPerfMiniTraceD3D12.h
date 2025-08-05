@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 
 #include "NvPerfD3D12.h"
 #include "NvPerfInit.h"
+#include "NvPerfMiniTrace.h"
 
 struct ID3D12Device;
 struct ID3D12CommandQueue;
@@ -643,4 +644,167 @@ namespace nv { namespace perf { namespace mini_trace {
         }
     };
 
+    class APITracerD3D12
+    {
+    private:
+        struct TraceData
+        {
+            std::string name;
+            // Initialize to -1 to indicate that the value is not set.
+            size_t startSlotInQueryHeap = size_t(-1);
+            size_t endSlotInQueryHeap = size_t(-1);
+            size_t nestingLevel = 0;
+        };
+        // Owned
+        ComPtr<ID3D12QueryHeap> m_queryHeap;
+        ComPtr<ID3D12Resource> m_queryResultBuffer;
+        // Not Owned
+        ID3D12Device* m_pDevice;
+
+        size_t m_nextSlot = 0;
+        size_t m_maxSlots = 0;
+
+        std::vector<TraceData> m_traceData;
+        std::vector<uint64_t> m_timestamps;
+    public:
+
+        bool ResolveQueries(std::vector<APITraceData>& traceData)
+        {
+            if (m_traceData.size() == 0)
+            {
+                return true;
+            }
+            m_timestamps.resize(m_nextSlot);
+
+            void* outMappedPtr = nullptr;
+            D3D12_RANGE range = { 0, m_nextSlot * sizeof(uint64_t) };
+            HRESULT hr = m_queryResultBuffer->Map(0, &range, &outMappedPtr);
+            if (FAILED(hr))
+            {
+                NV_PERF_LOG_ERR(20, "ID3D12Resource::Map() failed\n");
+                return false;
+            }
+
+            memcpy(m_timestamps.data(), outMappedPtr, m_nextSlot * sizeof(uint64_t));
+
+            const D3D12_RANGE emptyRange = {};
+            m_queryResultBuffer->Unmap(0, &emptyRange);
+            traceData.reserve(traceData.size() + m_traceData.size());
+            for (size_t index = 0; index < m_traceData.size(); ++index)
+            {
+                uint64_t startTimestamp = 0;
+                uint64_t endTimestamp = 0;
+                if (m_traceData[index].startSlotInQueryHeap < m_timestamps.size())
+                {
+                    startTimestamp = m_timestamps[m_traceData[index].startSlotInQueryHeap];
+                }
+                if (m_traceData[index].endSlotInQueryHeap < m_timestamps.size())
+                {
+                    endTimestamp = m_timestamps[m_traceData[index].endSlotInQueryHeap];
+                }
+                traceData.emplace_back(APITraceData{ m_traceData[index].name, startTimestamp, endTimestamp, m_traceData[index].nestingLevel });
+            }
+            return true;
+        }
+        void ClearData()
+        {
+            m_nextSlot = 0;
+            m_traceData.clear();
+        }
+        bool BeginRange(ID3D12GraphicsCommandList* pCommandList, const char* name, size_t nestingLevel, size_t& index)
+        {
+            size_t slot = m_nextSlot;
+            if (slot >= m_maxSlots)
+            {
+                NV_PERF_LOG_ERR(50, "No more slots\n");
+                return false;
+            }
+            m_traceData.emplace_back(TraceData{name, slot, size_t(-1), nestingLevel});
+            index = m_traceData.size() - 1;
+            ++m_nextSlot;
+            pCommandList->EndQuery(m_queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, (UINT)slot);
+            return true;
+        }
+        bool EndRange(ID3D12GraphicsCommandList* pCommandList, size_t index)
+        {
+            if (index >= m_traceData.size())
+            {
+                NV_PERF_LOG_ERR(50, "Invalid index\n");
+                return false;
+            }
+            size_t slot = m_nextSlot;
+            if (slot >= m_maxSlots)
+            {
+                NV_PERF_LOG_ERR(50, "No more slots\n");
+                return false;
+            }
+            m_traceData[index].endSlotInQueryHeap = slot;
+            ++m_nextSlot;
+            pCommandList->EndQuery(m_queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, (UINT)slot);
+            return true;
+        }
+
+        void ResolveQueryDataOnCmdList(ID3D12GraphicsCommandList* pCommandList)
+        {
+            pCommandList->ResolveQueryData(m_queryHeap.Get(), D3D12_QUERY_TYPE_TIMESTAMP, 0, (UINT)m_nextSlot, m_queryResultBuffer.Get(), 0);
+        }
+
+        bool Initialize(ID3D12Device* pDevice, size_t numRanges)
+        {
+            size_t maxSlots = 2 * numRanges;
+            D3D12_QUERY_HEAP_DESC desc = {};
+            desc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
+            desc.Count = (UINT)maxSlots;
+            HRESULT hr = pDevice->CreateQueryHeap(&desc, IID_PPV_ARGS(&m_queryHeap));
+            if(FAILED(hr))
+            {
+                NV_PERF_LOG_ERR(20, "CreateQueryHeap failed\n");
+                return false;
+            }
+            D3D12_RESOURCE_DESC bufferDesc = {};
+            bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+            bufferDesc.Alignment = 0;
+            bufferDesc.Width = maxSlots * sizeof(uint64_t);
+            bufferDesc.Height = 1;
+            bufferDesc.DepthOrArraySize = 1;
+            bufferDesc.MipLevels = 1;
+            bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+            bufferDesc.SampleDesc.Count = 1;
+            bufferDesc.SampleDesc.Quality = 0;
+            bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+            bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+            D3D12_HEAP_PROPERTIES heapProperties = {};
+            heapProperties.Type = D3D12_HEAP_TYPE_READBACK;
+            heapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+            heapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+            heapProperties.CreationNodeMask = 1;
+            heapProperties.VisibleNodeMask = 1;
+
+            hr = pDevice->CreateCommittedResource( &heapProperties, D3D12_HEAP_FLAG_NONE,
+                &bufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_queryResultBuffer)
+            );
+            if(FAILED(hr))
+            {
+                NV_PERF_LOG_ERR(20, "CreateCommittedResource failed\n");
+                return false;
+            }
+
+            m_maxSlots = maxSlots;
+            m_pDevice = pDevice;
+            return true;
+        }
+
+        void Destroy()
+        {
+            m_pDevice = nullptr;
+            m_queryHeap = nullptr;
+            m_queryResultBuffer = nullptr;
+        }
+
+        ~APITracerD3D12()
+        {
+            Destroy();
+        }
+    };
 }}} // nv::perf::minitrace

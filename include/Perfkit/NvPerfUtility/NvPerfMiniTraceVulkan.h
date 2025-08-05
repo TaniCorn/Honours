@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include "NvPerfInit.h"
 #include "NvPerfScopeExitGuard.h"
 #include "NvPerfVulkan.h"
+#include "NvPerfMiniTrace.h"
 
 namespace nv { namespace perf { namespace mini_trace {
 
@@ -817,4 +818,138 @@ namespace nv { namespace perf { namespace mini_trace {
         }
     };
 
+    class APITracerVulkan
+    {
+    private:
+        struct TraceData
+        {
+            std::string name;
+            // Initialize to -1 to indicate that the value is not set.
+            size_t startSlotInVkPool = size_t(-1);
+            size_t endSlotInVkPool = size_t(-1);
+            size_t nestingLevel = 0;
+        };
+        VkDevice m_device;
+        VkQueryPool m_queryPool;
+        VulkanFunctions m_vkFunctions;
+
+        size_t m_nextSlot = 0;
+        size_t m_maxSlots = 0;
+
+        std::vector<TraceData> m_traceData;
+        std::vector<uint64_t> m_timestamps;
+    public:
+        bool ResolveQueries(std::vector<APITraceData>& traceData)
+        {
+            if (m_traceData.size() == 0)
+            {
+                return true;
+            }
+            m_timestamps.resize(m_nextSlot);
+            VkResult result = m_vkFunctions.pfnVkGetQueryPoolResults(m_device, m_queryPool, 0u, (uint32_t)m_timestamps.size(), m_timestamps.size() * sizeof(uint64_t), m_timestamps.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+            if (result != VK_SUCCESS)
+            {
+                NV_PERF_LOG_ERR(20, "vkGetQueryPoolResults failed\n");
+                return false;
+            }
+            traceData.reserve(traceData.size() + m_traceData.size());
+            for (size_t index = 0; index < m_traceData.size(); ++index)
+            {
+                uint64_t startTimestamp = 0;
+                uint64_t endTimestamp = 0;
+                if (m_traceData[index].startSlotInVkPool < m_timestamps.size())
+                {
+                    startTimestamp = m_timestamps[m_traceData[index].startSlotInVkPool];
+                }
+                if (m_traceData[index].endSlotInVkPool < m_timestamps.size())
+                {
+                    endTimestamp = m_timestamps[m_traceData[index].endSlotInVkPool];
+                }
+                traceData.emplace_back(APITraceData{ m_traceData[index].name, startTimestamp, endTimestamp, m_traceData[index].nestingLevel });
+            }
+            return true;
+        }
+        void ClearData()
+        {
+            m_nextSlot = 0;
+            m_traceData.clear();
+        }
+        void ResetQueries(VkCommandBuffer cmd)
+        {
+            m_vkFunctions.pfnVkCmdResetQueryPool(cmd, m_queryPool, 0u, (uint32_t)m_maxSlots);
+        }
+        bool BeginRange(VkCommandBuffer cmd, const char* name, size_t nestingLevel, size_t& index)
+        {
+            size_t slot = m_nextSlot;
+            if (slot >= m_maxSlots)
+            {
+                NV_PERF_LOG_ERR(50, "No more slots\n");
+                return false;
+            }
+            m_traceData.emplace_back(TraceData{name, slot, size_t(-1), nestingLevel});
+            index = m_traceData.size() - 1;
+            ++m_nextSlot;
+            m_vkFunctions.pfnVkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, m_queryPool, (uint32_t)slot);
+            return true;
+        }
+        bool EndRange(VkCommandBuffer cmd, size_t index)
+        {
+            if (index >= m_traceData.size())
+            {
+                NV_PERF_LOG_ERR(50, "Invalid index\n");
+                return false;
+            }
+            size_t slot = m_nextSlot;
+            if (slot >= m_maxSlots)
+            {
+                NV_PERF_LOG_ERR(50, "No more slots\n");
+                return false;
+            }
+            m_traceData[index].endSlotInVkPool = slot;
+            ++m_nextSlot;
+            m_vkFunctions.pfnVkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, m_queryPool, (uint32_t)slot);
+            return true;
+        }
+        bool Initialize(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, size_t numRanges
+#if defined(VK_NO_PROTOTYPES)
+                          , PFN_vkGetInstanceProcAddr pfnVkGetInstanceProcAddr
+                          , PFN_vkGetDeviceProcAddr pfnVkGetDeviceProcAddr
+#endif
+        )
+        {
+#if defined(VK_NO_PROTOTYPES)
+            m_vkFunctions.Initialize(instance, device, pfnVkGetInstanceProcAddr, pfnVkGetDeviceProcAddr);
+#else
+            m_vkFunctions.Initialize();
+#endif
+            size_t maxSlots = 2 * numRanges;
+            VkQueryPoolCreateInfo queryPoolCreateInfo = {};
+            queryPoolCreateInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+            queryPoolCreateInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+            queryPoolCreateInfo.queryCount = (uint32_t)maxSlots;
+            VkResult result = m_vkFunctions.pfnVkCreateQueryPool(device, &queryPoolCreateInfo, nullptr, &m_queryPool);
+            if (result != VK_SUCCESS)
+            {
+                NV_PERF_LOG_ERR(20, "vkCreateQueryPool failed\n");
+                return false;
+            }
+            m_maxSlots = maxSlots;
+            m_device = device;
+            return true;
+        }
+
+        void Destroy()
+        {
+            if (m_queryPool)
+            {
+                m_vkFunctions.pfnVkDestroyQueryPool(m_device, m_queryPool, nullptr);
+                m_queryPool = VK_NULL_HANDLE;
+            }
+        }
+
+        ~APITracerVulkan()
+        {
+            Destroy();
+        }
+    };
 }}} // nv::perf::minitrace

@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -197,6 +197,28 @@ namespace nv { namespace perf { namespace sampler {
                 , triggerSource(NVPW_GPU_PERIODIC_SAMPLER_TRIGGER_SOURCE_INVALID)
             {
             }
+        };
+
+        struct GetRecordBufferStatusParams
+        {
+            // [in]
+            bool queryNumUnreadBytes;
+            // [in]
+            bool queryOverflow;
+            // [in]
+            bool queryWriteOffset;
+            // [in]
+            bool queryReadOffset;
+            // [out]
+            size_t totalSize;
+            // [out]
+            size_t numUnreadBytes;
+            // [out]
+            NVPA_Bool overflow;
+            // [out]
+            size_t writeOffset;
+            // [out]
+            size_t readOffset;
         };
 
     private:
@@ -460,57 +482,84 @@ namespace nv { namespace perf { namespace sampler {
             return true;
         }
 
-        bool GetRecordBufferStatus(size_t& totalSize, size_t& usedSize, bool& overflow)
+        bool GetRecordBufferStatus(GetRecordBufferStatusParams& params)
+        //size_t& totalSize, size_t& usedSize, bool& overflow, size_t& writeOffset, size_t& readOffset)
         {
             if (!m_inSession)
             {
                 NV_PERF_LOG_ERR(20, "GetRecordBufferStatus() called, but not in a session\n");
                 return false;
             }
-            NVPW_GPU_PeriodicSampler_GetRecordBufferStatus_Params getRecordBufferStatusParams = { NVPW_GPU_PeriodicSampler_GetRecordBufferStatus_Params_STRUCT_SIZE };
+            NVPW_GPU_PeriodicSampler_GetRecordBufferStatus_V2_Params getRecordBufferStatusParams = { NVPW_GPU_PeriodicSampler_GetRecordBufferStatus_V2_Params_STRUCT_SIZE };
             getRecordBufferStatusParams.deviceIndex = m_deviceIndex;
-            const NVPA_Status nvpaStatus = NVPW_GPU_PeriodicSampler_GetRecordBufferStatus(&getRecordBufferStatusParams);
+            getRecordBufferStatusParams.queryNumUnreadBytes= params.queryNumUnreadBytes;
+            getRecordBufferStatusParams.queryOverflow = params.queryOverflow;
+            getRecordBufferStatusParams.queryWriteOffset = params.queryWriteOffset;
+            getRecordBufferStatusParams.queryReadOffset = params.queryReadOffset;
+
+            const NVPA_Status nvpaStatus = NVPW_GPU_PeriodicSampler_GetRecordBufferStatus_V2(&getRecordBufferStatusParams);
             if (nvpaStatus != NVPA_STATUS_SUCCESS)
             {
-                NV_PERF_LOG_ERR(20, "NVPW_GPU_PeriodicSampler_GetRecordBufferStatus failed, nvpaStatus = %s, deviceIndex = %llu\n", FormatStatus(nvpaStatus).c_str(), m_deviceIndex);
+                NV_PERF_LOG_ERR(20, "NVPW_GPU_PeriodicSampler_GetRecordBufferStatus_V2 failed, nvpaStatus = %s, deviceIndex = %llu\n", FormatStatus(nvpaStatus).c_str(), m_deviceIndex);
                 return false;
             }
-            totalSize = getRecordBufferStatusParams.totalSize;
-            usedSize = getRecordBufferStatusParams.usedSize;
-            overflow = !!getRecordBufferStatusParams.overflow;
+
+            params.totalSize = getRecordBufferStatusParams.totalSize;
+            if (params.queryNumUnreadBytes)
+            {
+                params.numUnreadBytes = getRecordBufferStatusParams.numUnreadBytes;
+            }
+            if (params.queryOverflow)
+            {
+                params.overflow = !!getRecordBufferStatusParams.overflow;
+            }
+            if (params.queryWriteOffset)
+            {
+                params.writeOffset = getRecordBufferStatusParams.writeOffset;
+            }
+            if (params.queryReadOffset)
+            {
+                params.readOffset = getRecordBufferStatusParams.readOffset;
+            }
             return true;
         }
 
-        bool DecodeCounters(
-            std::vector<uint8_t>& counterDataImage,
-            size_t numSamplingRangesToDecode, // must be 1
-            size_t& numSamplingRangesDecoded,
-            bool& recordBufferOverflow,
-            size_t& numSamplesDropped,
-            size_t& numSamplesMerged,
-            bool doNotDropSamples = false)
+        bool DecodeCounters(std::vector<uint8_t>& counterDataImage, size_t numBytesToDecode, NVPW_GPU_PeriodicSampler_DecodeStopReason& stopReason, size_t& numSamplesMerged, size_t& numBytesConsumed)
         {
             if (!m_inSession)
             {
                 NV_PERF_LOG_ERR(20, "DecodeCounters() called, but not in a session\n");
                 return false;
             }
-            NVPW_GPU_PeriodicSampler_DecodeCounters_V2_Params decodeCountersParams = { NVPW_GPU_PeriodicSampler_DecodeCounters_V2_Params_STRUCT_SIZE };
+
+            NVPW_GPU_PeriodicSampler_DecodeCounters_V3_Params decodeCountersParams = { NVPW_GPU_PeriodicSampler_DecodeCounters_V3_Params_STRUCT_SIZE };
             decodeCountersParams.deviceIndex = m_deviceIndex;
             decodeCountersParams.pCounterDataImage = counterDataImage.data();
             decodeCountersParams.counterDataImageSize = counterDataImage.size();
-            decodeCountersParams.numRangesToDecode = numSamplingRangesToDecode;
-            decodeCountersParams.doNotDropSamples = doNotDropSamples;
-            const NVPA_Status nvpaStatus = NVPW_GPU_PeriodicSampler_DecodeCounters_V2(&decodeCountersParams);
+            decodeCountersParams.numBytesToRead = numBytesToDecode;
+            const NVPA_Status nvpaStatus = NVPW_GPU_PeriodicSampler_DecodeCounters_V3(&decodeCountersParams);
             if (nvpaStatus)
             {
-                NV_PERF_LOG_ERR(20, "NVPW_GPU_PeriodicSampler_DecodeCounters_V2 failed, nvpaStatus = %s, deviceIndex = %llu\n", FormatStatus(nvpaStatus).c_str(), m_deviceIndex);
+                NV_PERF_LOG_ERR(20, "NVPW_GPU_PeriodicSampler_DecodeCounters_V3 failed, nvpaStatus = %s, deviceIndex = %llu\n", FormatStatus(nvpaStatus).c_str(), m_deviceIndex);
                 return false;
             }
-            numSamplingRangesDecoded = decodeCountersParams.numRangesDecoded;
-            recordBufferOverflow = !!decodeCountersParams.recordBufferOverflow;
-            numSamplesDropped = decodeCountersParams.numSamplesDropped;
+            stopReason = (NVPW_GPU_PeriodicSampler_DecodeStopReason)decodeCountersParams.decodeStopReason;
             numSamplesMerged = decodeCountersParams.numSamplesMerged;
+            numBytesConsumed = decodeCountersParams.numBytesConsumed;
+            return true;
+        }
+
+        bool AcknowledgeRecordBuffer(size_t numBytes)
+        {
+            NVPW_GPU_PeriodicSampler_AcknowledgeRecordBuffer_Params acknowledgeRecordBufferParams{NVPW_GPU_PeriodicSampler_AcknowledgeRecordBuffer_Params_STRUCT_SIZE};
+            acknowledgeRecordBufferParams.deviceIndex = m_deviceIndex;
+            acknowledgeRecordBufferParams.numBytes = numBytes;
+            const NVPA_Status nvpaStatus = NVPW_GPU_PeriodicSampler_AcknowledgeRecordBuffer(&acknowledgeRecordBufferParams);
+            if (nvpaStatus)
+            {
+                NV_PERF_LOG_ERR(20, "NVPW_GPU_PeriodicSampler_AcknowledgeRecordBuffer failed, nvpaStatus = %s, deviceIndex = %llu\n", FormatStatus(nvpaStatus).c_str(), m_deviceIndex);
+                return nvpaStatus;
+            }
             return true;
         }
     };

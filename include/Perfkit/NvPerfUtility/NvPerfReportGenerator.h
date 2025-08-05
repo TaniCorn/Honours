@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include <ctime>
 #include <fstream>
 #include <iomanip>
+#include <unordered_set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -38,18 +39,13 @@
 #include <sys/stat.h>
 #endif
 #include "NvPerfInit.h"
+#include "NvPerfUtilities.h"
 #include "NvPerfDeviceProperties.h"
 #include "NvPerfMetricsEvaluator.h"
 #include "NvPerfRangeProfiler.h"
 #include "NvPerfReportDefinition.h"
 #include "NvPerfReportDefinitionHAL.h"
 #include "NvPerfCommonHtmlTemplates.h"
-
-#ifdef WIN32
-#define NV_PERF_PATH_SEPARATOR '\\'
-#else
-#define NV_PERF_PATH_SEPARATOR '/'
-#endif
 
 namespace nv { namespace perf {
 
@@ -111,6 +107,7 @@ namespace nv { namespace perf {
         std::string reportDirectoryName;
         uint64_t secondsSinceEpoch;
         NVPW_Device_ClockStatus clockStatus;
+        NVPW_Device_ClockLevel clockLevel;
         const uint8_t* pCounterDataImage;
         size_t counterDataImageSize;
         std::vector<RangeData> ranges;
@@ -223,17 +220,17 @@ namespace nv { namespace perf {
         return buf;
     }
 
-    inline std::string MakeReport(const ReportDefinition& reportDefinition, const std::string& jsonContents)
+    inline std::string MakeReport(const char* pReportHtml, const std::string& jsonContents)
     {
         const char* pJsonReplacementMarker = "/***JSON_DATA_HERE***/";
-        const char* pInsertPoint = strstr(reportDefinition.pReportHtml, pJsonReplacementMarker);
+        const char* pInsertPoint = strstr(pReportHtml, pJsonReplacementMarker);
         if (!pInsertPoint)
         {
             return "";
         }
 
         std::string reportHtml;
-        reportHtml.append(reportDefinition.pReportHtml, pInsertPoint - reportDefinition.pReportHtml);
+        reportHtml.append(pReportHtml, pInsertPoint - pReportHtml);
         reportHtml.append(jsonContents);
         reportHtml.append(pInsertPoint + strlen(pJsonReplacementMarker));
 
@@ -416,7 +413,7 @@ namespace nv { namespace perf {
             sstream << "\"device\": {\n";
             sstream << "  \"gpuName\": \"" << reportLayout.gpuName << "\",\n";
             sstream << "  \"chipName\": \"" << reportLayout.chipName << "\",\n";
-            sstream << "  \"clockLockingStatus\": \"" << ToCString(reportData.clockStatus) << "\"\n";
+            sstream << "  \"clockLockingStatus\": \"" << ToCString(ClockInfo(reportData.clockStatus, reportData.clockLevel)) << "\"\n";
             sstream << "},\n";
 
             const MetricsEnumerator countersEnumerator = EnumerateCounters(pMetricsEvaluator);
@@ -504,11 +501,11 @@ namespace nv { namespace perf {
             for (size_t rangeIndex = 0, numRanges = reportData.ranges.size(); rangeIndex < numRanges; rangeIndex++)
             {
                 const char* pLeafName = reportData.ranges[rangeIndex].leafName.c_str();
-                const std::string filename(reportData.reportDirectoryName + NV_PERF_PATH_SEPARATOR + GetRangeFileName(rangeIndex, pLeafName));
+                const std::string filename = nv::perf::utilities::JoinDriectoryAndFileName(reportData.reportDirectoryName, GetRangeFileName(rangeIndex, pLeafName));
                 if (FILE* pHTMLFile = OpenFile(&filename[0], "wb"))
                 {
                     const std::string jsonContents = MakeJsonContents(pMetricsEvaluator, reportLayout, reportData, rangeIndex);
-                    const std::string reportHtml = MakeReport(reportLayout.perRange.definition, jsonContents);
+                    const std::string reportHtml = MakeReport(reportLayout.perRange.definition.pReportHtml, jsonContents);
                     fputs(reportHtml.c_str(), pHTMLFile);
                     fclose(pHTMLFile);
                 }
@@ -521,7 +518,7 @@ namespace nv { namespace perf {
 
         inline void WriteCsvReportFile(NVPW_MetricsEvaluator* pMetricsEvaluator, const ReportLayout& reportLayout, const ReportData& reportData)
         {
-            const std::string filename = reportData.reportDirectoryName + NV_PERF_PATH_SEPARATOR + "nvperf_metrics.csv";
+            const std::string filename = nv::perf::utilities::JoinDriectoryAndFileName(reportData.reportDirectoryName, "nvperf_metrics.csv");
             FILE* fp = OpenFile(filename.c_str(), "wt");
             if (!fp)
             {
@@ -774,7 +771,7 @@ namespace nv { namespace perf {
             if (FILE* pHTMLFile = OpenFile(&filename[0], "wb"))
             {
                 const std::string jsonContents = MakeJsonContents(pMetricsEvaluator, reportLayout, reportData);
-                const std::string reportHtml = MakeReport(reportLayout.summary.definition, jsonContents);
+                const std::string reportHtml = MakeReport(reportLayout.summary.definition.pReportHtml, jsonContents);
                 fputs(reportHtml.c_str(), pHTMLFile);
                 fclose(pHTMLFile);
             }
@@ -786,7 +783,7 @@ namespace nv { namespace perf {
 
         inline void WriteCsvReportFile(NVPW_MetricsEvaluator* pMetricsEvaluator, const ReportLayout& reportLayout, const ReportData& reportData)
         {
-            const std::string filename = reportData.reportDirectoryName + NV_PERF_PATH_SEPARATOR + "nvperf_metrics_summary.csv";
+            const std::string filename = nv::perf::utilities::JoinDriectoryAndFileName(reportData.reportDirectoryName, "nvperf_metrics_summary.csv");
             FILE* fp = OpenFile(filename.c_str(), "wt");
             if (!fp)
             {
@@ -823,6 +820,152 @@ namespace nv { namespace perf {
         }
 
     } // namespace Summary
+
+    namespace SchedulingInfo {
+
+        // outputs key-value pairs for the report JSON, not including the enclosing brackets
+        inline std::string MakeJsonContents(NVPW_MetricsEvaluator* pMetricsEvaluator, const ReportLayout& reportLayout, const CounterConfiguration& configuration)
+        {
+            std::stringstream sstream;
+            // Build mappings for { metrics : raw counter dependencies }
+            {
+                const MetricsEnumerator countersEnumerator = EnumerateCounters(pMetricsEvaluator);
+                const MetricsEnumerator ratiosEnumerator = EnumerateRatios(pMetricsEvaluator);
+                const MetricsEnumerator throughputsEnumerator = EnumerateThroughputs(pMetricsEvaluator);
+                std::unordered_set<std::string> processedMetrics;
+                sstream << "\"metricRawCounterDependencies\": {\n";
+                auto getRawDependencies = [&](const NVPW_MetricEvalRequest* pMetricEvalRequests, size_t numMetricEvalRequests) {
+                    for (size_t ii = 0; ii < numMetricEvalRequests; ++ii)
+                    {
+                        const NVPW_MetricEvalRequest& metricEvalRequest = pMetricEvalRequests[ii];
+                        // Submetrics are filtered here because
+                        // 1) Constant metrics(e.g. ".peak_sustained" or ".max_rate") don't depend on any counters.
+                        // 2) Rollup doesn't really matter to counter dependencies, for instance, "avg.per_second" & "sum.per_second" have the exact same counter dependencies. So we selectively collect one of them. 
+                        if (  !(metricEvalRequest.rollupOp == NVPW_ROLLUP_OP_SUM && metricEvalRequest.submetric == NVPW_SUBMETRIC_NONE) // "sum", but also applies to "avg"
+                           && !(metricEvalRequest.rollupOp == NVPW_ROLLUP_OP_SUM && metricEvalRequest.submetric == NVPW_SUBMETRIC_PER_SECOND) // "sum.per_second", but also applies to "avg.per_second"
+                           && !(metricEvalRequest.rollupOp == NVPW_ROLLUP_OP_AVG && metricEvalRequest.submetric == NVPW_SUBMETRIC_PER_CYCLE_ELAPSED) // "avg.per_cycle_elapsed"
+                           && !(metricEvalRequest.submetric == NVPW_SUBMETRIC_PCT_OF_PEAK_SUSTAINED_ELAPSED) // ".pct_of_peak_sustained_elapsed"
+                           && !(metricEvalRequest.submetric == NVPW_SUBMETRIC_RATIO) // ".ratio"
+                           )
+                        {
+                            continue;
+                        }
+
+                        const std::string metricName = ToString(countersEnumerator, ratiosEnumerator, throughputsEnumerator, metricEvalRequest);
+                        // Per-range report & summary report can contain overlapped metrics
+                        if (processedMetrics.count(metricName))
+                        {
+                            continue;
+                        }
+
+                        std::vector<const char*> rawDependencies;
+                        std::vector<const char*> optionalRawDependencies;
+                        if (!GetMetricRawCounterDependencies(pMetricsEvaluator, &metricEvalRequest, 1, rawDependencies, optionalRawDependencies))
+                        {
+                            NV_PERF_LOG_WRN(50, "Failed to get raw counter dependencies for metric %s\n", metricName.c_str());
+                            continue;
+                        }
+
+                        if (!processedMetrics.empty())
+                        {
+                            sstream << ",\n";
+                        }
+                        sstream << "\"" << metricName << "\": [";
+                        for (size_t rawDepIdx = 0; rawDepIdx < rawDependencies.size(); ++rawDepIdx)
+                        {
+                            const char* const pRawDep = rawDependencies[rawDepIdx];
+                            if (rawDepIdx)
+                            {
+                                sstream << ", ";
+                            }
+                            sstream << "\"" << pRawDep << "\"";
+                        }
+                        sstream << "]";
+                        processedMetrics.insert(metricName);
+                    }
+                    return true;
+                };
+                if (!ForEachBaseMetric(reportLayout.perRange.baseMetricRequests, reportLayout.perRange.submetricRequests, getRawDependencies))
+                {
+                    NV_PERF_LOG_ERR(10, "Failed to get raw counter dependencies for metrics in per-range report\n");
+                    return std::string();
+                }
+                if (!ForEachBaseMetric(reportLayout.summary.baseMetricRequests, reportLayout.summary.submetricRequests, getRawDependencies))
+                {
+                    NV_PERF_LOG_ERR(10, "Failed to get raw counter dependencies for metrics in summary report\n");
+                    return std::string();
+                }
+                sstream << "},\n";
+            }
+
+            // Build mappings for { pass index : raw counters }
+            {
+                sstream << "\"rawCounterDistribution\": {\n";
+                for (size_t passIdx = 0; passIdx < configuration.numPasses; ++passIdx)
+                {
+                    NVPW_Config_GetRawCounters_Params getRawCountersParams = { NVPW_Config_GetRawCounters_Params_STRUCT_SIZE };
+                    NVPW_Config_GetRawCounters_Params params{ NVPW_Config_GetRawCounters_Params_STRUCT_SIZE };
+                    getRawCountersParams.pConfig = configuration.configImage.data();
+                    getRawCountersParams.configSize = configuration.configImage.size();
+                    getRawCountersParams.passIndex = passIdx;
+                    NVPA_Status nvpaStatus = NVPW_Config_GetRawCounters(&getRawCountersParams);
+                    if (nvpaStatus)
+                    {
+                        NV_PERF_LOG_ERR(50, "NVPW_Config_GetRawCounters failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+                        return std::string();
+                    }
+                    std::vector<const char*> rawCounters(getRawCountersParams.numRawCounters);
+                    getRawCountersParams.ppRawCounterNames = rawCounters.data();
+                    nvpaStatus = NVPW_Config_GetRawCounters(&getRawCountersParams);
+                    if (nvpaStatus)
+                    {
+                        NV_PERF_LOG_ERR(50, "NVPW_Config_GetRawCounters failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+                        return std::string();
+                    }
+
+                    if (passIdx)
+                    {
+                        sstream << ",\n";
+                    }
+                    sstream << "\"" << passIdx << "\": [";
+                    for (size_t counterIdx = 0; counterIdx < rawCounters.size(); ++counterIdx)
+                    {
+                        const char* const pRawCounter = rawCounters[counterIdx];
+                        if (counterIdx)
+                        {
+                            sstream << ", ";
+                        }
+                        sstream << "\"" << pRawCounter << "\"";
+                    }
+                    sstream << "]";
+                }
+                sstream << "}\n";
+            }
+
+            std::string jsonContents = sstream.str();
+            return jsonContents;
+        }
+
+        inline void WriteHtmlReportFile(NVPW_MetricsEvaluator* pMetricsEvaluator, const ReportLayout& reportLayout, const ReportData& reportData, const CounterConfiguration& configuration)
+        {
+            const int filenameLength = snprintf(nullptr, 0, "%s%cscheduling_info.html", reportData.reportDirectoryName.c_str(), NV_PERF_PATH_SEPARATOR);
+            std::vector<char> filename(filenameLength + 1);
+            snprintf(&filename[0], filename.size(), "%s%cscheduling_info.html", reportData.reportDirectoryName.c_str(), NV_PERF_PATH_SEPARATOR);
+
+            if (FILE* pHTMLFile = OpenFile(&filename[0], "wb"))
+            {
+                const std::string jsonContents = MakeJsonContents(pMetricsEvaluator, reportLayout, configuration);
+                const std::string reportHtml = MakeReport(GetSchedulingInfoHtml().c_str(), jsonContents);
+                fputs(reportHtml.c_str(), pHTMLFile);
+                fclose(pHTMLFile);
+            }
+            else
+            {
+                NV_PERF_LOG_ERR(20, "OpenFile failed for file: %s\n", &filename[0]);
+            }
+        }
+
+    } // namespace SchedulingInfo
 
 } } // namespace nv::perf
 
@@ -873,7 +1016,7 @@ namespace nv { namespace perf { namespace profiler {
         ReportLayout m_reportLayout;
 
         size_t m_deviceIndex;
-        NVPW_Device_ClockStatus m_clockStatus;
+        ClockInfo m_clockInfo;
         IReportProfiler& m_reportProfiler;
 
         // options
@@ -960,7 +1103,7 @@ namespace nv { namespace perf { namespace profiler {
             , m_configuration()
             , m_reportLayout()
             , m_deviceIndex(size_t(~0))
-            , m_clockStatus(NVPW_DEVICE_CLOCK_STATUS_UNKNOWN)
+            , m_clockInfo()
             , m_reportProfiler(reportProfiler)
             , m_frameLevelRangeName()
             , m_numNestingLevels(1)
@@ -1003,18 +1146,18 @@ namespace nv { namespace perf { namespace profiler {
             m_reportLayout = {};
 
             m_deviceIndex = size_t(~0);
-            m_clockStatus = NVPW_DEVICE_CLOCK_STATUS_UNKNOWN;
+            m_clockInfo = ClockInfo();
 
             m_configuration = {};
             m_metricsEvaluator = {};
         }
 
-        template <class TCreateMetricsEvaluator, class TCreateRawMetricsConfig>
+        template <class TCreateMetricsEvaluator, class TCreateRawCounterConfig>
         bool InitializeReportMetrics(
             size_t deviceIndex,
             const DeviceIdentifiers& deviceIdentifiers,
             TCreateMetricsEvaluator&& createMetricsEvaluator,
-            TCreateRawMetricsConfig&& createRawMetricsConfig,
+			TCreateRawCounterConfig&& createRawCounterConfig,
             const std::vector<std::string>& additionalMetrics)
         {
             m_deviceIndex = deviceIndex;
@@ -1050,20 +1193,21 @@ namespace nv { namespace perf { namespace profiler {
             m_reportLayout.chipName = deviceIdentifiers.pChipName;
 
             // initialize raw metric config
-            NVPA_RawMetricsConfig* pRawMetricsConfig = createRawMetricsConfig();
-            if (!pRawMetricsConfig)
+            NVPW_RawCounterConfig* pRawCounterConfig = createRawCounterConfig();
+            if (!pRawCounterConfig)
             {
-                NV_PERF_LOG_ERR(10, "RawMetricsConfig creation failed\n");
+                NV_PERF_LOG_ERR(10, "RawCounterConfig creation failed\n");
                 return false;
             }
 
             // add metrics and create configuration
             nv::perf::MetricsConfigBuilder configBuilder;
-            if (!configBuilder.Initialize(m_metricsEvaluator, pRawMetricsConfig, deviceIdentifiers.pChipName))
+            if (!configBuilder.Initialize(m_metricsEvaluator, pRawCounterConfig, deviceIdentifiers.pChipName))
             {
                 NV_PERF_LOG_ERR(10, "configBuilder.Initialize() failed\n");
                 return false;
             }
+
             auto addMetrics = [&](const NVPW_MetricEvalRequest* pMetricEvalRequests, size_t numMetricEvalRequests) {
                 if (!configBuilder.AddMetrics(pMetricEvalRequests, numMetricEvalRequests))
                 {
@@ -1244,7 +1388,8 @@ namespace nv { namespace perf { namespace profiler {
 
                         ReportData reportData = {};
                         reportData.secondsSinceEpoch = secondsSinceEpoch;
-                        reportData.clockStatus = m_clockStatus;
+                        reportData.clockStatus = m_clockInfo.clockStatus;
+                        reportData.clockLevel = m_clockInfo.clockLevel;
                         reportData.pCounterDataImage = decodeResult.counterDataImage.data();
                         reportData.counterDataImageSize = decodeResult.counterDataImage.size();
                         reportData.reportDirectoryName = m_reportDirectoryName;
@@ -1274,18 +1419,20 @@ namespace nv { namespace perf { namespace profiler {
                         if (outputOptions.enableHtmlReport)
                         {
                             [&]() {
-                                const std::string filename = m_reportDirectoryName + NV_PERF_PATH_SEPARATOR + "readme.html";
-                                FILE* fp = OpenFile(filename.c_str(), "wt");
-                                if (!fp)
                                 {
-                                    NV_PERF_LOG_ERR(50, "Failed to create files in directory %s, skipping writing HTML files\n", m_reportDirectoryName.c_str());
-                                    return;
+                                    const std::string filename = nv::perf::utilities::JoinDriectoryAndFileName(m_reportDirectoryName, "readme.html");
+                                    FILE* fp = OpenFile(filename.c_str(), "wt");
+                                    if (!fp)
+                                    {
+                                        NV_PERF_LOG_ERR(50, "Failed to create files in directory %s, skipping writing HTML files\n", m_reportDirectoryName.c_str());
+                                        return;
+                                    }
+                                    fprintf(fp, "%s", GetReadMeHtml().c_str());
+                                    fclose(fp);
                                 }
-                                fprintf(fp, "%s", GetReadMeHtml().c_str());
-                                fclose(fp);
-
                                 SummaryReport::WriteHtmlReportFile(m_metricsEvaluator, m_reportLayout, reportData);
                                 PerRangeReport::WriteHtmlReportFiles(m_metricsEvaluator, m_reportLayout, reportData);
+                                SchedulingInfo::WriteHtmlReportFile(m_metricsEvaluator, m_reportLayout, reportData, m_configuration);
                             }();
                         }
 
@@ -1297,7 +1444,7 @@ namespace nv { namespace perf { namespace profiler {
 
                         if (outputOptions.writeCounterConfigImage || m_writeCounterConfigImage)
                         {
-                            const std::string filename = m_reportDirectoryName + NV_PERF_PATH_SEPARATOR + "CounterConfigImage.dat";
+                            const std::string filename = nv::perf::utilities::JoinDriectoryAndFileName(m_reportDirectoryName, "CounterConfigImage.dat");
                             std::ofstream ofs(filename, std::ios::binary);
                             if (ofs.is_open())
                             {
@@ -1315,7 +1462,7 @@ namespace nv { namespace perf { namespace profiler {
 
                         if (outputOptions.writeCounterDataImage || m_writeCounterDataImage)
                         {
-                            const std::string filename = m_reportDirectoryName + NV_PERF_PATH_SEPARATOR + "CounterDataImage.dat";
+                            const std::string filename = nv::perf::utilities::JoinDriectoryAndFileName(m_reportDirectoryName, "CounterDataImage.dat");
                             std::ofstream ofs(filename, std::ios::binary);
                             if (ofs.is_open())
                             {
@@ -1391,7 +1538,7 @@ namespace nv { namespace perf { namespace profiler {
                 return true;
             }
 
-            m_clockStatus = GetDeviceClockState(m_deviceIndex);
+            m_clockInfo = GetDeviceClockState(m_deviceIndex);
             m_inCollection = true;
             return true;
         }
@@ -1400,7 +1547,7 @@ namespace nv { namespace perf { namespace profiler {
         {
             m_reportDirectoryName.clear();
             m_inCollection = false;
-            m_clockStatus = NVPW_DEVICE_CLOCK_STATUS_UNKNOWN;
+            m_clockInfo = ClockInfo();
             if (m_reportProfiler.IsInSession())
             {
                 m_reportProfiler.EndSession();

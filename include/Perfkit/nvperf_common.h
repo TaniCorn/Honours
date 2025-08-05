@@ -2,7 +2,7 @@
 #define NVPERF_COMMON_H
 
 /*
- * Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+ * Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
  *
  * NOTICE TO USER:
  *

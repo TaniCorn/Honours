@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -61,6 +61,11 @@ namespace nv { namespace perf {
         PFN_vkResetFences pfnVkResetFences;
         PFN_vkUnmapMemory pfnVkUnmapMemory;
         PFN_vkWaitForFences pfnVkWaitForFences;
+        PFN_vkCreateQueryPool pfnVkCreateQueryPool;
+        PFN_vkDestroyQueryPool pfnVkDestroyQueryPool;
+        PFN_vkCmdWriteTimestamp pfnVkCmdWriteTimestamp;
+        PFN_vkCmdResetQueryPool pfnVkCmdResetQueryPool;
+        PFN_vkGetQueryPoolResults pfnVkGetQueryPoolResults;
 
 #if defined(VK_NO_PROTOTYPES)
         void Initialize(VkInstance instance, VkDevice device, PFN_vkGetInstanceProcAddr pfnVkGetInstanceProcAddr_, PFN_vkGetDeviceProcAddr pfnVkGetDeviceProcAddr_)
@@ -98,6 +103,11 @@ namespace nv { namespace perf {
                 pfnVkResetFences = (PFN_vkResetFences)pfnVkGetDeviceProcAddr(device, "vkResetFences");
                 pfnVkUnmapMemory = (PFN_vkUnmapMemory)pfnVkGetDeviceProcAddr(device, "vkUnmapMemory");
                 pfnVkWaitForFences = (PFN_vkWaitForFences)pfnVkGetDeviceProcAddr(device, "vkWaitForFences");
+                pfnVkCreateQueryPool = (PFN_vkCreateQueryPool)pfnVkGetDeviceProcAddr(device, "vkCreateQueryPool");
+                pfnVkDestroyQueryPool = (PFN_vkDestroyQueryPool)pfnVkGetDeviceProcAddr(device, "vkDestroyQueryPool");
+                pfnVkCmdWriteTimestamp = (PFN_vkCmdWriteTimestamp)pfnVkGetDeviceProcAddr(device, "vkCmdWriteTimestamp");
+                pfnVkCmdResetQueryPool = (PFN_vkCmdResetQueryPool)pfnVkGetDeviceProcAddr(device, "vkCmdResetQueryPool");
+                pfnVkGetQueryPoolResults = (PFN_vkGetQueryPoolResults)pfnVkGetDeviceProcAddr(device, "vkGetQueryPoolResults");
             }
         }
 #else
@@ -131,6 +141,11 @@ namespace nv { namespace perf {
             pfnVkResetFences = vkResetFences;
             pfnVkUnmapMemory = vkUnmapMemory;
             pfnVkWaitForFences = vkWaitForFences;
+            pfnVkCreateQueryPool = vkCreateQueryPool;
+            pfnVkDestroyQueryPool = vkDestroyQueryPool;
+            pfnVkCmdWriteTimestamp = vkCmdWriteTimestamp;
+            pfnVkCmdResetQueryPool = vkCmdResetQueryPool;
+            pfnVkGetQueryPoolResults = vkGetQueryPoolResults;
         }
 #endif
 
@@ -164,6 +179,11 @@ namespace nv { namespace perf {
             pfnVkResetFences = nullptr;
             pfnVkUnmapMemory = nullptr;
             pfnVkWaitForFences = nullptr;
+            pfnVkCreateQueryPool = nullptr;
+            pfnVkDestroyQueryPool = nullptr;
+            pfnVkCmdWriteTimestamp = nullptr;
+            pfnVkCmdResetQueryPool = nullptr;
+            pfnVkGetQueryPoolResults = nullptr;
         }
     };
 
@@ -412,7 +432,7 @@ namespace nv { namespace perf {
         return deviceIdentifiers;
     }
 
-    inline NVPW_Device_ClockStatus VulkanGetDeviceClockState(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device
+    inline ClockInfo VulkanGetDeviceClockState(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device
 #if defined(VK_NO_PROTOTYPES)
                                                             , PFN_vkGetInstanceProcAddr pfnVkGetInstanceProcAddr
                                                             , PFN_vkGetDeviceProcAddr pfnVkGetDeviceProcAddr
@@ -428,7 +448,7 @@ namespace nv { namespace perf {
         return GetDeviceClockState(nvperfDeviceIndex);
     }
 
-    inline bool VulkanSetDeviceClockState(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, NVPW_Device_ClockSetting clockStatus
+    inline bool VulkanSetDeviceClockState(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, NVPW_Device_ClockSetting clockSetting
 #if defined(VK_NO_PROTOTYPES)
                                          , PFN_vkGetInstanceProcAddr pfnVkGetInstanceProcAddr
                                          , PFN_vkGetDeviceProcAddr pfnVkGetDeviceProcAddr
@@ -441,10 +461,10 @@ namespace nv { namespace perf {
                                                              , pfnVkGetDeviceProcAddr
 #endif
             );
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockSetting);
     }
 
-    inline bool VulkanSetDeviceClockState(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, NVPW_Device_ClockStatus clockStatus
+    inline bool VulkanSetDeviceClockState(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device, const ClockInfo& clockInfo
 #if defined(VK_NO_PROTOTYPES)
                                          , PFN_vkGetInstanceProcAddr pfnVkGetInstanceProcAddr
                                          , PFN_vkGetDeviceProcAddr pfnVkGetDeviceProcAddr
@@ -457,7 +477,7 @@ namespace nv { namespace perf {
                                                              , pfnVkGetDeviceProcAddr
 #endif
                 );
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockInfo);
     }
 
     inline size_t VulkanCalculateMetricsEvaluatorScratchBufferSize(const char* pChipName)
@@ -492,20 +512,20 @@ namespace nv { namespace perf {
 
 namespace nv { namespace perf { namespace profiler {
 
-    inline NVPA_RawMetricsConfig* VulkanCreateRawMetricsConfig(const char* pChipName)
+    inline NVPW_RawCounterConfig* VulkanCreateRawCounterConfig(const char* pChipName)
     {
-        NVPW_VK_RawMetricsConfig_Create_Params configParams = { NVPW_VK_RawMetricsConfig_Create_Params_STRUCT_SIZE };
+        NVPW_VK_RawCounterConfig_Create_Params configParams = { NVPW_VK_RawCounterConfig_Create_Params_STRUCT_SIZE };
         configParams.activityKind = NVPA_ACTIVITY_KIND_PROFILER;
         configParams.pChipName = pChipName;
 
-        NVPA_Status nvpaStatus = NVPW_VK_RawMetricsConfig_Create(&configParams);
+        NVPA_Status nvpaStatus = NVPW_VK_RawCounterConfig_Create(&configParams);
         if (nvpaStatus)
         {
-            NV_PERF_LOG_ERR(20, "NVPW_VK_RawMetricsConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
+            NV_PERF_LOG_ERR(20, "NVPW_VK_RawCounterConfig_Create failed, nvpaStatus = %s\n", FormatStatus(nvpaStatus).c_str());
             return nullptr;
         }
 
-        return configParams.pRawMetricsConfig;
+        return configParams.pRawCounterConfig;
     }
 
     inline bool VulkanIsGpuSupported(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device

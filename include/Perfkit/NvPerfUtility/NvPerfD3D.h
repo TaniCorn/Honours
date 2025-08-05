@@ -1,5 +1,5 @@
 /*
-* Copyright 2014-2023 NVIDIA Corporation.  All rights reserved.
+* Copyright 2014-2025 NVIDIA Corporation.  All rights reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ namespace nv { namespace perf {
         return deviceIdentifiers;
     }
 
-    inline NVPW_Device_ClockStatus D3DGetDeviceClockState(IDXGIAdapter* pDXGIAdapter)
+    inline ClockInfo D3DGetDeviceClockState(IDXGIAdapter* pDXGIAdapter)
     {
         size_t nvperfDeviceIndex = D3DGetNvperfDeviceIndex(pDXGIAdapter);
         return GetDeviceClockState(nvperfDeviceIndex);
@@ -75,9 +75,9 @@ namespace nv { namespace perf {
         return SetDeviceClockState(nvperfDeviceIndex, clockSetting);
     }
 
-    inline bool D3DSetDeviceClockState(IDXGIAdapter* pDXGIAdapter, NVPW_Device_ClockStatus clockStatus)
+    inline bool D3DSetDeviceClockState(IDXGIAdapter* pDXGIAdapter, const ClockInfo& clockInfo)
     {
         size_t nvperfDeviceIndex = D3DGetNvperfDeviceIndex(pDXGIAdapter);
-        return SetDeviceClockState(nvperfDeviceIndex, clockStatus);
+        return SetDeviceClockState(nvperfDeviceIndex, clockInfo);
     }
 }}
