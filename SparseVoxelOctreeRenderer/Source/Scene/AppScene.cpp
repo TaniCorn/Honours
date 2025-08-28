@@ -139,6 +139,7 @@ bool AppScene::frame()
 	SVOTraverser->SetMatrixBuffer(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix);
 	SVOTraverser->SetCameraBuffer(renderer->getDeviceContext(), camera->getPosition(), 0);
 	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), VoxelViewMode, VoxelViewDepth, IsHeatmapEnabled, -1);
+	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), VoxelViewMode, VoxelViewDepth, IsHeatmapEnabled, ViewIterations);
 	SVOTraverser->SetTexture(renderer->getDeviceContext(), RTViewer->GetRenderTexture()->getShaderResourceView());
 
 	SVOTraverser->compute(renderer->getDeviceContext(), 74, 40, 1);
@@ -216,9 +217,11 @@ void AppScene::CameraControlsGUI()
 void AppScene::TracerControlsGUI()
 {
 	if (ImGui::CollapsingHeader("Tracer Controls"))
+	if (ImGui::TreeNode("Tracer Controls"))
 	{
 		ImGui::Text(ViewModeDisplay.c_str());
 		ImGui::SliderInt("Voxel ViewMode", &VoxelViewMode, 0, 4);
+		ImGui::SliderInt("View Iterations", &ViewIterations, 1, 1000);
 		if (VoxelViewMode != 0)
 		{
 			ImGui::SliderInt("Voxel ViewDepth", &VoxelViewDepth, 0, 7);
@@ -246,12 +249,14 @@ void AppScene::TracerControlsGUI()
 			ViewModeDisplay = "Octree Tracer Main";
 			break;
 		}
+		ImGui::TreePop();
 	}
 }
 
 void AppScene::PerfTrackerGUI()
 {
 	if (ImGui::CollapsingHeader("Performance"))
+	if (ImGui::TreeNode("Performance"))
 	{
 		ConstructionPerf.GUIRender(PerfTrack);
 
@@ -285,6 +290,8 @@ void AppScene::PerfTrackerGUI()
 				}
 			}
 		}
+
+		ImGui::TreePop();
 
 	}
 }

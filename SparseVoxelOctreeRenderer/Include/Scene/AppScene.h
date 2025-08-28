@@ -49,6 +49,7 @@ private:
 	bool IsHeatmapEnabled = false;
 	int VoxelViewMode = 0; // 0: Normal, 1: Heatmap, 2:Boxes at Depth, 3: Wireframe at Depth, 4: Wireframe above Depth
 	int VoxelViewDepth = 0; // Depth for the view mode
+	int ViewIterations = 150;
 	std::string ViewModeDisplay = "Octree Tracer"; // Display string for the current view mode
 };
 

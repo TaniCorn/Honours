@@ -67,6 +67,7 @@ bool RayIntersectWireframe(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 o
     stackIndexes[stackTop] = 0;
     stackTop++;
     for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
+    for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         //Get top of stack
         int OctreeStride = stackIndexes[--stackTop];
@@ -145,6 +146,7 @@ void RayIntersectAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 off
     stackTop++;
     
     for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
+    for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
@@ -247,6 +249,7 @@ uint RayIntersectValidVoxel(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 
     stackTop++;
     
     for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
+    for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         int OctreeStride = stackIndexes[--stackTop];
         currentNode = Octree[OctreeStride];
@@ -394,6 +397,7 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 RayIntersectAtDepth(ray, vo, modelOffsets, doesIntersect, octantLocation, colorIndex, modelHeatIterations);
                 heatIterations += modelHeatIterations;
                 outputColor = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
+                outputColor = float4(HeatmapColor(heatIterations, 0, amountOfOctrees), 1);
                 break;
             case 2:
                 // Render colored cubes at depth
