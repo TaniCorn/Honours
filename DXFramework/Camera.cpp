@@ -214,9 +214,9 @@ void Camera::turnDown()
 void Camera::turn(int x, int y)
 {
 	// Update the rotation.
-	rotation.y += (float)x * lookSpeed;// m_speed * x;
+	rotation.y += (float)x * lookSpeed * frameTime * 250.0f;// m_speed * x;
 
-	rotation.x += (float)y * lookSpeed;// m_speed * y;
+	rotation.x += (float)y * lookSpeed * frameTime * 250.0f;// m_speed * y;
 }
 
 void Camera::strafeRight()

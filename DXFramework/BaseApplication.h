@@ -54,6 +54,8 @@ public:
 	*/
 	virtual bool frame();
 
+	virtual void updateWindowSize(int screenWidth, int screenHeight) = 0;
+
 protected:
 	/** \brief Protected Virtual function for handling input
 	* Function provides default input handling for camera and UI functions. 

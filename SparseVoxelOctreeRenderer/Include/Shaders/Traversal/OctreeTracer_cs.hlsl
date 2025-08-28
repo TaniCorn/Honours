@@ -31,15 +31,23 @@ cbuffer ViewModeBuffer : register(b2)
     int heat;
     int amountOfOctrees; // Currently used for padding
 };
-
+cbuffer ApplicationBuffer : register(b3)
+{
+    int applicationWidth;
+    int applicationHeight;
+    int buf3;
+    int buf4;
+};
 struct VoxelColor
 {
     uint rgba[256];
 };
-cbuffer ColorBuffer : register(b3)
+
+cbuffer ColorBuffer : register(b4)
 {
     VoxelColor cpal[MODELAMOUNTS];
 };
+
 // Input and output structures
 Texture2D gInput : register(t0);
 StructuredBuffer<VoxelOctree> voxelOctree[MODELAMOUNTS] : register(t1);
@@ -66,7 +74,6 @@ bool RayIntersectWireframe(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 o
     int stackTop = 0;
     stackIndexes[stackTop] = 0;
     stackTop++;
-    for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
     for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         //Get top of stack
@@ -145,7 +152,6 @@ void RayIntersectAtDepth(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 off
     stackIndexes[stackTop] = 0;
     stackTop++;
     
-    for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
     for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         int OctreeStride = stackIndexes[--stackTop];
@@ -248,7 +254,6 @@ uint RayIntersectValidVoxel(Ray r, StructuredBuffer<VoxelOctree> Octree, float3 
     stackIndexes[stackTop] = 0;
     stackTop++;
     
-    for (int iterations = 0; iterations < MAX_ITERATIONS && stackTop > 0; iterations++)
     for (int iterations = 0; iterations < amountOfOctrees && stackTop > 0; iterations++)
     {
         int OctreeStride = stackIndexes[--stackTop];
@@ -334,14 +339,13 @@ void main(int3 groupThreadID : SV_GroupThreadID,
     int x = dispatchThreadID.x;
     int y = dispatchThreadID.y;
     
-    // Quick Abort when reaching out of bounds for y pixel as the resolution in y is not nicely divisible by the 16 threads
-    if (dispatchThreadID.y > 636)
+    if(x > applicationWidth ||  y > applicationHeight)
     {
-        return;
+        return; // Out of bounds check for x and y
     }
 
     float3 camPos = cameraPosition.xyz;
-    float2 res = float2(1184, 636);
+    float2 res = float2(applicationWidth, applicationHeight);
     float fov = 1.0;
     
     // Calculating the texel coordinates based on resolution and dispatch thread ID
@@ -396,7 +400,6 @@ void main(int3 groupThreadID : SV_GroupThreadID,
                 // Heatmap mode, additive
                 RayIntersectAtDepth(ray, vo, modelOffsets, doesIntersect, octantLocation, colorIndex, modelHeatIterations);
                 heatIterations += modelHeatIterations;
-                outputColor = float4(HeatmapColor(heatIterations, 0, MAX_ITERATIONS), 1);
                 outputColor = float4(HeatmapColor(heatIterations, 0, amountOfOctrees), 1);
                 break;
             case 2:

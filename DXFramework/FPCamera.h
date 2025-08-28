@@ -23,7 +23,7 @@ public:
 	//~FPCamera();
 
 	void move(float dt);	///< Move camera, handles basic camera movement
-
+	void setRes(int width, int height);///< Set screen resolution for mouse movement calculations
 private:
 	Input* input;
 	int winWidth, winHeight;///< stores window width and height

@@ -16,7 +16,7 @@ namespace TextureView
 		~TextureViewer();
 
 		void Render(ID3D11DeviceContext* Context, XMMATRIX WorldMatrix, XMMATRIX OrthoMatrix, XMMATRIX OrthoViewMatrix, ID3D11ShaderResourceView* SRV) const;
-
+		void ResizeTexture(ID3D11Device* Device, HWND hwnd, ID3D11DeviceContext* Context, float NewWidth, float NewHeight, float XPos, float YPos, float NearPlane = 0.1f, float FarPlane = 100.0f);
 		RenderTexture* GetRenderTexture() const;
 	private:
 		std::unique_ptr<TextureShader> Shader;

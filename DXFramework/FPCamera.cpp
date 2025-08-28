@@ -122,3 +122,9 @@ void FPCamera::move(float dt)
 	//}
 	update();
 }
+
+void FPCamera::setRes(int width, int height)
+{
+	winWidth = width;
+	winHeight = height;
+}

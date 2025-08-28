@@ -96,18 +96,18 @@ void AppScene::init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenH
 	//g_clockStatus = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
 	//nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
 
-	g_nvperf.InitializeReportGenerator(renderer->getDevice());
-	g_nvperf.SetFrameLevelRangeName("Frame");
-	g_nvperf.SetNumNestingLevels(2);
-	g_nvperf.SetMaxNumRanges(2); // "Frame" + "Draw"
-	g_nvperf.outputOptions.directoryName = "HtmlReports\\D3D11";
+g_nvperf.InitializeReportGenerator(renderer->getDevice());
+g_nvperf.SetFrameLevelRangeName("Frame");
+g_nvperf.SetNumNestingLevels(2);
+g_nvperf.SetMaxNumRanges(2); // "Frame" + "Draw"
+g_nvperf.outputOptions.directoryName = "HtmlReports\\D3D11";
 
-	// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
-	m_clockInfo = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
-	nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
+// LoadDriver() must be called first, which is taken care of by InitializeReportGenerator()
+m_clockInfo = nv::perf::D3D11GetDeviceClockState(renderer->getDevice());
+nv::perf::D3D11SetDeviceClockState(renderer->getDevice(), NVPW_DEVICE_CLOCK_SETTING_LOCK_TO_RATED_TDP);
 
-	QueryPerformanceFrequency(&m_clockFreq);
-	QueryPerformanceCounter(&m_startTimestamp);
+QueryPerformanceFrequency(&m_clockFreq);
+QueryPerformanceCounter(&m_startTimestamp);
 #endif
 }
 
@@ -138,11 +138,11 @@ bool AppScene::frame()
 
 	SVOTraverser->SetMatrixBuffer(renderer->getDeviceContext(), worldMatrix, orthoViewMatrix, orthoMatrix, viewMatrix, projectionMatrix);
 	SVOTraverser->SetCameraBuffer(renderer->getDeviceContext(), camera->getPosition(), 0);
-	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), VoxelViewMode, VoxelViewDepth, IsHeatmapEnabled, -1);
 	SVOTraverser->SetViewModeBuffer(renderer->getDeviceContext(), VoxelViewMode, VoxelViewDepth, IsHeatmapEnabled, ViewIterations);
 	SVOTraverser->SetTexture(renderer->getDeviceContext(), RTViewer->GetRenderTexture()->getShaderResourceView());
+	SVOTraverser->SetApplicationBuffer(renderer->getDeviceContext(), RTViewer->GetRenderTexture()->getTextureWidth(), RTViewer->GetRenderTexture()->getTextureHeight());
 
-	SVOTraverser->compute(renderer->getDeviceContext(), 74, 40, 1);
+	SVOTraverser->compute(renderer->getDeviceContext(), RTViewer->GetRenderTexture()->getTextureWidth()/ 16.0f, RTViewer->GetRenderTexture()->getTextureHeight()/ 16.0f, 1);
 	SVOTraverser->Unbind(renderer->getDeviceContext());
 #ifdef BENCHMARK
 	g_nvperf.PopRange(); // Draw
@@ -165,14 +165,42 @@ bool AppScene::frame()
 	return true;
 }
 
+void AppScene::updateWindowSize(int screenWidth, int screenHeight)
+{
+	sWidth = screenWidth;
+	sHeight = screenHeight;
+
+	renderer->resizeWindow(screenWidth, screenHeight);
+	RTViewer->ResizeTexture(renderer->getDevice(), wnd, renderer->getDeviceContext(), screenWidth, screenHeight,0,0);
+
+	// TODO: Fix the resize function so we don't need to recreate the entire traverser. 
+	// For some reason going fullscreen just messes up the output texture and stretches it weirdly
+	//SVOTraverser->Resize(renderer->getDevice(), wnd, screenWidth, screenHeight + 40);
+	SVOTraverser.reset();
+	const int PregeneratedOctreeSize = 200000;
+	SVOTraverser = std::make_unique<SVOTraverserShader>(renderer->getDevice(), wnd, PregeneratedOctreeSize, screenWidth, screenHeight);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("dragon"), SVOModels->GetPalette("dragon"), 0);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("monu1"), SVOModels->GetPalette("monu1"), 1);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("cars"), SVOModels->GetPalette("cars"), 2);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("chair"), SVOModels->GetPalette("chair"), 3);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("doom"), SVOModels->GetPalette("doom"), 4);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("menger"), SVOModels->GetPalette("menger"), 5);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("teapot"), SVOModels->GetPalette("teapot"), 6);
+	SVOTraverser->SetVoxelModelAndPalette(renderer->getDeviceContext(), SVOModels->GetSVOModel("room"), SVOModels->GetPalette("room"), 7);
+
+	// Create the camera object and set to default position.
+	camera->setRes(screenWidth, screenHeight);
+	camera->update();
+}
+
 bool AppScene::render()
 {
-	renderer->beginScene(1.0f, 0.58f, 0.92f, 1.0f);
+	renderer->beginScene(1.0f, 1.0f, 0.92f, 1.0f);
 
 	XMMATRIX worldMatrix = renderer->getWorldMatrix();
 	XMMATRIX orthoMatrix = renderer->getOrthoMatrix();
 	XMMATRIX orthoViewMatrix = camera->getOrthoViewMatrix();
-	
+
 	RTViewer->Render(renderer->getDeviceContext(), worldMatrix, orthoMatrix, orthoViewMatrix, SVOTraverser->GetSRV());
 
 	//ImGui::ShowDemoWindow();
@@ -190,11 +218,18 @@ void AppScene::renderGUI()
 	renderer->getDeviceContext()->GSSetShader(NULL, NULL, 0);
 	renderer->getDeviceContext()->HSSetShader(NULL, NULL, 0);
 	renderer->getDeviceContext()->DSSetShader(NULL, NULL, 0);
-	
+
 	// Have a ImGUI class for the specific window to render
 
 	ImGui::Text("FPS: %.2f", timer->getFPS());
+	ImGui::Text("IO Moise X: %d Y: %d", input->getMouseX(), input->getMouseY());
+	ImGui::Text("ImGui Mouse X: %.1f Y: %.1f", ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y);
 
+
+	if(ImGui::Button("Refresh"))
+	{
+
+	}
 	CameraControlsGUI();
 	TracerControlsGUI();
 #if BENCHMARK
@@ -207,16 +242,19 @@ void AppScene::renderGUI()
 
 void AppScene::CameraControlsGUI()
 {
-	if (ImGui::CollapsingHeader("Camera Controls"))
+	if (ImGui::TreeNode("Application Controls"))
 	{
 		ImGui::SliderFloat("Camera Speed", &camera->camSpeed, 1.f, 100.0f);
 		ImGui::SliderFloat("Camera Sensitivity", &camera->lookSpeed, 0.0f, 2.0f);
+		bool vsync = renderer->isVsyncEnabled();
+		ImGui::Checkbox("VSync", &vsync);
+		renderer->setVsyncEnabled(vsync);
+		ImGui::TreePop();
 	}
 }
 
 void AppScene::TracerControlsGUI()
 {
-	if (ImGui::CollapsingHeader("Tracer Controls"))
 	if (ImGui::TreeNode("Tracer Controls"))
 	{
 		ImGui::Text(ViewModeDisplay.c_str());
@@ -255,7 +293,6 @@ void AppScene::TracerControlsGUI()
 
 void AppScene::PerfTrackerGUI()
 {
-	if (ImGui::CollapsingHeader("Performance"))
 	if (ImGui::TreeNode("Performance"))
 	{
 		ConstructionPerf.GUIRender(PerfTrack);

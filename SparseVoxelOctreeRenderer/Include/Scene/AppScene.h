@@ -23,6 +23,7 @@ public:
 
 	void init(HINSTANCE hinstance, HWND hwnd, int screenWidth, int screenHeight, Input* in, bool VSYNC, bool FULL_SCREEN) override;
 	bool frame() override;
+	void updateWindowSize(int screenWidth, int screenHeight) override;
 protected:
 	bool render() override;
 private:

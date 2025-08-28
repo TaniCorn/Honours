@@ -47,7 +47,13 @@ public:
 		VoxelColor Palettes[MODELAMOUNTS];
 	};
 
-
+	struct ApplicationBuffer
+	{
+		int ApplicationWidth;
+		int ApplicationHeight;
+		int Buf3;
+		int Buf4;
+	};
 public:
 	SVOTraverserShader(ID3D11Device* Device, HWND Hwnd, int OctantNumber, int InWidth, int InHeight);
 	~SVOTraverserShader();
@@ -64,6 +70,7 @@ public:
 	void SetCameraBuffer(ID3D11DeviceContext* DeviceContext, const XMFLOAT3& CameraPos, int VoxelView = 0);
 	void SetViewModeBuffer(ID3D11DeviceContext* DeviceContext, int VoxelView, int ViewDepth, bool Heatmap, int AmountOfOctrees = 2);
 	void SetTexture(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Texture);
+	void SetApplicationBuffer(ID3D11DeviceContext* DeviceContext, int Width, int Height);
 
 	/// <summary>
 	/// Set the octrees from shader resource views. These should've been generated from the GPUConstruction
@@ -81,6 +88,11 @@ public:
 	ID3D11ShaderResourceView* GetSRV();
 	void Unbind(ID3D11DeviceContext* Dc);
 
+	/// <summary>
+	/// Doesn't currently work properly. For now just recreate the entire shader
+	/// </summary>
+	void Resize(ID3D11Device* Device, HWND Hwnd, int NewWidth, int NewHeight);
+
 	ID3D11Device* Device;
 	HWND Hwnd;
 	int ScreenWidth, ScreenHeight;
@@ -97,6 +109,7 @@ private:
 	ID3D11Buffer* InMatrixBuffer = nullptr;
 	ID3D11Buffer* InCameraBuffer = nullptr;
 	ID3D11Buffer* InViewBuffer = nullptr;
+	ID3D11Buffer* InApplicationBuffer = nullptr;
 	ID3D11Buffer* InVoxelPaletteBuffer[MODELAMOUNTS];
 	ID3D11Buffer* InOctreeBuffer[MODELAMOUNTS];
 	ID3D11ShaderResourceView* InOctreeSRV[MODELAMOUNTS];

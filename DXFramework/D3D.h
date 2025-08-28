@@ -76,6 +76,11 @@ public:
 	void setBackBufferRenderTarget();	///< Sets the back buffer as the render target
 	void resetViewport();				///< Restores viewport if dimensions of render target were different
 
+	bool isVsyncEnabled();	///< Returns if vsync is enabled
+	void setVsyncEnabled(bool enabled);	///< Sets vsync enabled/disabled
+
+	void resizeWindow(int screenWidth, int screenHeight); ///< Resize the swapchain buffers and recreate the render target and depth/stencil buffers
+
 private:
 	void createDevice();
 	void createSwapchain();

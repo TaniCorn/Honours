@@ -494,6 +494,76 @@ void D3D::resetViewport()
 	return;
 }
 
+bool D3D::isVsyncEnabled()
+{
+	return vsync_enabled;
+}
+
+void D3D::setVsyncEnabled(bool enabled)
+{
+	vsync_enabled = enabled;
+}
+
+void D3D::resizeWindow(int screenWidth, int screenHeight)
+{
+	if (screenWidth != screenwidth || screenHeight != screenheight)
+	{
+		screenwidth = screenWidth;
+		screenheight = screenHeight;
+		if (swapChain)
+		{
+			// Release old views, as they hold references to the buffers we will be destroying.
+			if (renderTargetView)
+			{
+				renderTargetView->Release();
+				renderTargetView = 0;
+			}
+			if (depthStencilView)
+			{
+				depthStencilView->Release();
+				depthStencilView = 0;
+			}
+			if (depthStencilBuffer)
+			{
+				depthStencilBuffer->Release();
+				depthStencilBuffer = 0;
+			}
+
+			// Resize the swap chain.
+			HRESULT hr;
+			hr = swapChain->ResizeBuffers(1, screenwidth, screenheight, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+			if (FAILED(hr))
+			{
+				MessageBox(*wnd, L"Failed to resize swap chain buffers.", L"Error", MB_OK);
+				return;
+			}
+
+			// Create a new render target view of the back buffer.
+			createRenderTargetView();
+			// Create a new depth stencil buffer and view.
+			createDepthBuffer();
+			createStencilBuffer();
+			// Set the new viewport.
+			viewport.Width = (float)screenwidth;
+			viewport.Height = (float)screenheight;
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			viewport.TopLeftX = 0.0f;
+			viewport.TopLeftY = 0.0f;
+			deviceContext->RSSetViewports(1, &viewport);
+			// Reset the projection matrix.
+			fieldOfView = (float)XM_PI / 4.0f;
+			screenAspect = (float)screenwidth / (float)screenheight;
+			projectionMatrix = XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, nearPlane, farPlane);
+
+			// Reset the orthographic matrix.
+			orthoMatrix = XMMatrixOrthographicLH((float)screenwidth, (float)screenheight, nearPlane, farPlane);
+		}
+		
+		
+	}
+}
+
 // Enable/disable wireframe rendering. Uses previously created raster states.
 void D3D::setWireframeMode(bool b)
 {

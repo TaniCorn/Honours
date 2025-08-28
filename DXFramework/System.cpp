@@ -155,6 +155,11 @@ void System::initialiseWindows(int& screenWidth, int& screenHeight)
 
 		// Set the position of the window to the top left corner.
 		posX = posY = 0;
+
+		// After resizing swap chain and render targets:
+		ImGuiIO& io = ImGui::GetIO();
+		io.DisplaySize = ImVec2((float)screenWidth, (float)screenHeight);
+		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f); // Or your DPI scale
 	}
 	else
 	{
@@ -268,7 +273,30 @@ LRESULT CALLBACK System::WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM
 			PostQuitMessage(0);
 			return 0;
 		}
+		case WM_SIZE:
+		{
+			// After resizing swap chain and render targets:
+			if (ImGui::GetCurrentContext() != nullptr)
+			{
+				/*int newWidth = GetSystemMetrics(SM_CXSCREEN);
+				int newHeight = GetSystemMetrics(SM_CYSCREEN);*/
 
+
+				RECT rect;
+				GetClientRect(hwnd, &rect);
+
+				int newWidth = rect.right;
+				int newHeight = rect.bottom;
+
+				ImGuiIO& io = ImGui::GetIO();
+				io.DisplaySize = ImVec2((float)newWidth, (float)newHeight);
+				io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
+
+
+				ApplicationHandle->app->updateWindowSize(newWidth, newHeight);
+			}
+			break;
+		}
 	}
 
 	//if (ImGui_ImplDX11_WndProcHandler(hwnd, umessage, wparam, lparam))

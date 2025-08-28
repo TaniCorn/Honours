@@ -177,7 +177,7 @@ HRESULT SVOTraverserShader::CreateInput()
 	Hr = CreateConstantBuffer(&InMatrixBuffer, sizeof(InvMatrixBuffer));
 	Hr = CreateConstantBuffer(&InCameraBuffer, sizeof(CameraBuffer));
 	Hr = CreateConstantBuffer(&InViewBuffer, sizeof(ViewModeBuffer));
-
+	Hr = CreateConstantBuffer(&InApplicationBuffer, sizeof(ApplicationBuffer));
 	return Hr;
 }
 
@@ -232,6 +232,7 @@ void SVOTraverserShader::SetShaderParameters(ID3D11DeviceContext* DeviceContext,
 	DeviceContext->CSSetConstantBuffers(0, 1, &InMatrixBuffer);
 	DeviceContext->CSSetConstantBuffers(1, 1, &InCameraBuffer);
 	DeviceContext->CSSetConstantBuffers(2, 1, &InViewBuffer);
+	DeviceContext->CSSetConstantBuffers(3, 1, &InApplicationBuffer);
 
 	DeviceContext->CSSetShaderResources(0, 1, &Texture);
 	DeviceContext->CSSetUnorderedAccessViews(0, 1, &TexUAV, 0);
@@ -292,6 +293,20 @@ void SVOTraverserShader::SetTexture(ID3D11DeviceContext* DeviceContext, ID3D11Sh
 	DeviceContext->CSSetUnorderedAccessViews(0, 1, &TexUAV, 0);
 }
 
+void SVOTraverserShader::SetApplicationBuffer(ID3D11DeviceContext* DeviceContext, int Width, int Height)
+{
+	HRESULT Result;
+	D3D11_MAPPED_SUBRESOURCE MappedResource;
+	Result = DeviceContext->Map(InApplicationBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+	ApplicationBuffer* AppPtr = (ApplicationBuffer*)MappedResource.pData;
+	AppPtr->ApplicationHeight = Height;
+	AppPtr->ApplicationWidth = Width;
+	AppPtr->Buf3 = 0;
+	AppPtr->Buf4 = 0;
+	DeviceContext->Unmap(InApplicationBuffer, 0);
+	DeviceContext->CSSetConstantBuffers(3, 1, &InApplicationBuffer);
+}
+
 void SVOTraverserShader::SetOctreeVoxels(ID3D11DeviceContext* DeviceContext, ID3D11ShaderResourceView* Octree[MODELAMOUNTS])
 {
 	DeviceContext->CSSetShaderResources(1, MODELAMOUNTS, Octree);
@@ -333,7 +348,7 @@ void SVOTraverserShader::SetVoxelPalette(ID3D11DeviceContext* DeviceContext, con
 	}
 	DeviceContext->Unmap(InVoxelPaletteBuffer[StorageIndex], 0);
 
-	DeviceContext->CSSetConstantBuffers(3 + StorageIndex, 1, &InVoxelPaletteBuffer[StorageIndex]);//TODO: Figure out how we can get the constant buffer working correctly
+	DeviceContext->CSSetConstantBuffers(4 + StorageIndex, 1, &InVoxelPaletteBuffer[StorageIndex]);//TODO: Figure out how we can get the constant buffer working correctly
 	DeviceContext->CSSetShaderResources(9 + StorageIndex, 1, &InPaletteSRV[StorageIndex]);
 }
 
@@ -378,4 +393,59 @@ void SVOTraverserShader::Unbind(ID3D11DeviceContext* Dc)
 	Dc->CSSetUnorderedAccessViews(0, 1, NullUAV, 0);
 
 	Dc->CSSetShader(nullptr, nullptr, 0);
+}
+
+void SVOTraverserShader::Resize(ID3D11Device* Device, HWND Hwnd, int NewWidth, int NewHeight)
+{
+
+	this->Device = Device;
+	this->Hwnd = hwnd;
+	if (Tex)
+	{
+		Tex->Release();
+		Tex = 0;
+	}
+
+	if (TexSRV)
+	{
+		TexSRV->Release();
+		TexSRV = 0;
+	}
+
+	if (TexUAV)
+	{
+		TexUAV->Release();
+		TexUAV = 0;
+	}
+
+	HRESULT Hr;
+	D3D11_TEXTURE2D_DESC TextureDesc;
+	ZeroMemory(&TextureDesc, sizeof(TextureDesc));
+	TextureDesc.Width = ScreenWidth;
+	TextureDesc.Height = ScreenHeight;
+	TextureDesc.MipLevels = 1;
+	TextureDesc.ArraySize = 1;
+	TextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	TextureDesc.SampleDesc.Count = 1;
+	TextureDesc.SampleDesc.Quality = 0;
+	TextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	TextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	TextureDesc.CPUAccessFlags = 0;
+	TextureDesc.MiscFlags = 0;
+	Tex = 0;
+	Hr = renderer->CreateTexture2D(&TextureDesc, 0, &Tex);
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc;
+	SrvDesc.Format = TextureDesc.Format;
+	SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	SrvDesc.Texture2D.MostDetailedMip = 0;
+	SrvDesc.Texture2D.MipLevels = 1;
+	Hr = renderer->CreateShaderResourceView(Tex, &SrvDesc, &TexSRV);
+
+	D3D11_UNORDERED_ACCESS_VIEW_DESC DescUAV;
+	ZeroMemory(&DescUAV, sizeof(DescUAV));
+	DescUAV.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	DescUAV.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+	DescUAV.Texture2D.MipSlice = 0;
+	Hr = renderer->CreateUnorderedAccessView(Tex, &DescUAV, &TexUAV);
 }
